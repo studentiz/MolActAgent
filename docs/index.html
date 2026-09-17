@@ -3,28 +3,31 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#f4f6f2" />
-  <meta name="description" content="MolActAgent is a Python package for small-data molecular activity prediction with explicit reference comparisons." />
+  <meta name="theme-color" content="#faf8f2" />
+  <meta name="description" content="MolActAgent is a Python package for small-data molecular activity classification and regression with explicit reference comparisons." />
   <link rel="canonical" href="https://studentiz.github.io/MolActAgent/" />
   <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
   <title>MolActAgent | Small-data molecular activity prediction</title>
   <style>
     :root {
-      --paper: #f4f6f2;
-      --surface: #ffffff;
-      --ink: #17231f;
-      --muted: #5e6b66;
-      --quiet: #7c8983;
-      --line: #dce3de;
-      --line-strong: #c5d0c9;
-      --forest: #155b49;
-      --forest-dark: #0d332b;
-      --mint: #dcefe5;
-      --blue: #2e6f8e;
-      --yellow: #f2d98b;
-      --code: #10211d;
-      --code-ink: #e5f0ea;
-      --max: 1120px;
+      --paper: #faf8f2;
+      --surface: #fffefa;
+      --ink: #18211e;
+      --muted: #5b6762;
+      --quiet: #74807b;
+      --line: #1b2420;
+      --soft-line: #cbd4ce;
+      --teal: #079f9f;
+      --teal-dark: #087978;
+      --mint: #dcefe8;
+      --green: #e7f3df;
+      --cream: #f8eedf;
+      --lavender: #f2edf6;
+      --blue: #e8f1f5;
+      --yellow: #f4d98c;
+      --code: #17241f;
+      --code-ink: #ecf4ef;
+      --max: 1180px;
     }
 
     *, *::before, *::after { box-sizing: border-box; }
@@ -45,25 +48,33 @@
       outline-offset: 4px;
       border-radius: 4px;
     }
+    h1, h2, h3, p { margin-top: 0; }
+    code, pre, .eyebrow, .section-kicker, .figure-label, .arch-label, .code-head {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .wrap {
+      width: min(var(--max), calc(100% - 48px));
+      margin: 0 auto;
+    }
     .skip-link {
       position: absolute;
       left: 16px;
       top: -48px;
       z-index: 20;
       padding: 8px 12px;
-      background: var(--forest-dark);
+      background: var(--ink);
       color: #fff;
       text-decoration: none;
     }
     .skip-link:focus { top: 12px; }
-    .wrap {
-      width: min(var(--max), calc(100% - 48px));
-      margin: 0 auto;
-    }
 
-    header {
-      border-bottom: 1px solid var(--line);
-      background: rgba(244, 246, 242, 0.96);
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid var(--soft-line);
+      background: rgba(250, 248, 242, 0.96);
+      backdrop-filter: blur(8px);
     }
     .nav {
       min-height: 72px;
@@ -75,12 +86,13 @@
     .brand {
       display: inline-flex;
       align-items: center;
-      gap: 11px;
+      gap: 10px;
       color: var(--ink);
       text-decoration: none;
       font-size: 17px;
-      font-weight: 650;
-      letter-spacing: -0.02em;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      white-space: nowrap;
     }
     .brand img { width: 31px; height: 31px; }
     .nav-right {
@@ -91,378 +103,610 @@
     .nav-links {
       display: flex;
       align-items: center;
-      gap: 22px;
+      gap: 21px;
     }
     .nav-links a {
       color: var(--muted);
-      font-size: 14px;
+      font-size: 12px;
       text-decoration: none;
     }
-    .nav-links a:hover { color: var(--forest); }
-    .github-link {
+    .nav-links a:hover { color: var(--teal-dark); }
+    .github-button {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      padding: 8px 13px;
-      border: 1px solid var(--line-strong);
-      border-radius: 6px;
-      color: var(--ink);
-      font-size: 14px;
+      gap: 8px;
+      min-height: 40px;
+      padding: 8px 14px;
+      border: 1px solid var(--ink);
+      border-radius: 5px;
+      background: var(--ink);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
       text-decoration: none;
-      background: var(--surface);
+      white-space: nowrap;
     }
-    .github-link:hover { border-color: var(--forest); color: var(--forest); }
-    .github-link svg { width: 16px; height: 16px; }
+    .github-button:hover { background: var(--teal-dark); border-color: var(--teal-dark); }
+    .github-button svg { width: 16px; height: 16px; }
 
     .hero {
-      padding: 92px 0 86px;
-      border-bottom: 1px solid var(--line);
+      padding: 76px 0 84px;
+      border-bottom: 1px solid var(--soft-line);
     }
     .hero-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
-      gap: 76px;
+      grid-template-columns: minmax(0, 0.84fr) minmax(470px, 1.16fr);
+      gap: 64px;
       align-items: center;
     }
-    .eyebrow, .section-label {
-      margin: 0 0 18px;
-      color: var(--forest);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 12px;
-      font-weight: 650;
-      letter-spacing: 0.09em;
+    .eyebrow, .section-kicker {
+      margin: 0 0 17px;
+      color: var(--teal-dark);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.11em;
       text-transform: uppercase;
     }
-    h1, h2, h3, p { margin-top: 0; }
     h1 {
-      max-width: 760px;
-      margin-bottom: 25px;
-      color: var(--forest-dark);
-      font-size: clamp(48px, 7vw, 82px);
-      font-weight: 700;
-      letter-spacing: -0.065em;
+      max-width: 600px;
+      margin-bottom: 24px;
+      color: var(--ink);
+      font-size: clamp(46px, 6vw, 76px);
+      font-weight: 750;
+      letter-spacing: -0.07em;
       line-height: 0.99;
     }
-    h1 span { color: var(--forest); }
-    .hero-copy > p:not(.eyebrow) {
-      max-width: 620px;
-      margin-bottom: 30px;
+    h1 span { color: var(--teal-dark); }
+    .hero-lede {
+      max-width: 600px;
+      margin-bottom: 28px;
       color: var(--muted);
-      font-size: 20px;
-      line-height: 1.5;
+      font-size: 19px;
+      line-height: 1.58;
     }
     .actions {
       display: flex;
       flex-wrap: wrap;
       gap: 11px;
-      margin-bottom: 36px;
+      margin-bottom: 25px;
     }
     .button {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 42px;
+      min-height: 44px;
       padding: 9px 16px;
-      border: 1px solid var(--forest);
-      border-radius: 6px;
+      border: 1px solid var(--ink);
+      border-radius: 5px;
       font-size: 14px;
-      font-weight: 650;
+      font-weight: 700;
       text-decoration: none;
     }
-    .button.primary { background: var(--forest); color: #fff; }
-    .button.primary:hover { background: var(--forest-dark); border-color: var(--forest-dark); }
-    .button.secondary { background: transparent; color: var(--forest); }
+    .button.primary { background: var(--ink); color: #fff; }
+    .button.primary:hover { background: var(--teal-dark); border-color: var(--teal-dark); }
+    .button.secondary { background: var(--surface); color: var(--ink); }
     .button.secondary:hover { background: var(--mint); }
-    .meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px 24px;
-      margin: 0;
-      padding: 0;
+    .button svg { width: 16px; height: 16px; margin-right: 8px; }
+    .hero-note {
+      margin-bottom: 0;
       color: var(--quiet);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 12px;
-      list-style: none;
     }
-    .meta li::before {
-      content: "·";
-      margin-right: 8px;
-      color: var(--forest);
-      font-size: 18px;
-      line-height: 0;
-      vertical-align: -2px;
-    }
+    .hero-note code { color: var(--teal-dark); font-size: 11px; }
 
-    .diagram {
-      padding: 25px;
-      border: 1px solid #29463d;
-      border-radius: 10px;
-      background: var(--code);
-      color: var(--code-ink);
-      box-shadow: 12px 12px 0 rgba(21, 91, 73, 0.12);
+    .overview-card {
+      padding: 18px;
+      border: 2px solid var(--line);
+      border-radius: 5px;
+      background: var(--surface);
+      box-shadow: 11px 11px 0 rgba(7, 159, 159, 0.13);
     }
-    .diagram-title {
-      margin-bottom: 22px;
-      color: #94b5a7;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 12px;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-    .diagram-step {
-      display: grid;
-      grid-template-columns: 38px 1fr;
-      gap: 14px;
-      align-items: start;
-      padding: 15px 0;
-      border-top: 1px solid #29463d;
-    }
-    .diagram-step:first-of-type { border-top: 0; padding-top: 0; }
-    .step-number {
-      color: var(--yellow);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 12px;
-    }
-    .diagram-step strong {
-      display: block;
-      margin-bottom: 2px;
-      color: #f1f7f3;
-      font-size: 16px;
-      font-weight: 600;
-    }
-    .diagram-step span:last-child {
-      color: #9eb4aa;
-      font-size: 13px;
-    }
-    .diagram-result {
+    .figure-bar {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
       gap: 16px;
-      margin-top: 12px;
-      padding: 15px 16px;
-      border: 1px solid #4a7766;
-      border-radius: 6px;
-      background: #17382f;
+      margin-bottom: 14px;
+      padding: 0 2px 12px;
+      border-bottom: 1px solid var(--soft-line);
     }
-    .diagram-result span {
-      color: var(--yellow);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 11px;
+    .figure-bar span, .figure-label, .arch-label {
+      color: var(--ink);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
     }
-    .diagram-result strong { color: #fff; font-size: 14px; font-weight: 600; }
-    .diagram-note {
-      margin: 18px 0 0;
-      color: #9eb4aa;
-      font-size: 12px;
-      line-height: 1.5;
+    .figure-bar strong { font-size: 13px; font-weight: 700; }
+    .figure-box {
+      padding: 14px 15px;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
+    }
+    .figure-box.mint { background: var(--mint); }
+    .figure-box.blue { background: var(--blue); }
+    .figure-label { display: block; margin-bottom: 10px; }
+    .input-lines {
+      display: grid;
+      gap: 5px;
+      color: var(--ink);
+      font-size: 13px;
+    }
+    .input-lines strong { font-weight: 700; }
+    .figure-arrow {
+      height: 23px;
+      display: grid;
+      place-items: center;
+      color: var(--ink);
+      font-size: 20px;
+      line-height: 1;
+    }
+    .figure-process-grid { display: grid; gap: 7px; }
+    .figure-process {
+      display: grid;
+      grid-template-columns: 46px 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 10px 12px;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
+    }
+    .figure-process:nth-child(1) { background: var(--cream); }
+    .figure-process:nth-child(2) { background: var(--lavender); }
+    .figure-process:nth-child(3) { background: var(--mint); }
+    .figure-process:nth-child(4) { background: var(--green); }
+    .figure-process:nth-child(5) { background: var(--blue); }
+    .figure-process .step {
+      color: var(--teal-dark);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1.3;
+      text-transform: uppercase;
+    }
+    .figure-process strong { display: block; margin-bottom: 2px; font-size: 13px; }
+    .figure-process p { margin-bottom: 0; color: var(--muted); font-size: 11px; line-height: 1.42; }
+    .figure-output {
+      display: grid;
+      grid-template-columns: 118px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+    .figure-output .figure-label { margin-bottom: 0; }
+    .output-points {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .output-points span {
+      padding: 4px 7px;
+      border: 1px solid var(--soft-line);
+      border-radius: 3px;
+      background: rgba(255, 254, 250, 0.8);
+      color: var(--ink);
+      font-size: 10px;
+    }
+    .figure-caption {
+      margin: 12px 2px 0;
+      color: var(--quiet);
+      font-size: 11px;
+      line-height: 1.45;
     }
 
-    .summary {
-      padding: 28px 0;
-      border-bottom: 1px solid var(--line);
+    .summary-strip {
+      border-bottom: 1px solid var(--soft-line);
       background: var(--surface);
     }
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 0;
     }
     .summary-item {
-      padding: 0 25px;
-      border-left: 1px solid var(--line);
+      min-height: 92px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 12px 22px;
+      border-left: 1px solid var(--soft-line);
     }
     .summary-item:first-child { padding-left: 0; border-left: 0; }
     .summary-item:last-child { padding-right: 0; }
-    .summary-item strong {
-      display: block;
-      margin-bottom: 3px;
-      color: var(--ink);
-      font-size: 15px;
-      font-weight: 650;
-    }
-    .summary-item span { color: var(--muted); font-size: 13px; }
+    .summary-item strong { margin-bottom: 3px; font-size: 14px; }
+    .summary-item span { color: var(--muted); font-size: 12px; }
 
-    section.content-section { padding: 92px 0; }
-    .docs-intro {
-      border-bottom: 1px solid var(--line);
-      background: #edf2ed;
-    }
-    .section-heading {
-      max-width: 700px;
-      margin-bottom: 44px;
-    }
+    section.section { padding: 88px 0; }
+    .section-heading { max-width: 720px; margin-bottom: 38px; }
     .section-heading h2 {
-      margin-bottom: 14px;
-      color: var(--forest-dark);
-      font-size: clamp(34px, 4.5vw, 52px);
-      font-weight: 680;
-      letter-spacing: -0.055em;
+      margin-bottom: 13px;
+      color: var(--ink);
+      font-size: clamp(34px, 4.4vw, 53px);
+      font-weight: 730;
+      letter-spacing: -0.06em;
       line-height: 1.04;
     }
-    .section-heading > p:not(.section-label) {
+    .section-heading > p:not(.section-kicker) {
       margin-bottom: 0;
       color: var(--muted);
-      font-size: 18px;
-      line-height: 1.6;
+      font-size: 17px;
+      line-height: 1.62;
     }
 
-    .method-grid {
+    .capability-section { background: var(--paper); }
+    .capability-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1px;
-      border: 1px solid var(--line);
-      background: var(--line);
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
     }
-    .method-card {
-      min-height: 220px;
-      padding: 24px;
-      background: var(--surface);
+    .capability-card {
+      min-height: 230px;
+      display: flex;
+      flex-direction: column;
+      padding: 22px;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
     }
-    .method-card .number {
-      display: inline-block;
-      margin-bottom: 50px;
-      color: var(--forest);
+    .capability-card:nth-child(1) { background: var(--mint); }
+    .capability-card:nth-child(2) { background: var(--cream); }
+    .capability-card:nth-child(3) { background: var(--lavender); }
+    .card-number {
+      display: block;
+      margin-bottom: 39px;
+      color: var(--teal-dark);
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 13px;
+      font-size: 11px;
+      font-weight: 700;
     }
-    .method-card h3 {
-      margin-bottom: 9px;
+    .capability-card h3 { margin-bottom: 9px; font-size: 20px; letter-spacing: -0.035em; }
+    .capability-card p { margin-bottom: 18px; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .capability-card code {
+      align-self: flex-start;
+      margin-top: auto;
+      padding: 5px 7px;
+      border: 1px solid rgba(27, 36, 32, 0.24);
+      border-radius: 3px;
       color: var(--ink);
-      font-size: 18px;
-      font-weight: 650;
-      letter-spacing: -0.025em;
-    }
-    .method-card p { margin-bottom: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
-    .architecture-note {
-      margin: 16px 0 0;
-      padding: 18px 20px;
-      border: 1px solid var(--line-strong);
-      background: var(--surface);
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.6;
-    }
-    .architecture-note strong { color: var(--forest); }
-    .architecture-note a { color: var(--forest); font-weight: 650; text-decoration: none; }
-    .architecture-note code {
-      color: var(--forest);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 12px;
+      font-size: 11px;
     }
 
-    .quickstart {
-      padding: 92px 0;
-      background: var(--forest-dark);
-      color: #e5f0ea;
+    .workflow-section {
+      border-top: 1px solid var(--soft-line);
+      border-bottom: 1px solid var(--soft-line);
+      background: #f5f3ed;
     }
-    .quickstart-grid {
+    .workflow-layout {
       display: grid;
-      grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1.25fr);
-      gap: 70px;
+      grid-template-columns: minmax(280px, 0.86fr) minmax(420px, 1.14fr);
+      gap: 54px;
       align-items: start;
     }
-    .quickstart .section-label { color: var(--yellow); }
-    .quickstart h2 { margin-bottom: 15px; color: #f5faf6; }
-    .quickstart .section-heading > p:not(.section-label) { color: #aac2b6; }
+    .stage-list { display: grid; gap: 8px; }
+    .stage {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 13px;
+      padding: 14px 15px;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
+    }
+    .stage:nth-child(1) { background: var(--cream); }
+    .stage:nth-child(2) { background: var(--lavender); }
+    .stage:nth-child(3) { background: var(--mint); }
+    .stage:nth-child(4) { background: var(--green); }
+    .stage:nth-child(5) { background: var(--blue); }
+    .stage-index {
+      color: var(--teal-dark);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .stage h3 { margin-bottom: 3px; font-size: 15px; }
+    .stage p { margin-bottom: 0; color: var(--muted); font-size: 12px; line-height: 1.48; }
+    .comparison-card {
+      padding: 18px;
+      border: 2px solid var(--line);
+      border-radius: 5px;
+      background: var(--surface);
+      box-shadow: 9px 9px 0 rgba(243, 201, 130, 0.28);
+    }
+    .comparison-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .comparison-title strong { font-size: 16px; }
+    .comparison-title span { color: var(--quiet); font-size: 11px; }
+    .class-strip {
+      display: grid;
+      grid-template-columns: 1fr 0.75fr 1fr;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .class-pill {
+      min-height: 58px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 8px 10px;
+      border-radius: 4px;
+      color: var(--ink);
+      font-size: 12px;
+      line-height: 1.25;
+    }
+    .class-pill strong { font-size: 13px; }
+    .class-pill.active { background: var(--green); }
+    .class-pill.test { background: #eef0ef; text-align: center; }
+    .class-pill.inactive { background: var(--cream); }
+    .tuple-unit {
+      margin-bottom: 10px;
+      padding: 14px;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
+      background: var(--cream);
+      text-align: center;
+    }
+    .tuple-unit strong { display: block; margin-bottom: 3px; font-size: 14px; }
+    .tuple-unit span { color: var(--muted); font-size: 11px; }
+    .comparison-block {
+      margin-top: 9px;
+      padding: 12px 13px;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
+    }
+    .comparison-block.blue { background: var(--blue); }
+    .comparison-block.mint { background: var(--mint); }
+    .comparison-block strong { display: block; margin-bottom: 4px; font-size: 13px; }
+    .comparison-block p { margin-bottom: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .prompt-box {
+      margin-top: 9px;
+      padding: 12px 13px;
+      border: 1.5px solid var(--teal);
+      border-radius: 4px;
+      background: var(--surface);
+    }
+    .prompt-box strong { display: block; margin-bottom: 4px; color: var(--teal-dark); font-size: 12px; }
+    .prompt-box p { margin-bottom: 0; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; line-height: 1.5; }
+    .reasoning-row {
+      display: grid;
+      grid-template-columns: 0.72fr 1.28fr;
+      gap: 9px;
+      margin-top: 9px;
+    }
+    .reasoning-label {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
+      background: var(--mint);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .reasoning-list {
+      margin: 0;
+      padding: 12px 13px 12px 27px;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
+      background: var(--blue);
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.55;
+    }
+    .comparison-note { margin: 12px 0 0; color: var(--quiet); font-size: 11px; line-height: 1.45; }
+
+    .quickstart-section {
+      border-bottom: 1px solid var(--soft-line);
+      background: var(--lavender);
+    }
+    .quickstart-layout {
+      display: grid;
+      grid-template-columns: minmax(250px, 0.72fr) minmax(0, 1.28fr);
+      gap: 54px;
+      align-items: start;
+    }
+    .quickstart-section .section-heading { margin-bottom: 0; }
+    .quickstart-detail {
+      margin-top: 22px;
+      padding: 13px 14px;
+      border-left: 3px solid var(--teal);
+      background: rgba(255, 254, 250, 0.72);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .quickstart-detail strong { color: var(--ink); }
+    .code-stack { display: grid; gap: 12px; }
     .code-panel {
       overflow: auto;
-      border: 1px solid #3e6858;
-      border-radius: 8px;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
       background: var(--code);
     }
-    .code-panel-head {
-      padding: 11px 16px;
-      border-bottom: 1px solid #29463d;
-      color: #94b5a7;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 12px;
+    .code-head {
+      padding: 9px 13px;
+      border-bottom: 1px solid #395047;
+      color: var(--yellow);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
     pre {
       margin: 0;
-      padding: 21px 22px 24px;
+      padding: 15px 17px 17px;
       color: var(--code-ink);
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 13px;
-      line-height: 1.7;
+      font-size: 12px;
+      line-height: 1.65;
       white-space: pre;
     }
-    .code-comment { color: #7ea18e; }
-    .code-keyword { color: #f2d98b; }
-    .code-name { color: #94d2c1; }
-    .code-string { color: #c6dc9b; }
-
-    .interfaces {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
+    .code-comment { color: #86ae9b; }
+    .code-keyword { color: var(--yellow); }
+    .code-name { color: #9ed9c8; }
+    .code-string { color: #c6de9f; }
+    .quickstart-link {
+      display: inline-flex;
+      margin-top: 16px;
+      color: var(--teal-dark);
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
     }
-    .interface-card {
-      padding: 25px;
-      border: 1px solid var(--line);
+    .quickstart-link:hover { text-decoration: underline; }
+
+    .architecture-section { background: var(--paper); }
+    .architecture-map {
+      padding: 20px;
+      border: 2px solid var(--line);
+      border-radius: 5px;
       background: var(--surface);
     }
-    .interface-card h3 { margin-bottom: 10px; font-size: 19px; font-weight: 650; letter-spacing: -0.03em; }
-    .interface-card p { min-height: 74px; margin-bottom: 18px; color: var(--muted); font-size: 14px; }
-    .interface-card code, .scope-card code {
-      color: var(--forest);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 12px;
+    .arch-label { display: block; margin-bottom: 10px; color: var(--teal-dark); }
+    .arch-row {
+      display: flex;
+      align-items: stretch;
+      gap: 9px;
     }
-    .scope {
-      padding: 92px 0;
-      border-top: 1px solid var(--line);
-      border-bottom: 1px solid var(--line);
-      background: #edf2ed;
+    .arch-node {
+      flex: 1;
+      min-height: 84px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 12px 13px;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
+      background: var(--paper);
     }
-    .scope-grid {
+    .arch-node strong { margin-bottom: 3px; font-size: 14px; }
+    .arch-node span { margin-bottom: 4px; color: var(--teal-dark); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; font-weight: 700; }
+    .arch-node code { color: var(--muted); font-size: 10px; }
+    .arch-node.entry:nth-child(1) { background: var(--cream); }
+    .arch-node.entry:nth-child(2) { background: var(--mint); }
+    .arch-node.entry:nth-child(3) { background: var(--lavender); }
+    .arch-arrow {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      place-items: center;
+      flex: 0 0 22px;
+      color: var(--teal);
+      font-size: 22px;
+      font-weight: 700;
     }
-    .scope-card { padding: 28px; border: 1px solid var(--line-strong); background: var(--surface); }
-    .scope-card h3 { margin-bottom: 13px; font-size: 20px; font-weight: 650; letter-spacing: -0.03em; }
-    .scope-card p { margin-bottom: 0; color: var(--muted); font-size: 15px; }
-    .scope-card.good h3 { color: var(--forest); }
-    .scope-card.caution { border-color: #d7cda9; background: #fffdf4; }
-    .scope-card.caution h3 { color: #81691a; }
+    .arch-down {
+      display: grid;
+      place-items: center;
+      height: 39px;
+      color: var(--teal-dark);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .arch-core {
+      padding: 15px;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
+      background: var(--mint);
+    }
+    .arch-core .arch-label { color: var(--ink); }
+    .arch-core-flow .arch-node { background: var(--surface); }
+    .arch-branch {
+      margin-top: 12px;
+      padding: 15px;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
+      background: var(--blue);
+    }
+    .branch-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 11px;
+    }
+    .branch-header strong { font-size: 14px; }
+    .branch-header span { color: var(--muted); font-size: 11px; }
+    .branch-flow .arch-node { min-height: 70px; background: var(--surface); }
+    .arch-output {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: 12px;
+      padding: 14px 15px;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
+      background: var(--cream);
+    }
+    .arch-output strong { font-size: 14px; }
+    .arch-output span { color: var(--muted); font-size: 12px; text-align: right; }
+    .architecture-footnote {
+      margin: 15px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .architecture-footnote code { color: var(--teal-dark); font-size: 11px; }
+    .architecture-footnote a { color: var(--teal-dark); font-weight: 700; text-decoration: none; }
+    .architecture-footnote a:hover { text-decoration: underline; }
 
+    .docs-section {
+      border-top: 1px solid var(--soft-line);
+      border-bottom: 1px solid var(--soft-line);
+      background: #f7f0e5;
+    }
     .docs-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
+      gap: 12px;
     }
-    .doc-link {
-      display: block;
-      padding: 23px;
-      border: 1px solid var(--line);
-      background: var(--surface);
+    .doc-card {
+      min-height: 210px;
+      display: flex;
+      flex-direction: column;
+      padding: 21px;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
       text-decoration: none;
     }
-    .doc-link:hover { border-color: var(--forest); }
-    .doc-link-primary {
-      border-color: var(--forest);
-      box-shadow: inset 0 3px 0 var(--forest);
-    }
-    .doc-link-primary:hover { background: #f7fbf7; }
-    .doc-link small {
-      display: block;
-      margin-bottom: 18px;
-      color: var(--forest);
+    .doc-card:nth-child(1) { background: var(--mint); }
+    .doc-card:nth-child(2) { background: var(--surface); }
+    .doc-card:nth-child(3) { background: var(--lavender); }
+    .doc-card:hover { box-shadow: 5px 5px 0 rgba(7, 159, 159, 0.18); }
+    .doc-card small {
+      margin-bottom: 38px;
+      color: var(--teal-dark);
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 11px;
-      letter-spacing: 0.07em;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
     }
-    .doc-link h3 { margin-bottom: 8px; font-size: 19px; font-weight: 650; letter-spacing: -0.03em; }
-    .doc-link p { margin-bottom: 18px; color: var(--muted); font-size: 14px; }
-    .doc-link .read { color: var(--forest); font-size: 13px; font-weight: 650; }
+    .doc-card h3 { margin-bottom: 8px; font-size: 20px; letter-spacing: -0.035em; }
+    .doc-card p { margin-bottom: 17px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .doc-card .read { margin-top: auto; color: var(--teal-dark); font-size: 12px; font-weight: 700; }
+
+    .scope-section { padding: 64px 0; background: var(--surface); }
+    .scope-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .scope-card {
+      padding: 20px;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
+    }
+    .scope-card.good { background: var(--green); }
+    .scope-card.caution { background: var(--cream); }
+    .scope-card h3 { margin-bottom: 8px; font-size: 16px; }
+    .scope-card p { margin-bottom: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
 
     footer {
-      padding: 35px 0 42px;
-      border-top: 1px solid var(--line);
-      background: var(--surface);
+      padding: 31px 0 38px;
+      border-top: 1px solid var(--soft-line);
+      background: var(--paper);
     }
     .footer-row {
       display: flex;
@@ -473,48 +717,70 @@
     .footer-brand {
       display: inline-flex;
       align-items: center;
-      gap: 9px;
+      gap: 8px;
       color: var(--ink);
-      font-size: 15px;
-      font-weight: 650;
+      font-size: 14px;
+      font-weight: 700;
     }
     .footer-brand img { width: 24px; height: 24px; }
-    .footer-note { margin: 0; color: var(--quiet); font-size: 13px; }
-    .footer-links { display: flex; gap: 18px; }
-    .footer-links a { color: var(--muted); font-size: 13px; text-decoration: none; }
-    .footer-links a:hover { color: var(--forest); }
+    .footer-note { margin: 0; color: var(--quiet); font-size: 12px; }
+    .footer-links { display: flex; flex-wrap: wrap; gap: 16px; }
+    .footer-links a { color: var(--muted); font-size: 12px; text-decoration: none; }
+    .footer-links a:hover { color: var(--teal-dark); }
 
-    @media (max-width: 900px) {
-      .hero-grid, .quickstart-grid { grid-template-columns: 1fr; gap: 48px; }
-      .hero { padding-top: 70px; }
-      .method-grid { grid-template-columns: repeat(2, 1fr); }
-      .summary-grid { grid-template-columns: repeat(2, 1fr); gap: 22px 0; }
-      .summary-item:nth-child(3) { padding-left: 0; border-left: 0; }
-      .summary-item:nth-child(2) { padding-right: 0; }
-      .summary-item:nth-child(4) { padding-right: 0; }
+    @media (max-width: 980px) {
+      .hero-grid, .workflow-layout, .quickstart-layout { grid-template-columns: 1fr; gap: 42px; }
+      .overview-card { max-width: 760px; }
+      .workflow-layout .section-heading, .quickstart-layout .section-heading { max-width: 680px; }
     }
-    @media (max-width: 680px) {
+    @media (max-width: 820px) {
+      .nav-links { gap: 14px; }
+      .nav-right { gap: 16px; }
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .summary-item:nth-child(3) { padding-left: 0; border-left: 0; }
+      .summary-item:nth-child(2), .summary-item:nth-child(4) { padding-right: 0; }
+      .capability-grid, .docs-grid { grid-template-columns: 1fr; }
+      .capability-card, .doc-card { min-height: 0; }
+      .capability-card .card-number, .doc-card small { margin-bottom: 24px; }
+      .arch-row { flex-wrap: wrap; }
+      .arch-row .arch-node { min-width: calc(50% - 22px); }
+      .arch-row .arch-arrow { display: none; }
+      .arch-core-flow, .branch-flow { display: grid; grid-template-columns: 1fr 1fr; }
+      .arch-core-flow .arch-node, .branch-flow .arch-node { min-width: 0; }
+      .arch-core-flow .arch-arrow, .branch-flow .arch-arrow { display: grid; }
+    }
+    @media (max-width: 620px) {
       .wrap { width: min(var(--max), calc(100% - 32px)); }
-      .nav { min-height: 62px; }
+      .site-header { position: static; }
+      .nav { min-height: 64px; }
       .nav-links { display: none; }
       .nav-right { gap: 0; }
-      .hero { padding: 58px 0 62px; }
-      h1 { font-size: clamp(44px, 14vw, 66px); }
-      .hero-copy > p:not(.eyebrow) { font-size: 18px; }
-      .diagram { padding: 20px; box-shadow: 7px 7px 0 rgba(21, 91, 73, 0.12); }
-      .summary-grid, .method-grid, .interfaces, .scope-grid, .docs-grid { grid-template-columns: 1fr; }
+      .hero { padding: 54px 0 62px; }
+      h1 { font-size: clamp(44px, 14vw, 64px); }
+      .hero-lede { font-size: 17px; }
+      .overview-card { padding: 13px; box-shadow: 6px 6px 0 rgba(7, 159, 159, 0.13); }
+      .figure-output { grid-template-columns: 1fr; gap: 8px; }
+      .summary-grid { grid-template-columns: 1fr; }
       .summary-item, .summary-item:first-child, .summary-item:last-child {
-        padding: 0;
+        min-height: 0;
+        padding: 13px 0;
         border-left: 0;
+        border-top: 1px solid var(--soft-line);
       }
-      .summary-item { padding-top: 14px; border-top: 1px solid var(--line); }
       .summary-item:first-child { padding-top: 0; border-top: 0; }
-      .method-card { min-height: 0; }
-      .method-card .number { margin-bottom: 28px; }
-      section.content-section, .quickstart, .scope { padding: 66px 0; }
-      .section-heading { margin-bottom: 30px; }
+      section.section { padding: 64px 0; }
+      .section-heading { margin-bottom: 28px; }
+      .section-heading h2 { font-size: clamp(32px, 10vw, 45px); }
+      .section-heading > p:not(.section-kicker) { font-size: 16px; }
+      .class-strip { grid-template-columns: 1fr; }
+      .class-pill.test { text-align: left; }
+      .reasoning-row { grid-template-columns: 1fr; }
+      .arch-row .arch-node { min-width: 100%; }
+      .arch-core-flow, .branch-flow { grid-template-columns: 1fr; }
+      .arch-core-flow .arch-arrow, .branch-flow .arch-arrow { transform: rotate(90deg); min-height: 18px; }
+      .arch-output { align-items: flex-start; flex-direction: column; gap: 7px; }
+      .arch-output span { text-align: left; }
       .footer-row { align-items: flex-start; flex-direction: column; }
-      .footer-links { flex-wrap: wrap; }
     }
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
@@ -524,7 +790,7 @@
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
 
-  <header>
+  <header class="site-header">
     <div class="wrap nav">
       <a class="brand" href="#overview" aria-label="MolActAgent home">
         <img src="assets/logo.svg" alt="" />
@@ -532,14 +798,15 @@
       </a>
       <div class="nav-right">
         <nav class="nav-links" aria-label="Primary navigation">
-          <a href="#architecture">Architecture</a>
+          <a href="#what-it-does">What it does</a>
+          <a href="#workflow">Workflow</a>
           <a href="#quickstart">Quick start</a>
-          <a href="https://github.com/studentiz/MolActAgent/blob/main/docs/tutorial.md" target="_blank" rel="noopener">Tutorial</a>
-          <a href="https://github.com/studentiz/MolActAgent/blob/main/docs/design.md" target="_blank" rel="noopener">Design</a>
+          <a href="#architecture">Architecture</a>
+          <a href="#docs">Docs</a>
         </nav>
-        <a class="github-link" href="https://github.com/studentiz/MolActAgent" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .3a12 12 0 0 0-3.79 23.4c.6.1.82-.26.82-.58v-2c-3.34.72-4.05-1.6-4.05-1.6-.55-1.4-1.34-1.77-1.34-1.77-1.1-.75.08-.74.08-.74 1.21.08 1.85 1.24 1.85 1.24 1.07 1.84 2.81 1.31 3.5 1 .1-.78.42-1.32.76-1.62-2.66-.3-5.46-1.33-5.46-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.62-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.21.7.82.58A12 12 0 0 0 12 .3"/></svg>
-          GitHub
+        <a class="github-button" href="https://github.com/studentiz/MolActAgent" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .3a12 12 0 0 0-3.79 23.4c.6.1.82-.26.82-.58v-2c-3.34.72-4.05-1.6-4.05-1.6-.55-1.4-1.34-1.77-1.34-1.77-1.1-.75.08-.74.08-.74 1.21.08 1.85 1.24 1.85 1.24 1.07 1.84 2.81 1.31 3.5 1 .1-.78.42-1.32.76-1.62-2.66-.3-5.46-1.33-5.46-5.93 0-1.31.47-2.38 1.24-3.22.12-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.62-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.21.7.82.58A12 12 0 0 0 12 .3"/></svg>
+          View on GitHub
         </a>
       </div>
     </div>
@@ -549,197 +816,289 @@
     <section class="hero" id="overview">
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow">Research software · v0.3.0</p>
-          <h1>Small datasets.<br /><span>Explicit reference comparisons.</span></h1>
-          <p>MolActAgent is a Python package for molecular activity prediction when the labelled reference set is small. It selects comparable rows, sends those comparisons to an OpenAI-compatible language model, and keeps the reasoning record with the result.</p>
+          <p class="eyebrow">MolActAgent · research software</p>
+          <h1>Small-data molecular activity <span>prediction.</span></h1>
+          <p class="hero-lede">A Python package for labelled molecular activity data. MolActAgent selects representative references, builds balanced comparisons, and returns a prediction with the evidence used to make it.</p>
           <div class="actions">
-            <a class="button primary" href="https://github.com/studentiz/MolActAgent/blob/main/docs/tutorial.md" target="_blank" rel="noopener">Read the tutorial</a>
-            <a class="button secondary" href="https://github.com/studentiz/MolActAgent/blob/main/docs/design.md" target="_blank" rel="noopener">Read the design notes</a>
+            <a class="button primary" href="https://github.com/studentiz/MolActAgent" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .3a12 12 0 0 0-3.79 23.4c.6.1.82-.26.82-.58v-2c-3.34.72-4.05-1.6-4.05-1.6-.55-1.4-1.34-1.77-1.34-1.77-1.1-.75.08-.74.08-.74 1.21.08 1.85 1.24 1.85 1.24 1.07 1.84 2.81 1.31 3.5 1 .1-.78.42-1.32.76-1.62-2.66-.3-5.46-1.33-5.46-5.93 0-1.31.47-2.38 1.24-3.22.12-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.62-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.21.7.82.58A12 12 0 0 0 12 .3"/></svg>
+              Open GitHub repository
+            </a>
+            <a class="button secondary" href="#quickstart">Run the quick start</a>
           </div>
-          <ul class="meta" aria-label="Project details">
-            <li>Python 3.10–3.12</li>
-            <li>MIT licensed</li>
-            <li>OpenAI-compatible endpoints</li>
-          </ul>
+          <p class="hero-note">Works with numeric feature tables and optional SMILES featurisation via RDKit. Confidence is an evidence score, not a calibrated probability.</p>
         </div>
 
-        <div class="diagram" aria-label="MolActAgent technical architecture at a glance">
-          <div class="diagram-title">Architecture at a glance</div>
-          <div class="diagram-step">
-            <span class="step-number">01</span>
-            <div><strong>io.py + preprocessing</strong><span>validate tables, filter variance, prepare features</span></div>
+        <aside class="overview-card" aria-label="Overview of the MolActAgent method">
+          <div class="figure-bar">
+            <span>Overview</span>
+            <strong>MolActAgent</strong>
           </div>
-          <div class="diagram-step">
-            <span class="step-number">02</span>
-            <div><strong>neighbors.py</strong><span>feature similarity and neighbourhood context select references</span></div>
+          <div class="figure-box mint">
+            <span class="figure-label">Inputs</span>
+            <div class="input-lines">
+              <div><strong>Research background</strong> · activity definition</div>
+              <div><strong>Labelled reference data</strong> · features + activity</div>
+              <div><strong>Test compound</strong> · one or more rows</div>
+            </div>
           </div>
-          <div class="diagram-step">
-            <span class="step-number">03</span>
-            <div><strong>prompts.py + llm.py</strong><span>tuple prompts, parallel calls, parsing, validation, and retries</span></div>
+          <div class="figure-arrow" aria-hidden="true">↓</div>
+          <div class="figure-process-grid">
+            <div class="figure-process">
+              <span class="step">Step 1</span>
+              <div><strong>Molecular representation</strong><p>Convert numeric tables or SMILES into comparable molecular features.</p></div>
+            </div>
+            <div class="figure-process">
+              <span class="step">Step 2</span>
+              <div><strong>Reference evidence organization</strong><p>Find representative compounds and their local neighbourhood context.</p></div>
+            </div>
+            <div class="figure-process">
+              <span class="step">Step 3</span>
+              <div><strong>Balanced comparison construction</strong><p>Build a test-plus-candidate-reference tuple for contrastive comparison.</p></div>
+            </div>
+            <div class="figure-process">
+              <span class="step">Step 4</span>
+              <div><strong>Tuple-level activity reasoning</strong><p>Use an OpenAI-compatible LLM to inspect discriminative features and evidence.</p></div>
+            </div>
+            <div class="figure-process">
+              <span class="step">Step 5</span>
+              <div><strong>Evidence aggregation</strong><p>Validate, combine, and preserve the tuple-level results in Python.</p></div>
+            </div>
           </div>
-          <div class="diagram-step">
-            <span class="step-number">04</span>
-            <div><strong>result.py + report.py</strong><span>aggregate votes and preserve references, confidence, and attribution</span></div>
+          <div class="figure-arrow" aria-hidden="true">↓</div>
+          <div class="figure-box blue figure-output">
+            <span class="figure-label">Structured output</span>
+            <div class="output-points">
+              <span>prediction</span>
+              <span>confidence</span>
+              <span>key features</span>
+              <span>selected references</span>
+              <span>support / counter-evidence</span>
+            </div>
           </div>
-          <div class="diagram-result">
-            <span>result</span>
-            <strong>typed prediction + evidence record</strong>
-          </div>
-          <p class="diagram-note">Python controls the data path and aggregation. The language model is used only for structured comparisons over selected rows.</p>
-        </div>
+          <p class="figure-caption">Python controls the data path and aggregation. The model reasons over selected evidence rather than the whole dataset.</p>
+        </aside>
       </div>
     </section>
 
-    <section class="summary" aria-label="Project summary">
+    <section class="summary-strip" aria-label="Project capabilities">
       <div class="wrap summary-grid">
-        <div class="summary-item"><strong>Classification</strong><span>Multi-class tabular prediction</span></div>
+        <div class="summary-item"><strong>Classification</strong><span>Multi-class labelled tables</span></div>
         <div class="summary-item"><strong>Regression</strong><span>Cross-classification backend</span></div>
         <div class="summary-item"><strong>Chemistry</strong><span>SMILES → RDKit features</span></div>
-        <div class="summary-item"><strong>Interfaces</strong><span>Python API and command line</span></div>
+        <div class="summary-item"><strong>Interfaces</strong><span>Python API + CLI</span></div>
       </div>
     </section>
 
-    <section class="content-section docs-intro" id="docs">
+    <section class="section capability-section" id="what-it-does">
       <div class="wrap">
         <div class="section-heading">
-          <p class="section-label">Start here</p>
-          <h2>Two documents, two ways in.</h2>
-          <p>Use the tutorial to run the project. Use the design notes to understand what happens between the input table and the final result.</p>
+          <p class="section-kicker">What it does</p>
+          <h2>One reference-comparison engine for three common tasks.</h2>
+          <p>Start with a small labelled dataset. Choose the interface that matches your workflow, then inspect the references and evidence behind each result.</p>
         </div>
-        <div class="docs-grid">
-          <a class="doc-link doc-link-primary" href="https://github.com/studentiz/MolActAgent/blob/main/docs/tutorial.md" target="_blank" rel="noopener">
-            <small>Practical guide</small>
-            <h3>Tutorial</h3>
-            <p>Installation, configuration, the iris example, the CLI, regression, and your own data.</p>
-            <span class="read">Open tutorial →</span>
-          </a>
-          <a class="doc-link doc-link-primary" href="https://github.com/studentiz/MolActAgent/blob/main/docs/design.md" target="_blank" rel="noopener">
-            <small>Technical reference</small>
-            <h3>Design notes</h3>
-            <p>The module map, contextual similarity, tuple prompts, aggregation, CCR regression, result schemas, and reports.</p>
-            <span class="read">Open design notes →</span>
-          </a>
-          <a class="doc-link" href="https://github.com/studentiz/MolActAgent/tree/main/examples" target="_blank" rel="noopener">
-            <small>Source tree</small>
-            <h3>Examples</h3>
-            <p>Small tabular and SMILES datasets used by the repository examples.</p>
-            <span class="read">Browse examples →</span>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <section class="content-section" id="architecture">
-      <div class="wrap">
-        <div class="section-heading">
-          <p class="section-label">Architecture</p>
-          <h2>The shared engine, with a separate regression branch.</h2>
-          <p>The public interfaces are thin layers around the same engine. The cards below are the short version; the full module map and call graph live in the design notes.</p>
-        </div>
-        <div class="method-grid">
-          <article class="method-card">
-            <span class="number">01 / io + fit</span>
-            <h3>Prepare the data</h3>
-            <p><code>io.py</code> validates tables; <code>MolActAgent.fit</code> applies the variance filter and <code>DataPreprocessor</code>.</p>
+        <div class="capability-grid">
+          <article class="capability-card">
+            <span class="card-number">01 / CLASSIFY</span>
+            <h3>Predict activity classes</h3>
+            <p>Run multi-class classification with class-aware reference selection, weighted votes, and full result access.</p>
+            <code>ma.MolActAgentClassifier</code>
           </article>
-          <article class="method-card">
-            <span class="number">02 / neighbors.py</span>
-            <h3>Select references</h3>
-            <p><code>NeighborFinder</code> blends feature and neighbourhood similarity, then selects candidate classes and top-k rows.</p>
-          </article>
-          <article class="method-card">
-            <span class="number">03 / prompts.py + llm.py</span>
-            <h3>Run comparisons</h3>
-            <p><code>PromptBuilder</code> creates tuple prompts; <code>LLMClient</code> handles parallel calls, parsing, validation, and retries.</p>
-          </article>
-          <article class="method-card">
-            <span class="number">04 / aggregate</span>
-            <h3>Assemble the result</h3>
-            <p>Python combines tuple votes and exposes confidence, driver attribution, result wrappers, and reports.</p>
-          </article>
-        </div>
-        <p class="architecture-note"><strong>Regression path:</strong> <code>CrossClassificationRegressor</code> runs target-bin and feature-cluster classification phases, then deduplicates selected references before numeric aggregation. <a href="https://github.com/studentiz/MolActAgent/blob/main/docs/design.md#19-the-ccr-regression-backend" target="_blank" rel="noopener">See the design notes →</a></p>
-      </div>
-    </section>
-
-    <section class="quickstart" id="quickstart">
-      <div class="wrap quickstart-grid">
-        <div class="section-heading">
-          <p class="section-label">Quick start</p>
-          <h2>Use the same API for a toy table or a chemistry dataset.</h2>
-          <p>The repository includes an iris classification example. Set your endpoint variables, install the package in editable mode, and run the estimator from the project checkout.</p>
-        </div>
-        <div class="code-panel">
-          <div class="code-panel-head">shell + Python</div>
-          <pre><code><span class="code-comment"># Configure the endpoint in your shell</span>
-<span class="code-keyword">export</span> MOLACTAGENT_API_KEY=<span class="code-string">"your-api-key"</span>
-<span class="code-keyword">export</span> MOLACTAGENT_BASE_URL=<span class="code-string">"https://api.example.com"</span>
-<span class="code-keyword">export</span> MOLACTAGENT_MODEL=<span class="code-string">"your-model-name"</span>
-
-<span class="code-keyword">import</span> molactagent <span class="code-keyword">as</span> ma
-
-iris = ma.datasets.<span class="code-name">load_iris_flowers</span>()
-clf = ma.<span class="code-name">MolActAgentClassifier</span>(k=3)
-clf.<span class="code-name">fit</span>(iris.X_train, iris.y_train)
-
-labels = clf.<span class="code-name">predict</span>(iris.X_test)
-details = clf.<span class="code-name">predict_full</span>(iris.X_test)[0]
-
-<span class="code-comment"># label, confidence, selected references, and vote summary</span>
-<span class="code-keyword">print</span>(details.label, details.confidence)</code></pre>
-        </div>
-      </div>
-    </section>
-
-    <section class="content-section" id="interfaces">
-      <div class="wrap">
-        <div class="section-heading">
-          <p class="section-label">Interfaces</p>
-          <h2>Choose the layer that fits the job.</h2>
-          <p>Use the estimator for experiments, the pipeline for files and reports, or the preprocessing helpers when the input starts as SMILES.</p>
-        </div>
-        <div class="interfaces">
-          <article class="interface-card">
-            <h3>Python estimators</h3>
-            <p>scikit-learn-style wrappers with rich result accessors and batch caching.</p>
-            <code>ma.MolActAgentClassifier</code><br />
+          <article class="capability-card">
+            <span class="card-number">02 / REGRESS</span>
+            <h3>Estimate continuous values</h3>
+            <p>Use the cross-classification regression backend to select evidence and aggregate reference targets into a numeric estimate.</p>
             <code>ma.MolActAgentRegressor</code>
           </article>
-          <article class="interface-card">
-            <h3>File pipeline</h3>
-            <p>Validate CSV, TSV, Excel, Parquet, or JSON inputs and write summaries plus interpretability reports.</p>
-            <code>molactagent validate</code><br />
-            <code>molactagent run</code>
-          </article>
-          <article class="interface-card">
-            <h3>Chemistry helpers</h3>
-            <p>Convert SMILES to descriptors, MACCS keys, Morgan fingerprints, and scaffolds when RDKit is installed.</p>
-            <code>ma.datasets.load_bslt_regression</code>
+          <article class="capability-card">
+            <span class="card-number">03 / FEATURISE</span>
+            <h3>Prepare molecular features</h3>
+            <p>Convert SMILES into descriptors, MACCS keys, Morgan fingerprints, or scaffolds when RDKit is available.</p>
+            <code>ma.datasets + ma.pp</code>
           </article>
         </div>
       </div>
     </section>
 
-    <section class="scope" id="scope">
+    <section class="section workflow-section" id="workflow">
+      <div class="wrap workflow-layout">
+        <div>
+          <div class="section-heading">
+            <p class="section-kicker">How a prediction is built</p>
+            <h2>Every result starts with a balanced comparison.</h2>
+            <p>The reference set is narrowed numerically before the language model is called. The selected rows, tuple votes, and aggregation details remain available to inspect.</p>
+          </div>
+          <div class="stage-list">
+            <article class="stage">
+              <span class="stage-index">01</span>
+              <div><h3>Represent the molecules</h3><p>Use the supplied feature table or create features from SMILES.</p></div>
+            </article>
+            <article class="stage">
+              <span class="stage-index">02</span>
+              <div><h3>Organize reference evidence</h3><p>Combine feature similarity with local neighbourhood context.</p></div>
+            </article>
+            <article class="stage">
+              <span class="stage-index">03</span>
+              <div><h3>Build comparison tuples</h3><p>Place the test row beside one reference from each candidate class.</p></div>
+            </article>
+            <article class="stage">
+              <span class="stage-index">04</span>
+              <div><h3>Reason over selected rows</h3><p>Ask the LLM to compare discriminative features and supporting evidence.</p></div>
+            </article>
+            <article class="stage">
+              <span class="stage-index">05</span>
+              <div><h3>Aggregate and report</h3><p>Validate structured responses, combine votes, and retain attribution.</p></div>
+            </article>
+          </div>
+        </div>
+
+        <div class="comparison-card" aria-label="Example of a balanced comparison unit">
+          <div class="comparison-title"><strong>Balanced comparison unit</strong><span>one test · candidate references</span></div>
+          <div class="class-strip">
+            <div class="class-pill active"><strong>Active reference</strong><span>experimentally active</span></div>
+            <div class="class-pill test"><strong>Test</strong><span>unknown activity</span></div>
+            <div class="class-pill inactive"><strong>Inactive reference</strong><span>experimentally inactive</span></div>
+          </div>
+          <div class="tuple-unit"><strong>Contrastive tuple</strong><span>compare the test against representative references from the candidate classes</span></div>
+          <div class="comparison-block blue"><strong>Deterministic molecular comparison</strong><p>Feature alignment, contextual distance, class-specific references, and local neighbourhood texture.</p></div>
+          <div class="prompt-box"><strong>Structured prompt</strong><p>discriminative features · reference values · neighbourhood evidence · JSON response schema</p></div>
+          <div class="reasoning-row">
+            <div class="reasoning-label">LLM reasoning<br />over selected rows</div>
+            <ul class="reasoning-list">
+              <li>read feature alignment</li>
+              <li>select domain-weighted drivers</li>
+              <li>explain class-specific evidence</li>
+              <li>evaluate counter-evidence</li>
+            </ul>
+          </div>
+          <div class="comparison-block mint"><strong>Structured output</strong><p>Predicted class or value, confidence, key features, supporting references, and uncertainty fields.</p></div>
+          <p class="comparison-note">The model sees the selected comparison, not the whole reference table by default.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section quickstart-section" id="quickstart">
+      <div class="wrap quickstart-layout">
+        <div class="section-heading">
+          <p class="section-kicker">Quick start</p>
+          <h2>Run the bundled iris example.</h2>
+          <p>Install the package, configure an OpenAI-compatible endpoint, and make a first classification prediction from the repository checkout.</p>
+          <div class="quickstart-detail"><strong>Input:</strong> labelled reference rows in <code>iris.X_train</code> and <code>iris.y_train</code>.<br /><strong>Output:</strong> labels plus a rich result object for the test rows.</div>
+          <a class="quickstart-link" href="https://github.com/studentiz/MolActAgent/blob/main/docs/tutorial.md" target="_blank" rel="noopener">Open the full tutorial →</a>
+        </div>
+        <div class="code-stack">
+          <div class="code-panel">
+            <div class="code-head">1 · install + configure</div>
+            <pre><code>python -m pip install -e .
+
+<span class="code-keyword">export</span> MOLACTAGENT_API_KEY=<span class="code-string">"your-api-key"</span>
+<span class="code-keyword">export</span> MOLACTAGENT_BASE_URL=<span class="code-string">"https://api.example.com"</span>
+<span class="code-keyword">export</span> MOLACTAGENT_MODEL=<span class="code-string">"your-model-name"</span></code></pre>
+          </div>
+          <div class="code-panel">
+            <div class="code-head">2 · classify</div>
+            <pre><code><span class="code-keyword">import</span> molactagent <span class="code-keyword">as</span> ma
+
+iris = ma.datasets.<span class="code-name">load_iris_flowers</span>()
+clf = ma.<span class="code-name">MolActAgentClassifier</span>(k=3, max_workers=4)
+clf.<span class="code-name">fit</span>(iris.X_train, iris.y_train)
+
+result = clf.<span class="code-name">predict_full</span>(iris.X_test)[0]
+<span class="code-keyword">print</span>(result.label, result.confidence)</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section architecture-section" id="architecture">
       <div class="wrap">
         <div class="section-heading">
-          <p class="section-label">Scope</p>
-          <h2>Know what the output means.</h2>
-          <p>The package is designed for small-data experiments where the reference rows are important. It is not a claim that a language model is a replacement for a validated QSAR workflow.</p>
+          <p class="section-kicker">Technical architecture</p>
+          <h2>The public API is thin; the comparison engine is shared.</h2>
+          <p>CLI commands, file pipelines, and estimators converge on the same deterministic selection and structured LLM stages. Regression adds two internal classification views before numeric aggregation.</p>
         </div>
-        <div class="scope-grid">
-          <article class="scope-card good">
-            <h3>Good fit</h3>
-            <p>Small labelled tables, descriptor-based experiments, exploratory comparisons, and workflows that need to inspect which reference rows and features affected a result.</p>
-          </article>
-          <article class="scope-card caution">
-            <h3>Check first</h3>
-            <p>Large datasets, strict probabilistic calibration, distribution shift, and safety-critical decisions. Compare conventional baselines, hold out data correctly, and review results with domain expertise.</p>
-          </article>
+        <div class="architecture-map" aria-label="MolActAgent technical architecture">
+          <span class="arch-label">Entry points</span>
+          <div class="arch-row">
+            <div class="arch-node entry"><span>CLI + files</span><strong>Validate / run</strong><code>cli.py · pipeline.py</code></div>
+            <div class="arch-arrow" aria-hidden="true">→</div>
+            <div class="arch-node entry"><span>Python API</span><strong>Classifier / regressor</strong><code>estimators/ · agent.py</code></div>
+            <div class="arch-arrow" aria-hidden="true">→</div>
+            <div class="arch-node entry"><span>Features</span><strong>Prepare the input</strong><code>pp · datasets · chemistry</code></div>
+          </div>
+          <div class="arch-down" aria-hidden="true">↓ shared orchestration</div>
+          <div class="arch-core">
+            <span class="arch-label">Shared MolActAgent engine</span>
+            <div class="arch-row arch-core-flow">
+              <div class="arch-node"><span>INPUT</span><strong>Validate + preprocess</strong><code>io.py · preprocessing.py</code></div>
+              <div class="arch-arrow" aria-hidden="true">→</div>
+              <div class="arch-node"><span>SELECT</span><strong>Find references</strong><code>neighbors.py</code></div>
+              <div class="arch-arrow" aria-hidden="true">→</div>
+              <div class="arch-node"><span>COMPARE</span><strong>Prompt + call + check</strong><code>prompts.py · llm.py</code></div>
+              <div class="arch-arrow" aria-hidden="true">→</div>
+              <div class="arch-node"><span>AGGREGATE</span><strong>Return evidence</strong><code>result.py · report.py</code></div>
+            </div>
+          </div>
+          <div class="arch-branch">
+            <div class="branch-header"><strong>CCR regression branch</strong><span>continuous target → selected references → numeric estimate</span></div>
+            <div class="arch-row branch-flow">
+              <div class="arch-node"><span>TARGET VIEW</span><strong>Equal-frequency bins</strong><code>target classification</code></div>
+              <div class="arch-arrow" aria-hidden="true">→</div>
+              <div class="arch-node"><span>FEATURE VIEW</span><strong>Cosine clusters</strong><code>feature classification</code></div>
+              <div class="arch-arrow" aria-hidden="true">→</div>
+              <div class="arch-node"><span>MERGE</span><strong>Deduplicate references</strong><code>cross_classification.py</code></div>
+              <div class="arch-arrow" aria-hidden="true">→</div>
+              <div class="arch-node"><span>NUMERIC</span><strong>Aggregate targets</strong><code>mean · median · interval</code></div>
+            </div>
+          </div>
+          <div class="arch-output"><strong>Typed result + report</strong><span>prediction · confidence · references · feature attribution · supporting / counter-evidence</span></div>
+        </div>
+        <p class="architecture-footnote">For the complete module map, call graph, schemas, and regression details, read the <a href="https://github.com/studentiz/MolActAgent/blob/main/docs/design.md" target="_blank" rel="noopener">design notes</a>.</p>
+      </div>
+    </section>
+
+    <section class="section docs-section" id="docs">
+      <div class="wrap">
+        <div class="section-heading">
+          <p class="section-kicker">Further reading</p>
+          <h2>Run it, inspect it, extend it.</h2>
+          <p>The repository contains the source, a practical walkthrough, and the full technical explanation of the method.</p>
+        </div>
+        <div class="docs-grid">
+          <a class="doc-card" href="https://github.com/studentiz/MolActAgent" target="_blank" rel="noopener">
+            <small>Source repository</small>
+            <h3>Browse the code</h3>
+            <p>Examples, package modules, tests, configuration templates, and release history.</p>
+            <span class="read">Open GitHub →</span>
+          </a>
+          <a class="doc-card" href="https://github.com/studentiz/MolActAgent/blob/main/docs/tutorial.md" target="_blank" rel="noopener">
+            <small>Practical guide</small>
+            <h3>Run the tutorial</h3>
+            <p>Installation, configuration, iris classification, the CLI, regression, and your own data.</p>
+            <span class="read">Open tutorial →</span>
+          </a>
+          <a class="doc-card" href="https://github.com/studentiz/MolActAgent/blob/main/docs/design.md" target="_blank" rel="noopener">
+            <small>Technical reference</small>
+            <h3>Read the design notes</h3>
+            <p>Module responsibilities, contextual similarity, tuple prompts, aggregation, schemas, reports, and CCR.</p>
+            <span class="read">Open design notes →</span>
+          </a>
         </div>
       </div>
     </section>
 
+    <section class="scope-section" id="scope">
+      <div class="wrap scope-grid">
+        <article class="scope-card good">
+          <h3>Designed for</h3>
+          <p>Small labelled tables, descriptor-based experiments, exploratory comparisons, and workflows where reference evidence needs to remain visible.</p>
+        </article>
+        <article class="scope-card caution">
+          <h3>Validate before use</h3>
+          <p>Compare conventional baselines, evaluate distribution shift and calibration, and involve domain experts before making scientific or safety-critical decisions.</p>
+        </article>
+      </div>
+    </section>
   </main>
 
   <footer>
