@@ -30,7 +30,7 @@ class TabularBundle:
     """One-call output of :func:`load_dataset`.
 
     Holds the validation result *plus* the prepared numpy arrays
-    so a single ``ca.pp.load_dataset(...)`` call is enough to feed
+    so a single ``ma.pp.load_dataset(...)`` call is enough to feed
     either the high-level pipeline or the new estimator wrappers.
 
     The validation result is exposed because surfaces like

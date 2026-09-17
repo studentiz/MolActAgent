@@ -1,4 +1,4 @@
-"""Preprocessing — the Scanpy-style ``ca.pp`` namespace.
+"""Preprocessing — the Scanpy-style ``ma.pp`` namespace.
 
 Two families of helpers live here:
 
@@ -16,8 +16,8 @@ Two families of helpers live here:
   numeric-CSV case.
 
 The split is intentional: a non-chemistry user importing
-``ca.pp.tabular`` should not pay the RDKit import cost; a
-chemistry user importing ``ca.pp.chemistry`` should not have to
+``ma.pp.tabular`` should not pay the RDKit import cost; a
+chemistry user importing ``ma.pp.chemistry`` should not have to
 remember which scripts to copy from.
 """
 

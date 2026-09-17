@@ -1047,7 +1047,7 @@ def main():
 
     logger.info("\n" + "=" * 60 + "\n  MolActAgent (LOOCV)\n" + "=" * 60)
     t0 = time.time()
-    ca_metrics, ca_records = run_molactagent_loocv(
+    ma_metrics, ma_records = run_molactagent_loocv(
         X, y,
         meta["feature_names"], meta["feature_descriptions"],
         background, llm,
@@ -1060,13 +1060,13 @@ def main():
     )
     elapsed = time.time() - t0
     logger.info(f"MolActAgent LOOCV finished in {elapsed:.1f}s")
-    all_metrics["MolActAgent"] = ca_metrics
+    all_metrics["MolActAgent"] = ma_metrics
 
     # Strip the heavy raw tuple_results from per-fold records when
     # writing the summary file (still keep label, score, conf, time
     # and the per-class top-feature attribution).
-    ca_records_lite: list[dict] = []
-    for r in ca_records:
+    ma_records_lite: list[dict] = []
+    for r in ma_records:
         if r is None:
             continue
         raw = r["raw"] or {}
@@ -1081,8 +1081,8 @@ def main():
             "candidate_classes": raw.get("candidate_classes", []),
             "key_features_per_class": raw.get("key_features_per_class", {}),
         }
-        ca_records_lite.append(rec_copy)
-    all_predictions["MolActAgent"] = ca_records_lite
+        ma_records_lite.append(rec_copy)
+    all_predictions["MolActAgent"] = ma_records_lite
 
     # ── output ───────────────────────────────────────────────────
     table = format_metrics_table(all_metrics)
@@ -1100,7 +1100,7 @@ def main():
                 "negative_class": negative_class,
                 "background": background,
                 "metrics": all_metrics,
-                "molactagent_records": ca_records_lite,
+                "molactagent_records": ma_records_lite,
                 "llm_stats": llm.stats,
                 "elapsed_molactagent_s": round(elapsed, 1),
             },
@@ -1211,7 +1211,7 @@ def _main_regression(args, csv_path: pathlib.Path) -> None:
         "\n  MolActAgent regression (LOOCV)\n" + "=" * 60
     )
     t0 = time.time()
-    ca_metrics, ca_records = run_molactagent_loocv_regression(
+    ma_metrics, ma_records = run_molactagent_loocv_regression(
         X, y,
         feature_names, feature_descriptions, background, llm,
         k=args.k, metric=args.metric,
@@ -1221,14 +1221,14 @@ def _main_regression(args, csv_path: pathlib.Path) -> None:
     )
     elapsed = time.time() - t0
     logger.info(f"MolActAgent regression LOOCV finished in {elapsed:.1f}s")
-    all_metrics["MolActAgent"] = ca_metrics
+    all_metrics["MolActAgent"] = ma_metrics
 
-    ca_records_lite: list[dict] = []
-    for r in ca_records:
+    ma_records_lite: list[dict] = []
+    for r in ma_records:
         if r is None:
             continue
         raw = r["raw"] or {}
-        ca_records_lite.append({
+        ma_records_lite.append({
             "fold": r["fold"],
             "true": r["true"],
             "pred": r["pred"],
@@ -1253,7 +1253,7 @@ def _main_regression(args, csv_path: pathlib.Path) -> None:
             "feature_names": feature_names,
             "background": background,
             "metrics": all_metrics,
-            "molactagent_records": ca_records_lite,
+            "molactagent_records": ma_records_lite,
             "llm_stats": llm.stats,
             "elapsed_molactagent_s": round(elapsed, 1),
         }, indent=2, ensure_ascii=False, default=str),

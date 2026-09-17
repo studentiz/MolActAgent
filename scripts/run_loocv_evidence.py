@@ -385,7 +385,7 @@ def run_one_csv(
 
     logger.info("\n" + "=" * 60 + "\n  MolActAgent (LOOCV)\n" + "=" * 60)
     t0 = time.time()
-    ca_metrics, ca_details, ca_preds = run_molactagent_loocv(
+    ma_metrics, ma_details, ma_preds = run_molactagent_loocv(
         llm,
         X,
         y,
@@ -397,11 +397,11 @@ def run_one_csv(
         max_workers=args.max_workers,
         use_scaled_for_prompt=args.use_scaled_values,
     )
-    all_metrics["MolActAgent"] = ca_metrics
+    all_metrics["MolActAgent"] = ma_metrics
     logger.info(f"MolActAgent LOOCV finished in {time.time() - t0:.1f}s")
 
     out["metrics"] = all_metrics
-    out["molactagent_predictions"] = ca_details
+    out["molactagent_predictions"] = ma_details
     if pure_preds is not None:
         out["pure_llm_predictions"] = pure_preds
     return out

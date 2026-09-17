@@ -62,7 +62,7 @@ class MolActAgentClassifier(ClassifierMixin, BaseEstimator):
        Pass ``api_key`` / ``base_url`` / ``model_name`` directly to
        the constructor::
 
-           clf = ca.MolActAgentClassifier(
+           clf = ma.MolActAgentClassifier(
                api_key="sk-...",
                base_url="https://api.deepseek.com",
                model_name="deepseek-chat",
@@ -73,7 +73,7 @@ class MolActAgentClassifier(ClassifierMixin, BaseEstimator):
        built yourself.
 
     3. **Pre-built config (for batch jobs).** Pass
-       ``llm_config=ca.load_llm_config('llm_config.jsonc')``.
+       ``llm_config=ma.load_llm_config('llm_config.jsonc')``.
 
     4. **Auto-discovery (for projects with a checked-in config).**
        Don't pass any of the above — the wrapper walks up from cwd

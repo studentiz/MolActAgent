@@ -41,13 +41,13 @@ logger = logging.getLogger("ablation_antiTB")
 
 ABLATION_CONFIGS = {
     "no_background": {
-        "label": "CA (no background)",
+        "label": "MolActAgent (no background)",
         "background": None,
         "drop_feature_desc": False,
         "anonymize_features": False,
     },
     "no_semantic": {
-        "label": "CA (no semantic)",
+        "label": "MolActAgent (no semantic)",
         "background": None,
         "drop_feature_desc": True,
         "anonymize_features": True,
@@ -122,7 +122,7 @@ def main():
         )
 
         t0 = time.time()
-        ca_metrics, ca_details, ca_preds = run_molactagent_loocv(
+        ma_metrics, ma_details, ma_preds = run_molactagent_loocv(
             llm, X, y,
             feature_names=fn,
             feature_descriptions=fd or {},
@@ -134,17 +134,17 @@ def main():
         )
         elapsed = time.time() - t0
 
-        all_metrics[cfg["label"]] = ca_metrics
-        ablation_details[abl_name] = ca_details
+        all_metrics[cfg["label"]] = ma_metrics
+        ablation_details[abl_name] = ma_details
 
         logger.info(
             f"\n  {cfg['label']} done in {elapsed:.1f}s  "
-            f"bal_acc={ca_metrics['balanced_accuracy']:.3f}  "
-            f"mcc={ca_metrics['mcc']:.3f}\n"
+            f"bal_acc={ma_metrics['balanced_accuracy']:.3f}  "
+            f"mcc={ma_metrics['mcc']:.3f}\n"
         )
 
         logger.info("Per-fold predictions:")
-        for i, (pred, true_label) in enumerate(zip(ca_preds, y)):
+        for i, (pred, true_label) in enumerate(zip(ma_preds, y)):
             mark = "OK" if pred == true_label else "MISS"
             logger.info(f"  [{mark}] fold {i}: true={true_label} pred={pred}")
 

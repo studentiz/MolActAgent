@@ -19,7 +19,7 @@ For end-user examples, look at:
 
 | Script | Purpose |
 |---|---|
-| `prepare_features.py` | Convert a SMILES + label CSV into a descriptors + MACCS feature matrix on disk. (The package now exposes the same logic as `ca.pp.smiles_to_features`; this script remains for batch/CI workflows.) |
+| `prepare_features.py` | Convert a SMILES + label CSV into a descriptors + MACCS feature matrix on disk. (The package now exposes the same logic as `ma.pp.smiles_to_features`; this script remains for batch/CI workflows.) |
 | `prepare_penguins_subsample.py` | Build the bundled `examples/penguins/` reference + test split from the CC0 Palmer Penguins CSV. |
 | `split_cox2.py` | Scaffold-aware split for the COX-2 dataset. |
 
@@ -27,7 +27,7 @@ For end-user examples, look at:
 
 | Script | Purpose |
 |---|---|
-| `run_loocv_metrics.py` | The general LOOCV evaluator (classification + regression) used to produce the project's benchmark numbers. The new `ca.tl.loocv` and `ca.tl.compare_baselines` cover the same ground for in-process use; this script remains useful for batch jobs that produce JSON / TXT artefacts in `data/`. |
+| `run_loocv_metrics.py` | The general LOOCV evaluator (classification + regression) used to produce the project's benchmark numbers. The new `ma.tl.loocv` and `ma.tl.compare_baselines` cover the same ground for in-process use; this script remains useful for batch jobs that produce JSON / TXT artefacts in `data/`. |
 | `run_loocv_evidence.py` | LOOCV with the per-tuple evidence dump (heavy output). |
 | `run_loocv_BSLT_regression.py` | BSLT-specific regression LOOCV. |
 | `run_ablation_antiTB.py` | Ablation study on the antiTB classification dataset. |

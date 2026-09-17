@@ -742,21 +742,21 @@ trying to do*, not by what the engine internally does.
 
 Three orthogonal concerns route through the engine:
 
-- `ca.pp.*` (preprocessing) sits **before** the engine — converts
+- `ma.pp.*` (preprocessing) sits **before** the engine — converts
   user data into the `(X, y, feature_names, descriptions,
   background)` shape the engine expects.
-- `ca.tl.*` (tools), `ca.metrics`, and the result wrappers sit
+- `ma.tl.*` (tools), `ma.metrics`, and the result wrappers sit
   **after** the engine — orchestrate engine calls, project the
   outputs into convenient shapes, and compute metrics.
-- `ca.datasets.*` is **adjacent** to the engine — provides
+- `ma.datasets.*` is **adjacent** to the engine — provides
   ready-made `(X_train, X_test, y_train, ...)` bundles drawn from
   the bundled examples.
 
 ### 11.4 The full call graph for a `molactagent run` invocation
 
 A typical `molactagent run` call traces through the modules like
-this (this is the engine flow — the `ca.tl` / `ca.metrics` /
-`ca.pp` paths are similar but differ in their entry point):
+this (this is the engine flow — the `ma.tl` / `ma.metrics` /
+`ma.pp` paths are similar but differ in their entry point):
 
 ```
    CLI                    molactagent.cli.main
@@ -2067,8 +2067,8 @@ head-to-head comparisons go through one API:
 
 Two families of helpers:
 
-**Chemistry** — `ca.pp.chemistry`, `ca.pp.descriptors`,
-`ca.pp.fingerprints`, `ca.pp.scaffold`. Convert SMILES into the
+**Chemistry** — `ma.pp.chemistry`, `ma.pp.descriptors`,
+`ma.pp.fingerprints`, `ma.pp.scaffold`. Convert SMILES into the
 MolActAgent-ready `(X, feature_names, feature_descriptions)` shape
 in one call:
 
@@ -2090,7 +2090,7 @@ in one call:
   `test_scaffolds`, `scaffold_ids` (the last is `GroupKFold`-
   ready).
 
-**Tabular** — `ca.pp.tabular`. Wraps the existing
+**Tabular** — `ma.pp.tabular`. Wraps the existing
 `io.validate_inputs` + `io.prepare_for_agent` into a single
 `load_dataset(reference, test, label_column, ...)` call returning
 a `TabularBundle` with `X_train, y_train, X_test, y_test,
@@ -2108,7 +2108,7 @@ Bundled-example accessors:
   before validation, per the dataset README.
 - `load_bslt_regression(*, descriptors=True, maccs=True,
   morgan=False)` — chemistry regression. Featurises the bundled
-  SMILES via `ca.pp.smiles_to_features` and returns a
+  SMILES via `ma.pp.smiles_to_features` and returns a
   `FeatureBundle`. Looks for `examples/bslt/bslt.csv` first,
   falls back to the legacy `data/BSLT_huigui.csv` for back-compat.
 

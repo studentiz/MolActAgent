@@ -5,7 +5,7 @@ via four equivalent paths:
 
     1. In-code:   MolActAgentClassifier(api_key=..., base_url=..., model_name=...)
     2. Reuse:     MolActAgentClassifier(llm_client=existing_client)
-    3. Reuse cfg: MolActAgentClassifier(llm_config=ca.load_llm_config(...))
+    3. Reuse cfg: MolActAgentClassifier(llm_config=ma.load_llm_config(...))
     4. Auto:      MolActAgentClassifier()  # walks up looking for a file or env vars
 
 These tests exercise paths 1, 2, 3, and the env-var part of path 4.
@@ -25,7 +25,7 @@ from contextlib import contextmanager
 import numpy as np
 import pytest
 
-import molactagent as ca
+import molactagent as ma
 from molactagent.config import LLMConfig, LLMConfigError, build_llm_client
 from molactagent.estimators._base import _ensure_llm_client
 
@@ -150,7 +150,7 @@ def test_ensure_llm_client_raises_with_helpful_message_when_no_source(tmp_path, 
             _ensure_llm_client(None, None)
     msg = str(excinfo.value)
     # All four documented escape hatches must be in the error message.
-    assert "ca.MolActAgentClassifier(api_key=" in msg
+    assert "ma.MolActAgentClassifier(api_key=" in msg
     assert "llm_client=" in msg
     assert "llm_config=" in msg
     assert "MOLACTAGENT_API_KEY" in msg
@@ -173,7 +173,7 @@ def test_ensure_llm_client_raises_friendly_error_with_only_overrides(tmp_path, m
                 timeout=30.0, max_retries=2,
             )
     msg = str(excinfo.value)
-    assert "ca.MolActAgentClassifier(api_key=" in msg, (
+    assert "ma.MolActAgentClassifier(api_key=" in msg, (
         "Optional-knobs-only path must surface the friendly error "
         "message, not the raw LLMConfigError. Got: " + msg
     )
@@ -187,7 +187,7 @@ def test_ensure_llm_client_raises_friendly_error_with_partial_credentials(tmp_pa
         with pytest.raises(ValueError) as excinfo:
             _ensure_llm_client(None, None, api_key="sk-only")
     msg = str(excinfo.value)
-    assert "ca.MolActAgentClassifier(api_key=" in msg
+    assert "ma.MolActAgentClassifier(api_key=" in msg
 
 
 def test_ensure_llm_client_complete_inline_bypasses_file_discovery(tmp_path, monkeypatch):
@@ -272,7 +272,7 @@ def test_ensure_llm_client_complete_inline_honors_optional_overrides():
 
 def test_classifier_in_code_credentials_construction():
     """In-code credentials don't trigger LLM calls until fit()."""
-    clf = ca.MolActAgentClassifier(
+    clf = ma.MolActAgentClassifier(
         api_key="sk-fake",
         base_url="https://example.com/v1",
         model_name="fake-model",
@@ -288,7 +288,7 @@ def test_classifier_in_code_credentials_construction():
 
 def test_classifier_in_code_credentials_get_set_params_roundtrip():
     """sklearn clone-style round-trip preserves the new credential fields."""
-    clf = ca.MolActAgentClassifier(
+    clf = ma.MolActAgentClassifier(
         api_key="sk-x", base_url="u", model_name="m", temperature=0.3, k=4,
     )
     params = clf.get_params()
@@ -299,7 +299,7 @@ def test_classifier_in_code_credentials_get_set_params_roundtrip():
     assert params["k"] == 4
 
     # Reconstruct via set_params (this is what sklearn.clone uses).
-    fresh = ca.MolActAgentClassifier()
+    fresh = ma.MolActAgentClassifier()
     fresh.set_params(**params)
     assert fresh.api_key == "sk-x"
     assert fresh.k == 4
@@ -321,7 +321,7 @@ def test_classifier_in_code_credentials_fit_predict(
     y_ref = multiclass_reference["bucket"].to_numpy()
     X_test = multiclass_test[feature_cols].to_numpy(dtype=float)
 
-    clf = ca.MolActAgentClassifier(
+    clf = ma.MolActAgentClassifier(
         api_key="sk-fake",
         base_url="https://example.com/v1",
         model_name="fake-model",
@@ -338,7 +338,7 @@ def test_classifier_in_code_credentials_fit_predict(
 
 
 def test_regressor_in_code_credentials_construction():
-    reg = ca.MolActAgentRegressor(
+    reg = ma.MolActAgentRegressor(
         api_key="sk-fake",
         base_url="https://example.com/v1",
         model_name="fake-model",
@@ -362,7 +362,7 @@ def test_classifier_infers_feature_names_from_dataframe(
     X_ref_df = multiclass_reference[feature_cols]
     y_ref = multiclass_reference["bucket"].to_numpy()
 
-    clf = ca.MolActAgentClassifier(
+    clf = ma.MolActAgentClassifier(
         llm_client=fake_llm, k=3, max_workers=1,
     ).fit(X_ref_df, y_ref)
 
@@ -380,7 +380,7 @@ def test_classifier_explicit_feature_names_override_dataframe_columns(
     X_ref_df = multiclass_reference[feature_cols]
     y_ref = multiclass_reference["bucket"].to_numpy()
 
-    clf = ca.MolActAgentClassifier(
+    clf = ma.MolActAgentClassifier(
         llm_client=fake_llm,
         feature_names=explicit,
         k=3, max_workers=1,
@@ -401,7 +401,7 @@ def test_back_compat_llm_client_path_still_works(
     X_ref = multiclass_reference[feature_cols].to_numpy(dtype=float)
     y_ref = multiclass_reference["bucket"].to_numpy()
     X_test = multiclass_test[feature_cols].to_numpy(dtype=float)
-    clf = ca.MolActAgentClassifier(
+    clf = ma.MolActAgentClassifier(
         llm_client=fake_llm, k=3, max_workers=1,
     ).fit(X_ref, y_ref)
     assert clf.predict(X_test).shape == (X_test.shape[0],)
@@ -420,7 +420,7 @@ def test_back_compat_llm_config_path_still_works(
     y_ref = multiclass_reference["bucket"].to_numpy()
     X_test = multiclass_test[feature_cols].to_numpy(dtype=float)
     cfg = LLMConfig(api_key="sk-fake", base_url="u", model_name="m")
-    clf = ca.MolActAgentClassifier(
+    clf = ma.MolActAgentClassifier(
         llm_config=cfg, k=3, max_workers=1,
     ).fit(X_ref, y_ref)
     assert clf.predict(X_test).shape == (X_test.shape[0],)
@@ -439,7 +439,7 @@ def test_classifier_passes_sklearn_is_classifier_check():
     Inheriting from ``ClassifierMixin + BaseEstimator`` fixes it.
     """
     from sklearn.base import is_classifier
-    clf = ca.MolActAgentClassifier(api_key="sk-x", base_url="u", model_name="m")
+    clf = ma.MolActAgentClassifier(api_key="sk-x", base_url="u", model_name="m")
     assert is_classifier(clf), (
         "is_classifier() must return True after the BaseEstimator + "
         "ClassifierMixin inheritance fix; otherwise sklearn rejects "
@@ -452,7 +452,7 @@ def test_classifier_passes_sklearn_is_classifier_check():
 
 def test_regressor_passes_sklearn_is_regressor_check():
     from sklearn.base import is_regressor
-    reg = ca.MolActAgentRegressor(api_key="sk-x", base_url="u", model_name="m")
+    reg = ma.MolActAgentRegressor(api_key="sk-x", base_url="u", model_name="m")
     assert is_regressor(reg)
     tags = reg.__sklearn_tags__()
     assert tags.estimator_type == "regressor"
@@ -465,7 +465,7 @@ def test_classifier_sklearn_clone_round_trip(fake_llm):
     ``__init__`` didn't strip the prefix back out.
     """
     from sklearn.base import clone
-    original = ca.MolActAgentClassifier(
+    original = ma.MolActAgentClassifier(
         api_key="sk-x", base_url="u", model_name="m",
         feature_descriptions={"alpha": "the alpha column"},
         background="some background",
@@ -499,7 +499,7 @@ def test_classifier_sklearn_clone_round_trip(fake_llm):
 def test_regressor_sklearn_clone_round_trip():
     """Same agent_kwargs round-trip test for the regressor."""
     from sklearn.base import clone
-    original = ca.MolActAgentRegressor(
+    original = ma.MolActAgentRegressor(
         api_key="sk-x", base_url="u", model_name="m",
         target_name="body_mass_g",
         k=5,
@@ -527,7 +527,7 @@ def test_classifier_cross_val_score_doesnt_fail_at_setup(fake_llm, monkeypatch):
     n = 6
     X = rng.normal(size=(n, 4))
     y = np.array(["a", "b"] * (n // 2))
-    clf = ca.MolActAgentClassifier(
+    clf = ma.MolActAgentClassifier(
         api_key="sk-x", base_url="u", model_name="m",
         k=2, max_workers=1,
     )

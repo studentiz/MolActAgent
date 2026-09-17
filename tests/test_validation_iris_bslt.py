@@ -12,7 +12,7 @@ re-architecture brief:
    tolerance is the criterion because the FakeLLM mock is fully
    deterministic — any divergence is a real functional regression.
 2. **Regression on BSLT_huigui.csv** — featurise the SMILES via the
-   new ``ca.pp`` chemistry pipeline, run the resulting feature
+   new ``ma.pp`` chemistry pipeline, run the resulting feature
    matrix through every interface, compute the full regression
    metric suite (MAE, RMSE, R², Pearson r, Spearman r, median AE),
    and again assert metric equality.
@@ -48,7 +48,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import molactagent as ca
+import molactagent as ma
 from molactagent.metrics import (
     binary_classification_metrics,
     classification_metrics,
@@ -77,8 +77,8 @@ def iris_paths():
 
 @pytest.fixture(scope="module")
 def iris_data():
-    """Iris dataset loaded via the new ``ca.datasets`` accessor."""
-    return ca.datasets.load_iris_flowers()
+    """Iris dataset loaded via the new ``ma.datasets`` accessor."""
+    return ma.datasets.load_iris_flowers()
 
 
 @pytest.fixture(scope="module")
@@ -186,7 +186,7 @@ def test_iris_labels_match_pipeline_estimator_cli_inprocess(
     """
     # ── (a) High-level pipeline ──────────────────────────────────
     pipe_dir = tmp_path / "pipeline_out"
-    pipe_result = ca.run_classification(
+    pipe_result = ma.run_classification(
         reference=iris_paths["reference"],
         test=iris_paths["test"],
         label_column="species",
@@ -202,7 +202,7 @@ def test_iris_labels_match_pipeline_estimator_cli_inprocess(
     assert pipeline_summary["predicted_label"].tolist() == pipeline_labels
 
     # ── (b) sklearn-style estimator ──────────────────────────────
-    clf = ca.MolActAgentClassifier(
+    clf = ma.MolActAgentClassifier(
         llm_client=fake_llm,
         feature_names=iris_data.feature_names,
         feature_descriptions=iris_data.feature_descriptions,
@@ -262,7 +262,7 @@ def test_iris_classification_metrics_identical_across_interfaces(
     # Run all three interfaces (same setup as above; we re-run
     # here so each test is self-contained).
     pipe_dir = tmp_path / "pipe"
-    pipe_result = ca.run_classification(
+    pipe_result = ma.run_classification(
         reference=iris_holdout_csvs["reference"],
         test=iris_holdout_csvs["test"],
         label_column="species",
@@ -275,7 +275,7 @@ def test_iris_classification_metrics_identical_across_interfaces(
     )
     pipe_labels = [o.predicted_label for o in pipe_result.outcomes]
 
-    clf = ca.MolActAgentClassifier(
+    clf = ma.MolActAgentClassifier(
         llm_client=fake_llm,
         feature_names=iris_holdout_csvs["feature_names"],
         feature_descriptions=iris_holdout_csvs["feature_descriptions_dict"],
@@ -362,7 +362,7 @@ def test_iris_predict_proba_well_formed_and_distinct_from_confidence(
     probabilities" — this test ensures they really are alongside,
     not aliased.
     """
-    clf = ca.MolActAgentClassifier(
+    clf = ma.MolActAgentClassifier(
         llm_client=fake_llm,
         feature_names=iris_data.feature_names,
         feature_descriptions=iris_data.feature_descriptions,
@@ -406,7 +406,7 @@ def bslt_features():
     except ImportError:
         pytest.skip("RDKit required for BSLT chemistry pipeline.")
     try:
-        return ca.datasets.load_bslt_regression(
+        return ma.datasets.load_bslt_regression(
             descriptors=True, maccs=True, morgan=False,
         )
     except FileNotFoundError as e:
@@ -465,7 +465,7 @@ def bslt_csvs(bslt_features, tmp_path_factory):
         "y_test": bslt_features.y[n_train:],
         "X_train": bslt_features.X[:n_train],
         "X_test": bslt_features.X[n_train:],
-        "background": ca.pp.chemistry.BSLT_BACKGROUND,
+        "background": ma.pp.chemistry.BSLT_BACKGROUND,
     }
 
 
@@ -488,7 +488,7 @@ def test_bslt_predictions_match_pipeline_estimator_cli_inprocess(
     """
     # ── (a) Pipeline (use in-memory PipelineOutput for full-precision preds) ──
     pipe_dir = tmp_path / "bslt_pipe"
-    pipe_result = ca.run_regression(
+    pipe_result = ma.run_regression(
         reference=bslt_csvs["reference"],
         test=bslt_csvs["test"],
         target_column="standard_value",
@@ -508,7 +508,7 @@ def test_bslt_predictions_match_pipeline_estimator_cli_inprocess(
     )
 
     # ── (b) Estimator ────────────────────────────────────────────
-    reg = ca.MolActAgentRegressor(
+    reg = ma.MolActAgentRegressor(
         llm_client=fake_llm,
         target_name="standard_value",
         feature_names=bslt_csvs["feature_names"],
@@ -576,7 +576,7 @@ def test_bslt_regression_metrics_identical_across_interfaces(
     """
     # Pipeline (in-memory, full precision)
     pipe_dir = tmp_path / "p"
-    pipe_result = ca.run_regression(
+    pipe_result = ma.run_regression(
         reference=bslt_csvs["reference"],
         test=bslt_csvs["test"],
         target_column="standard_value",
@@ -591,7 +591,7 @@ def test_bslt_regression_metrics_identical_across_interfaces(
     pipe_intervals = [o.interval for o in pipe_result.outcomes]
 
     # Estimator
-    reg = ca.MolActAgentRegressor(
+    reg = ma.MolActAgentRegressor(
         llm_client=fake_llm,
         target_name="standard_value",
         feature_names=bslt_csvs["feature_names"],
@@ -699,7 +699,7 @@ def test_cli_subprocess_version_and_help():
         capture_output=True, text=True, timeout=30,
     )
     assert proc.returncode == 0, proc.stderr
-    assert ca.__version__ in proc.stdout
+    assert ma.__version__ in proc.stdout
 
     proc = subprocess.run(
         [sys.executable, "-m", "molactagent", "--help"],

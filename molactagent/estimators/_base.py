@@ -22,10 +22,10 @@ from ..config import LLMConfig, build_llm_client
 
 _NO_CREDS_HINT = (
     "No LLM credentials available. Pick one:\n"
-    "  • In-code  : ca.MolActAgentClassifier(api_key='sk-...', "
+    "  • In-code  : ma.MolActAgentClassifier(api_key='sk-...', "
     "base_url='https://api.deepseek.com', model_name='deepseek-chat')\n"
-    "  • Reuse    : ca.MolActAgentClassifier(llm_client=existing_client)\n"
-    "  • Reuse cfg: ca.MolActAgentClassifier(llm_config=ca.load_llm_config('llm_config.jsonc'))\n"
+    "  • Reuse    : ma.MolActAgentClassifier(llm_client=existing_client)\n"
+    "  • Reuse cfg: ma.MolActAgentClassifier(llm_config=ma.load_llm_config('llm_config.jsonc'))\n"
     "  • Env vars : export MOLACTAGENT_API_KEY / MOLACTAGENT_BASE_URL / MOLACTAGENT_MODEL\n"
     "  • File     : run `molactagent init-config` to create llm_config.jsonc\n"
 )

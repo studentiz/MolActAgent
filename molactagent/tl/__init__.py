@@ -1,4 +1,4 @@
-"""Downstream analysis tools — the Scanpy-style ``ca.tl`` namespace.
+"""Downstream analysis tools — the Scanpy-style ``ma.tl`` namespace.
 
 Every function here operates on top of fitted estimators or raw
 predictions; none of them touch the engine internals. The split is:

@@ -41,7 +41,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import molactagent as ca
+import molactagent as ma
 from molactagent.metrics import classification_metrics, regression_metrics
 
 
@@ -63,10 +63,13 @@ def _real_llm_enabled() -> bool:
     return False
 
 
-pytestmark = pytest.mark.skipif(
-    not _real_llm_enabled(),
-    reason="Set MOLACTAGENT_REAL_LLM=1 to enable real-LLM tests.",
-)
+pytestmark = [
+    pytest.mark.real_llm,
+    pytest.mark.skipif(
+        not _real_llm_enabled(),
+        reason="Set MOLACTAGENT_REAL_LLM=1 to enable real-LLM tests.",
+    ),
+]
 
 
 # ── shared fixtures ────────────────────────────────────────────────
@@ -101,9 +104,9 @@ def real_llm_config():
                     "MOLACTAGENT_API_KEY / MOLACTAGENT_BASE_URL / "
                     "MOLACTAGENT_MODEL are not all set."
                 )
-            return ca.load_llm_config(None)
+            return ma.load_llm_config(None)
     profile = os.environ.get("MOLACTAGENT_REAL_LLM_PROFILE", "deepseek")
-    cfg = ca.load_llm_config(str(cfg_path), profile=profile)
+    cfg = ma.load_llm_config(str(cfg_path), profile=profile)
     return cfg
 
 
@@ -166,7 +169,7 @@ def test_real_llm_iris_pipeline(real_llm_client, iris_holdout_csvs, tmp_path):
     against a real LLM. Asserts: completes without errors, every
     sample gets a real verdict, and accuracy clears a floor."""
     out_dir = tmp_path / "real_pipe"
-    result = ca.run_classification(
+    result = ma.run_classification(
         reference=iris_holdout_csvs["reference"],
         test=iris_holdout_csvs["test"],
         label_column="species",
@@ -204,7 +207,7 @@ def test_real_llm_iris_estimator(real_llm_client, iris_holdout_csvs):
     """Same iris dataset through the sklearn-style estimator. Verifies:
     predict, predict_proba, predict_with_confidence all work; the
     proba matrix is well-formed; accuracy clears the floor."""
-    clf = ca.MolActAgentClassifier(
+    clf = ma.MolActAgentClassifier(
         llm_client=real_llm_client,
         feature_names=iris_holdout_csvs["feature_names"],
         feature_descriptions=iris_holdout_csvs["feature_descriptions_dict"],
@@ -295,7 +298,7 @@ def bslt_real_csvs(tmp_path_factory):
     except ImportError:
         pytest.skip("RDKit required.")
     try:
-        bundle = ca.datasets.load_bslt_regression(
+        bundle = ma.datasets.load_bslt_regression(
             descriptors=True, maccs=True, morgan=False,
         )
     except FileNotFoundError as e:
@@ -331,7 +334,7 @@ def bslt_real_csvs(tmp_path_factory):
         "y_test": bundle.y[n_train:],
         "X_train": bundle.X[:n_train],
         "X_test": bundle.X[n_train:],
-        "background": ca.pp.chemistry.BSLT_BACKGROUND,
+        "background": ma.pp.chemistry.BSLT_BACKGROUND,
     }
 
 
@@ -340,7 +343,7 @@ def test_real_llm_bslt_pipeline(real_llm_client, bslt_real_csvs, tmp_path):
     LLM. Verifies: completes, every sample gets a finite prediction
     OR a clean refusal, the metric suite computes."""
     out_dir = tmp_path / "real_bslt_pipe"
-    result = ca.run_regression(
+    result = ma.run_regression(
         reference=bslt_real_csvs["reference"],
         test=bslt_real_csvs["test"],
         target_column="standard_value",
@@ -377,7 +380,7 @@ def test_real_llm_bslt_estimator(real_llm_client, bslt_real_csvs):
     """BSLT regression through the sklearn-style estimator. Verifies:
     predict / predict_with_interval / predict_with_confidence all
     work; intervals are sensible."""
-    reg = ca.MolActAgentRegressor(
+    reg = ma.MolActAgentRegressor(
         llm_client=real_llm_client,
         target_name="standard_value",
         feature_names=bslt_real_csvs["feature_names"],

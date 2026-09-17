@@ -16,20 +16,20 @@ strings, which exercise the chemistry preprocessing pipeline.
 ## Use it
 
 ```python
-import molactagent as ca
+import molactagent as ma
 
 # One-call: SMILES → 26 RDKit descriptors + 167 MACCS keys + Murcko
 # scaffolds, ready for the estimator.
-features = ca.datasets.load_bslt_regression(
+features = ma.datasets.load_bslt_regression(
     descriptors=True, maccs=True, morgan=False,
 )
 
-reg = ca.MolActAgentRegressor(
-    llm_config=ca.load_llm_config("llm_config.jsonc"),
+reg = ma.MolActAgentRegressor(
+    llm_config=ma.load_llm_config("llm_config.jsonc"),
     target_name="standard_value",
     feature_names=features.feature_names,
     feature_descriptions=features.feature_descriptions,
-    background=ca.pp.chemistry.BSLT_BACKGROUND,
+    background=ma.pp.chemistry.BSLT_BACKGROUND,
     k=3,
 ).fit(features.X[:11], features.y[:11])
 

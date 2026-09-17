@@ -533,14 +533,14 @@ def build_llm_client(
        used by the CLI and any pipeline that already loaded a
        config file)::
 
-           cfg = ca.load_llm_config('llm_config.jsonc')
-           client = ca.build_llm_client(cfg)
+           cfg = ma.load_llm_config('llm_config.jsonc')
+           client = ma.build_llm_client(cfg)
 
     2. **From in-line credentials** (the Python-first ergonomic
        path — useful when you want to drive the client purely from
        code without touching a config file)::
 
-           client = ca.build_llm_client(
+           client = ma.build_llm_client(
                api_key='sk-...',
                base_url='https://api.deepseek.com',
                model_name='deepseek-chat',
@@ -572,9 +572,9 @@ def build_llm_client(
             f"base_url={'set' if base_url else 'missing'}, "
             f"model_name={'set' if model_name else 'missing'}.",
             hints=[
-                "Direct call:  ca.build_llm_client(api_key='sk-...', "
+                "Direct call:  ma.build_llm_client(api_key='sk-...', "
                 "base_url='https://...', model_name='deepseek-chat')",
-                "From config:  ca.build_llm_client(ca.load_llm_config('llm_config.jsonc'))",
+                "From config:  ma.build_llm_client(ma.load_llm_config('llm_config.jsonc'))",
             ],
         )
 

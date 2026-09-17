@@ -1260,10 +1260,10 @@ your familiarity:
 
 | If you... | use |
 |---|---|
-| Want one all-in-one call that handles validation, prediction, and report writing | `ca.run_classification` / `ca.run_regression` (this section) |
-| Want sklearn-style estimators that expose `predict_proba`, calibrated confidence, and slot into `cross_val_score`, GridSearchCV, etc. | `ca.MolActAgentClassifier` / `ca.MolActAgentRegressor` (§16.A below) |
-| Want Scanpy-style discoverable namespaces — chemistry preprocessing, LOOCV, baseline comparison, calibration | `ca.pp` / `ca.tl` / `ca.metrics` / `ca.datasets` (§16.B and §16.C below) |
-| Want maximum control: assemble prompts, drive the LLM client yourself, render reports | `ca.MolActAgent`, `ca.CrossClassificationRegressor`, `ca.LLMClient`, `ca.render_html_report` |
+| Want one all-in-one call that handles validation, prediction, and report writing | `ma.run_classification` / `ma.run_regression` (this section) |
+| Want sklearn-style estimators that expose `predict_proba`, calibrated confidence, and slot into `cross_val_score`, GridSearchCV, etc. | `ma.MolActAgentClassifier` / `ma.MolActAgentRegressor` (§16.A below) |
+| Want Scanpy-style discoverable namespaces — chemistry preprocessing, LOOCV, baseline comparison, calibration | `ma.pp` / `ma.tl` / `ma.metrics` / `ma.datasets` (§16.B and §16.C below) |
+| Want maximum control: assemble prompts, drive the LLM client yourself, render reports | `ma.MolActAgent`, `ma.CrossClassificationRegressor`, `ma.LLMClient`, `ma.render_html_report` |
 
 The high-level all-in-one path:
 
@@ -1393,14 +1393,14 @@ with. Both estimators implement `fit` / `predict` /
 accepts `BaseEstimator`-shaped objects.
 
 ```python
-import molactagent as ca
+import molactagent as ma
 
-cfg = ca.load_llm_config()  # auto-discovers llm_config.jsonc at project root
+cfg = ma.load_llm_config()  # auto-discovers llm_config.jsonc at project root
 
 # One-call dataset loader (handles validation + preparation).
-data = ca.datasets.load_iris_flowers()
+data = ma.datasets.load_iris_flowers()
 
-clf = ca.MolActAgentClassifier(
+clf = ma.MolActAgentClassifier(
     llm_config=cfg,
     feature_names=data.feature_names,
     feature_descriptions=data.feature_descriptions,
@@ -1443,8 +1443,8 @@ questions** and are exposed as separate axes by design:
 The regression counterpart:
 
 ```python
-data = ca.datasets.load_penguins()
-reg = ca.MolActAgentRegressor(
+data = ma.datasets.load_penguins()
+reg = ma.MolActAgentRegressor(
     llm_config=cfg,
     target_name="body_mass_g",
     feature_names=data.feature_names,
@@ -1462,17 +1462,17 @@ r2 = reg.score(data.X_test, data.y_test)               # R²; refusals masked ou
 
 ### 16.2 — Compound chemistry: SMILES → MolActAgent in one call
 
-If your data is a SMILES column plus a label column, `ca.pp` does
+If your data is a SMILES column plus a label column, `ma.pp` does
 the upstream work that used to require running
 `scripts/prepare_features.py` first.
 
 ```python
 import pandas as pd
-import molactagent as ca
+import molactagent as ma
 
 df = pd.read_csv("my_compounds.csv")  # columns: smiles, activity
 
-features = ca.pp.smiles_to_features(
+features = ma.pp.smiles_to_features(
     df["smiles"], y=df["activity"],
     descriptors=True,    # 26 RDKit descriptors (MolWt, MolLogP, TPSA, ...)
     maccs=True,          # 167 MACCS keys with full plain-English descriptions
@@ -1482,10 +1482,10 @@ print(f"X shape: {features.X.shape}")
 print(f"feature_descriptions has {len(features.feature_descriptions)} entries")
 
 # Bundled domain backgrounds (verbatim from the project's benchmarks):
-bg = ca.pp.chemistry.EGFR_BACKGROUND      # for EGFR inhibitor classification
+bg = ma.pp.chemistry.EGFR_BACKGROUND      # for EGFR inhibitor classification
 # Other options: ANTITB_BACKGROUND, BSLT_BACKGROUND
 
-clf = ca.MolActAgentClassifier(
+clf = ma.MolActAgentClassifier(
     llm_config=cfg,
     feature_names=features.feature_names,
     feature_descriptions=features.feature_descriptions,
@@ -1497,7 +1497,7 @@ clf = ca.MolActAgentClassifier(
 For chemistry-correct held-out evaluation, use scaffold splitting:
 
 ```python
-split = ca.pp.scaffold_split(
+split = ma.pp.scaffold_split(
     features.smiles, test_size=0.2, random_state=42,
 )
 clf.fit(features.X[split.train_idx], features.y[split.train_idx])
@@ -1508,7 +1508,7 @@ The `scaffold_ids` field plugs into sklearn's `GroupKFold`:
 
 ```python
 from sklearn.model_selection import GroupKFold
-groups = ca.pp.scaffold_split(features.smiles).scaffold_ids
+groups = ma.pp.scaffold_split(features.smiles).scaffold_ids
 for train_idx, test_idx in GroupKFold(n_splits=5).split(features.X, features.y, groups):
     ...
 ```
@@ -1516,12 +1516,12 @@ for train_idx, test_idx in GroupKFold(n_splits=5).split(features.X, features.y, 
 ### 16.3 — Downstream analysis: LOOCV, baselines, calibration, attribution
 
 Everything you need for benchmarking and diagnostics lives under
-`ca.tl`. None of these functions touches the engine internals —
+`ma.tl`. None of these functions touches the engine internals —
 they orchestrate predictions and post-process them.
 
 ```python
 # Leave-one-out CV against the LLM-backed estimator.
-result = ca.tl.loocv(clf, features.X, features.y, fold_workers=4)
+result = ma.tl.loocv(clf, features.X, features.y, fold_workers=4)
 print(result.summary())                # full metric table
 print(result.metrics.to_table())       # just the metrics
 result.to_dataframe()                  # tidy per-fold table
@@ -1529,7 +1529,7 @@ result.to_dataframe()                  # tidy per-fold table
 # Head-to-head against ML baselines (KNN, RF, LR, SVM, ...). The
 # default baseline list is curated for the task; pass `baselines='all'`
 # to run every baseline in the catalogue.
-comparison = ca.tl.compare_baselines(
+comparison = ma.tl.compare_baselines(
     molactagent_estimator=clf,
     X=features.X, y=features.y,
     baselines=["KNN3", "RF", "LR"],
@@ -1540,12 +1540,12 @@ print(comparison.metrics_table())      # exact same fixed-width text the legacy 
 print(comparison.best("mcc"))          # method name with highest MCC
 
 # Confidence calibration (Brier, ECE, reliability curve).
-cal = ca.tl.confidence_calibration(fold_records=result.fold_records)
+cal = ma.tl.confidence_calibration(fold_records=result.fold_records)
 print(cal.summary())
 
 # Cohort-level driver attribution: which features mattered ACROSS
 # the test set?
-agg = ca.tl.aggregate_drivers(result.fold_records)
+agg = ma.tl.aggregate_drivers(result.fold_records)
 print(agg.to_dataframe().head(10))
 print(agg.per_class_top_features(n=6))
 ```

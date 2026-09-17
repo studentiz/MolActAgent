@@ -561,13 +561,13 @@ def main():
     # ── MolActAgent ───────────────────────────────────────────────
     logger.info("\n" + "=" * 60 + "\n  MOLACTAGENT\n" + "=" * 60)
     t0 = time.time()
-    ca_metrics, ca_results, ca_preds = run_molactagent(
+    ma_metrics, ma_results, ma_preds = run_molactagent(
         llm, X_train, y_train, X_test, y_test,
         meta["feature_names"], meta["feature_descriptions"], meta["background"],
         args, max_samples=max_llm,
     )
     logger.info(f"MolActAgent done in {time.time()-t0:.1f}s")
-    all_metrics["MolActAgent"] = ca_metrics
+    all_metrics["MolActAgent"] = ma_metrics
 
     # ── LLM stats ────────────────────────────────────────────────
     llm.print_stats()
@@ -576,8 +576,8 @@ def main():
     print_metrics_table(all_metrics)
 
     # per-sample detail for LLM methods
-    print(f"\nMolActAgent per-sample detail (n={len(ca_preds)}):")
-    for i, (pred, res) in enumerate(zip(ca_preds, ca_results)):
+    print(f"\nMolActAgent per-sample detail (n={len(ma_preds)}):")
+    for i, (pred, res) in enumerate(zip(ma_preds, ma_results)):
         true = y_test[i]
         mark = "✓" if true == pred else ("?" if pred == "Unknown" else "✗")
         print(
@@ -597,7 +597,7 @@ def main():
                     "test_indices": test_idx.tolist(),
                 },
                 "metrics": all_metrics,
-                "molactagent_predictions": ca_results,
+                "molactagent_predictions": ma_results,
                 "llm_stats": llm.stats,
                 "llm_call_log": llm.call_log,
             },

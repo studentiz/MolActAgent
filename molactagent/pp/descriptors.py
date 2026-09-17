@@ -27,7 +27,7 @@ import numpy as np
 
 
 # The descriptions live as a module constant so users can introspect
-# them without RDKit installed (``ca.pp.descriptors.DESCRIPTIONS``).
+# them without RDKit installed (``ma.pp.descriptors.DESCRIPTIONS``).
 DESCRIPTIONS: dict[str, str] = {
     "MolWt": "Molecular weight (Da)",
     "MolLogP": "Wildman-Crippen LogP – lipophilicity (higher = more hydrophobic)",

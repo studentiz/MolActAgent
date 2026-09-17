@@ -52,7 +52,7 @@ users who prefer the full-word convention. (We do not ship a
 ``molactagent.preprocessing`` alias because the package already has
 an internal ``preprocessing`` submodule — the public preprocessing
 surface is ``molactagent.pp``.) Every namespace is a regular Python
-package — ``ca.pp.<TAB>`` shows what's available.
+package — ``ma.pp.<TAB>`` shows what's available.
 
 The CLI (``molactagent run`` / ``molactagent validate`` /
 ``molactagent init-config``) and the high-level ``run_*`` functions

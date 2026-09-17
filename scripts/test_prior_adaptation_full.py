@@ -381,7 +381,7 @@ def main():
             tabpfn_metrics, _ = run_tabpfn_loocv(
                 X_use, y_use, device=args.device, seed=seed,
             )
-            ca_metrics = molactagent_loocv(
+            ma_metrics = molactagent_loocv(
                 X_use, y_use, llm,
                 feature_names=feature_names,
                 feature_descriptions=GENERIC_FEATURE_DESCRIPTIONS,
@@ -390,7 +390,7 @@ def main():
             seed_metrics = {
                 **ml_metrics,
                 "TabPFN": tabpfn_metrics,
-                "MolActAgent": ca_metrics,
+                "MolActAgent": ma_metrics,
             }
             for name in method_order:
                 per_seed_metrics[name].append(seed_metrics[name])

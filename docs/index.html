@@ -779,13 +779,13 @@
                 <span class="light"></span>
                 <span class="filename">quickstart.py</span>
               </div>
-<pre class="code-block"><span class="kw">import</span> molactagent <span class="kw">as</span> ca
+<pre class="code-block"><span class="kw">import</span> molactagent <span class="kw">as</span> ma
 
 <span class="com"># Bundled example: 24 reference flowers + 6 unknowns to classify.</span>
-iris = ca.datasets.<span class="fn">load_iris_flowers</span>()
+iris = ma.datasets.<span class="fn">load_iris_flowers</span>()
 
 <span class="com"># Plug in any OpenAI-compatible LLM endpoint. Your key, your model.</span>
-clf = ca.<span class="fn">MolActAgentClassifier</span>(
+clf = ma.<span class="fn">MolActAgentClassifier</span>(
     api_key=<span class="str">"sk-..."</span>,
     base_url=<span class="str">"https://api.deepseek.com"</span>,
     model_name=<span class="str">"deepseek-chat"</span>,

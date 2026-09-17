@@ -66,7 +66,7 @@ pip install -e ".[all]"    # everything (recommended for trying things out)
 Verify the install:
 
 ```bash
-python -c "import molactagent as ca; print(ca.__version__)"
+python -c "import molactagent as ma; print(ma.__version__)"
 # → 0.3.0
 ```
 
@@ -77,14 +77,14 @@ python -c "import molactagent as ca; print(ca.__version__)"
 Three lines of code, the bundled iris dataset (already in the repo), and you're classifying with cited evidence.
 
 ```python
-import molactagent as ca
+import molactagent as ma
 
 # 1. The bundled iris example — 24 reference flowers, 6 unknowns to classify.
 #    No data preparation needed. Ships with the source repository.
-iris = ca.datasets.load_iris_flowers()
+iris = ma.datasets.load_iris_flowers()
 
 # 2. Build a classifier. The credentials are the only thing you supply.
-clf = ca.MolActAgentClassifier(
+clf = ma.MolActAgentClassifier(
     api_key="sk-...",                          # your key
     base_url="https://api.deepseek.com",       # any OpenAI-compatible endpoint
     model_name="deepseek-chat",                # whatever model you have access to
@@ -115,7 +115,7 @@ print(results[0].driver_attribution)
 #    {'feature': 'petal_width', ...}]
 ```
 
-Each result also carries `picked_references`, `counter_evidence`, the raw tuple-by-tuple `vote_summary`, and the original `test_feature_values`. When you go through the high-level pipeline (`ca.run_classification(...)`), the same evidence is auto-rendered to a polished `interpretability.html` report on disk.
+Each result also carries `picked_references`, `counter_evidence`, the raw tuple-by-tuple `vote_summary`, and the original `test_feature_values`. When you go through the high-level pipeline (`ma.run_classification(...)`), the same evidence is auto-rendered to a polished `interpretability.html` report on disk.
 
 A worked sample verdict for the first iris row:
 
@@ -232,7 +232,7 @@ MolActAgent accepts LLM credentials in **four** equivalent ways. The Quick Start
 ### 1. In-code — best for notebooks and ad-hoc Python
 
 ```python
-clf = ca.MolActAgentClassifier(
+clf = ma.MolActAgentClassifier(
     api_key="sk-...",
     base_url="https://api.deepseek.com",
     model_name="deepseek-chat",
@@ -242,7 +242,7 @@ clf = ca.MolActAgentClassifier(
 Optional context — omit for sensible defaults, supply inline when it matters:
 
 ```python
-clf = ca.MolActAgentClassifier(
+clf = ma.MolActAgentClassifier(
     api_key="sk-...", base_url="...", model_name="...",
     feature_descriptions={
         "petal_length": "length of the petal in centimetres",
@@ -263,15 +263,15 @@ df = pd.read_csv("my_data.csv")
 X = df[["sensor_a", "sensor_b", "sensor_c"]]
 y = df["category"]
 
-clf = ca.MolActAgentClassifier(api_key="sk-...", base_url="...", model_name="...")
+clf = ma.MolActAgentClassifier(api_key="sk-...", base_url="...", model_name="...")
 clf.fit(X, y)              # feature names auto-inferred from X.columns
 ```
 
 ### 2. Pre-built config file — best for batch jobs and team-shared projects
 
 ```python
-cfg = ca.load_llm_config("llm_config.jsonc")
-clf = ca.MolActAgentClassifier(llm_config=cfg)
+cfg = ma.load_llm_config("llm_config.jsonc")
+clf = ma.MolActAgentClassifier(llm_config=cfg)
 ```
 
 Generate a starter file with `molactagent init-config`. It supports comments, multiple vendor templates, and the same field names every example uses.
@@ -279,12 +279,12 @@ Generate a starter file with `molactagent init-config`. It supports comments, mu
 ### 3. Pre-built client — best for tests and shared sessions
 
 ```python
-client = ca.build_llm_client(
+client = ma.build_llm_client(
     api_key="sk-...",
     base_url="https://api.deepseek.com",
     model_name="deepseek-chat",
 )
-clf = ca.MolActAgentClassifier(llm_client=client)
+clf = ma.MolActAgentClassifier(llm_client=client)
 ```
 
 Useful when you want one `LLMClient` shared across many estimators, or when injecting a test fake.
@@ -298,7 +298,7 @@ export MOLACTAGENT_MODEL="deepseek-chat"
 ```
 
 ```python
-clf = ca.MolActAgentClassifier()  # credentials auto-discovered
+clf = ma.MolActAgentClassifier()  # credentials auto-discovered
 ```
 
 MolActAgent walks up from the current directory looking for `llm_config.jsonc` / `LLM_API.txt`, then falls back to the `MOLACTAGENT_*` environment variables.

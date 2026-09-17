@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import molactagent as ca
+import molactagent as ma
 
 # RDKit availability is stable for the lifetime of the test
 # session; check once.
@@ -228,7 +228,7 @@ def test_load_dataset_iris(tmp_workspace, project_root):
     """Smoke-test the tabular convenience wrapper on the bundled
     iris example."""
     iris_dir = project_root / "examples" / "iris_flowers"
-    bundle = ca.pp.load_dataset(
+    bundle = ma.pp.load_dataset(
         reference=iris_dir / "reference.csv",
         test=iris_dir / "test.csv",
         label_column="species",
@@ -248,7 +248,7 @@ def test_load_dataset_validation_failure_raises(tmp_workspace, simple_reference)
     """Bad inputs raise ``ValueError`` by default."""
     bad_test = simple_reference.iloc[:0]  # empty test frame
     with pytest.raises(Exception):
-        ca.pp.load_dataset(
+        ma.pp.load_dataset(
             reference=simple_reference,
             test=bad_test,
             label_column="activity",
@@ -260,18 +260,18 @@ def test_load_dataset_validation_failure_raises(tmp_workspace, simple_reference)
 
 
 def test_pp_namespace_lazy_attrs():
-    """``ca.pp.smiles_to_features`` must resolve through the lazy
+    """``ma.pp.smiles_to_features`` must resolve through the lazy
     re-export."""
-    func = ca.pp.smiles_to_features
+    func = ma.pp.smiles_to_features
     assert callable(func)
 
 
 def test_top_level_namespace_aliases():
-    """``ca.tools`` is an alias for ``ca.tl``. ``ca.preprocessing``
-    is intentionally NOT aliased to ``ca.pp`` — the package has an
+    """``ma.tools`` is an alias for ``ma.tl``. ``ma.preprocessing``
+    is intentionally NOT aliased to ``ma.pp`` — the package has an
     internal ``preprocessing`` submodule that the alias would
     shadow."""
-    assert ca.tl is ca.tools
+    assert ma.tl is ma.tools
 
 
 def test_preprocessing_legacy_module_still_works():
@@ -284,7 +284,7 @@ def test_preprocessing_legacy_module_still_works():
 
 
 def test_top_level_namespace_resolution_in_fresh_process():
-    """Regression test: ``ca.pp`` must resolve from a fresh interpreter.
+    """Regression test: ``ma.pp`` must resolve from a fresh interpreter.
 
     The Scanpy-style namespace lookup goes through
     ``molactagent.__init__.__getattr__``. An earlier implementation
@@ -304,9 +304,9 @@ def test_top_level_namespace_resolution_in_fresh_process():
     # the cold-start lazy-import path. The script touches every
     # Scanpy-style namespace.
     code = (
-        "import molactagent as ca; "
-        "_ = ca.pp; _ = ca.tl; _ = ca.tools; "
-        "_ = ca.metrics; _ = ca.datasets; "
+        "import molactagent as ma; "
+        "_ = ma.pp; _ = ma.tl; _ = ma.tools; "
+        "_ = ma.metrics; _ = ma.datasets; "
         "print('ok')"
     )
     out = subprocess.check_output(

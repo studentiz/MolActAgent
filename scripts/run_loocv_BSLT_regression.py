@@ -1452,7 +1452,7 @@ def main():
             "\n  MolActAgent regression (LOOCV)\n" + "=" * 60
         )
         t0 = time.time()
-        ca_metrics, ca_records = run_molactagent_loocv_regression(
+        ma_metrics, ma_records = run_molactagent_loocv_regression(
             X, y,
             feature_names, feature_descriptions,
             BACKGROUND_BSLT_REG, llm,
@@ -1463,14 +1463,14 @@ def main():
         )
         elapsed = time.time() - t0
         logger.info(f"MolActAgent LOOCV finished in {elapsed:.1f}s")
-        all_metrics["MolActAgent"] = ca_metrics
+        all_metrics["MolActAgent"] = ma_metrics
 
-        ca_records_lite: list[dict] = []
-        for r in ca_records:
+        ma_records_lite: list[dict] = []
+        for r in ma_records:
             if r is None:
                 continue
             raw = r["raw"] or {}
-            ca_records_lite.append({
+            ma_records_lite.append({
                 "fold": r["fold"],
                 "true": r["true"],
                 "pred": r["pred"],
@@ -1483,7 +1483,7 @@ def main():
                 "predictions": raw.get("predictions", []),
                 "driver_attribution": (raw.get("driver_attribution") or [])[:5],
             })
-        all_predictions["MolActAgent"] = ca_records_lite
+        all_predictions["MolActAgent"] = ma_records_lite
     else:
         logger.info("MolActAgent skipped.")
 

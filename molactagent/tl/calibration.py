@@ -13,7 +13,7 @@ module answers:
 The functions are deliberately generic: they accept either a fold-
 record list (the LOOCV output shape) or three parallel arrays
 ``(y_true, y_pred, confidence)`` so they slot into both the new
-``ca.tl.loocv`` flow and any user-rolled prediction loop.
+``ma.tl.loocv`` flow and any user-rolled prediction loop.
 """
 
 from __future__ import annotations

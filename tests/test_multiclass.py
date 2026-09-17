@@ -150,19 +150,19 @@ class TestAdaptiveTopM:
 
 class TestBaselineClamping:
     def test_baseline_class_from_counts_argmax(self):
-        from molactagent.agent import MolActAgent as CA
+        from molactagent.agent import MolActAgent as MA
         # Unique winner -> winner is baseline.
-        assert CA._baseline_class_from_counts({"a": 5, "b": 2, "c": 1}) == "a"
+        assert MA._baseline_class_from_counts({"a": 5, "b": 2, "c": 1}) == "a"
         # Tie at the top -> Unknown so the LLM has freedom to break the
         # deadlock with a domain argument.
-        assert CA._baseline_class_from_counts({"a": 3, "b": 3}) == "Unknown"
+        assert MA._baseline_class_from_counts({"a": 3, "b": 3}) == "Unknown"
         # All zero -> Unknown.
-        assert CA._baseline_class_from_counts({"a": 0, "b": 0, "c": 0}) == "Unknown"
+        assert MA._baseline_class_from_counts({"a": 0, "b": 0, "c": 0}) == "Unknown"
         # Empty -> Unknown.
-        assert CA._baseline_class_from_counts({}) == "Unknown"
+        assert MA._baseline_class_from_counts({}) == "Unknown"
 
     def test_finalize_clamps_dissenting_label(self):
-        from molactagent.agent import MolActAgent as CA
+        from molactagent.agent import MolActAgent as MA
         parsed = {
             "label": "B",
             "confidence": 0.9,
@@ -177,7 +177,7 @@ class TestBaselineClamping:
         # Baseline says A wins. The finalizer is the last guard and
         # clamps any disagreeing label back to the baseline regardless
         # of the LLM's stated confidence.
-        record = CA._finalize_tuple(
+        record = MA._finalize_tuple(
             parsed,
             ref_indices={"A": 0, "B": 1},
             candidate_classes=["A", "B"],
@@ -195,10 +195,10 @@ class TestBaselineClamping:
 
 class TestThreeWayInconclusive:
     def test_aggregation_returns_inconclusive_on_three_way_split(self):
-        from molactagent.agent import MolActAgent as CA
+        from molactagent.agent import MolActAgent as MA
         # Hand-build a MolActAgent shell so we can call the aggregator
         # without going through the LLM-driven pipeline.
-        agent = CA.__new__(CA)
+        agent = MA.__new__(MA)
         agent.feature_descriptions = None
 
         candidate_classes = ["A", "B", "C"]
