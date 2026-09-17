@@ -1,0 +1,53 @@
+// ─────────────────────────────────────────────────────────────────────
+// MolActAgent LLM API configuration (JSONC — JSON with comments)
+//
+// This is a *local example*. For most workflows you should put a
+// real ``llm_config.jsonc`` at the project root (created by
+// ``molactagent init-config``) and let ``molactagent`` find it via the
+// default config search.
+//
+// Rules:
+//   * Keep exactly ONE configuration object active (uncommented) below.
+//   * Required fields: api_key, base_url, model_name.
+//   * Optional: temperature (default 0.0), max_tokens (default 2000),
+//     timeout (default 120), max_retries (default 10).
+//   * Replace REPLACE-WITH-YOUR-OWN-KEY with your real API key.
+//   * To switch vendors: comment out the active block below and
+//     uncomment one of the templates at the bottom of the file.
+// ─────────────────────────────────────────────────────────────────────
+
+{
+  // Active provider — DeepSeek (cheap and reliable for most experiments)
+  "api_key": "REPLACE-WITH-YOUR-OWN-KEY",
+  "base_url": "https://api.deepseek.com",
+  "model_name": "deepseek-chat",
+  "temperature": 0.0,
+  "max_tokens": 2000,
+  "timeout": 120,
+  "max_retries": 10
+}
+
+/* ──────── Other vendor templates (copy ONE into the block above) ────────
+
+  // ── Alibaba Cloud DashScope (Qwen) ──────────────────────────────
+  {
+    "api_key": "REPLACE-WITH-YOUR-OWN-KEY",
+    "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "model_name": "qwen-plus"
+  }
+
+  // ── OpenAI ──────────────────────────────────────────────────────
+  {
+    "api_key": "REPLACE-WITH-YOUR-OWN-KEY",
+    "base_url": "https://api.openai.com/v1",
+    "model_name": "gpt-4o-mini"
+  }
+
+  // ── Local self-hosted (Ollama / vLLM / LM Studio) ───────────────
+  {
+    "api_key": "ollama",
+    "base_url": "http://localhost:11434/v1",
+    "model_name": "llama3.1:8b"
+  }
+
+──────────────────────────────────────────────────────────────────────── */

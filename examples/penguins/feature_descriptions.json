@@ -1,0 +1,6 @@
+{
+  "bill_length_mm": "Length of the penguin's bill from base to tip, in millimetres. Generally rises with overall body size; Gentoos and Chinstraps have noticeably longer bills than Adelies.",
+  "bill_depth_mm": "Vertical thickness of the bill at its base, in millimetres. Adelies and Chinstraps have deep bills (usually 17-21 mm); Gentoos are shallower (typically 13-16 mm), so deeper bills tend to come with smaller bodies in this dataset.",
+  "flipper_length_mm": "Length of the flipper, in millimetres. The single best monotone proxy for body mass in penguins — larger penguins have longer flippers.",
+  "body_mass_g": "Body mass in grams. The continuous target value to predict. Adult Adelies and Chinstraps cluster around 3.5-4.5 kg; Gentoos cluster around 4.7-6.0 kg."
+}

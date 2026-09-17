@@ -1,0 +1,16 @@
+Palmer Archipelago penguins, three species (Adelie, Chinstrap, Gentoo),
+measured between 2007 and 2009 by Dr. Kristen Gorman at the Long-Term
+Ecological Research site near Palmer Station. Body mass varies smoothly
+with structural size: birds with longer flippers and longer bills are
+heavier on average. Bill DEPTH is the only feature that runs the
+opposite way — Gentoos are heavier but have shallower bills than the
+two Adelie-sized species. The reference set is deliberately small (24
+adults across all three species) so the example is cheap to run; the
+agent should treat large flipper / long bill as evidence of a
+heavier bird, while reading bill depth in context.
+
+The CSV files also carry a ``species`` column for human readability
+and a ``sample_id`` column for unique row identifiers. Neither is
+used as a feature in the regression run — drop ``species`` before
+passing the data to ``run_regression`` and pass ``sample_id`` via
+``id_column``.

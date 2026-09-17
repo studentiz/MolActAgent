@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+title: "MolActAgent"
+message: "If MolActAgent contributes to your work, please cite this project."
+type: software
+version: "0.3.0"
+date-released: "2026-09-17"
+license: MIT
+repository-code: https://github.com/studentiz/MolActAgent
+authors:
+  - name: "MolActAgent contributors"
+keywords:
+  - molecular activity
+  - cheminformatics
+  - QSAR
+  - explainable AI

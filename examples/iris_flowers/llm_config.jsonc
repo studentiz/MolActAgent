@@ -1,0 +1,69 @@
+// ─────────────────────────────────────────────────────────────────────
+// MolActAgent LLM API configuration (JSONC — JSON with comments)
+//
+// Rules:
+//   * Keep exactly ONE configuration object active (uncommented) below.
+//   * Required fields: api_key, base_url, model_name.
+//   * Optional: temperature (default 0.0), max_tokens (default 2000),
+//     timeout (default 120), max_retries (default 10).
+//   * Replace REPLACE-WITH-YOUR-OWN-KEY with your real API key.
+//   * To switch vendors: comment out the active block below and
+//     uncomment one of the templates at the bottom of the file.
+// ─────────────────────────────────────────────────────────────────────
+
+{
+  // Active provider — DeepSeek (cheap and reliable for most experiments)
+  "api_key": "REPLACE-WITH-YOUR-OWN-KEY",
+  "base_url": "https://api.deepseek.com",
+  "model_name": "deepseek-chat",
+  "temperature": 0.0,
+  "max_tokens": 2000,
+  "timeout": 120,
+  "max_retries": 10
+}
+
+/* ──────── Other vendor templates (copy ONE into the block above) ────────
+
+  // ── Alibaba Cloud DashScope (Qwen) ──────────────────────────────
+  {
+    "api_key": "REPLACE-WITH-YOUR-OWN-KEY",
+    "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "model_name": "qwen-plus"
+  }
+
+  // ── OpenAI ──────────────────────────────────────────────────────
+  {
+    "api_key": "REPLACE-WITH-YOUR-OWN-KEY",
+    "base_url": "https://api.openai.com/v1",
+    "model_name": "gpt-4o-mini"
+  }
+
+  // ── Anthropic Claude (via OpenAI-compatible proxies, e.g. OpenRouter) ─
+  {
+    "api_key": "REPLACE-WITH-YOUR-OWN-KEY",
+    "base_url": "https://openrouter.ai/api/v1",
+    "model_name": "anthropic/claude-3.5-sonnet"
+  }
+
+  // ── Google Gemini (via OpenAI-compatible endpoint) ──────────────
+  {
+    "api_key": "REPLACE-WITH-YOUR-OWN-KEY",
+    "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+    "model_name": "gemini-1.5-pro"
+  }
+
+  // ── Mistral AI ──────────────────────────────────────────────────
+  {
+    "api_key": "REPLACE-WITH-YOUR-OWN-KEY",
+    "base_url": "https://api.mistral.ai/v1",
+    "model_name": "mistral-large-latest"
+  }
+
+  // ── Local self-hosted (Ollama / vLLM / LM Studio) ───────────────
+  {
+    "api_key": "ollama",
+    "base_url": "http://localhost:11434/v1",
+    "model_name": "llama3.1:8b"
+  }
+
+──────────────────────────────────────────────────────────────────────── */

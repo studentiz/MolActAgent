@@ -1,0 +1,10 @@
+smiles,class_label
+O=C(N[C@@H](CO)C(N[C@@H](C(N[C@@H](C(N[C@H](C(N[C@@H](C(N[C@@H](C(N1)=O)CO)=O)C(C)C)=O)CC2=CC=CC=C2)=O)C(C)C)=O)C)=O)[C@H]1CC3=CNC4=CC=CC=C43,active
+O=C(N[C@@H](C)C(N[C@@H](C(N[C@@H](C(N[C@H](C(N[C@@H](C(N[C@@H](C(N1)=O)CO)=O)C(C)C)=O)CC2=CC=CC=C2)=O)C(C)C)=O)C)=O)[C@H]1CC3=CNC4=CC=CC=C43,active
+O=C(N[C@@H](CO)C(N[C@@H](C(N[C@@H](C(N[C@H](C(N[C@@H](C(N[C@@H](C(N1)=O)C)=O)C(C)C)=O)CC2=CC=CC=C2)=O)C(C)C)=O)C)=O)[C@H]1CC3=CNC4=CC=CC=C43,active
+O=C(N[C@H](CO)C(N[C@@H](C(N[C@@H](C(N[C@H](C(N[C@@H](C(N[C@H](C(N1)=O)CO)=O)C(C)C)=O)CC2=CC=CC=C2)=O)C(C)C)=O)C)=O)[C@H]1CC3=CNC4=CC=CC=C43,inactive
+O=C(N[C@@H](C)C(N[C@@H](C(N[C@@H](C(N[C@H](C(N[C@@H](C(N[C@@H](C(N1)=O)CO)=O)C(C)C)=O)CC2=CC=CC=C2)=O)C(C)C)=O)C)=O)[C@H]1CC3=CNC4=CC=CC=C43,inactive
+O=C(N[C@@H](CO)C(N[C@@H](C(N[C@@H](C(N[C@H](C(O)=O)CC1=CC=CC=C1)=O)C(C)C)=O)C)=O)[C@H](NC([C@@H](CO)NC([C@H](N)C(C)C)=O)=O)CC2=CNC3=CC=CC=C32,inactive
+O=C(N[C@H](CO)C(N[C@@H](C(N[C@@H](C(N[C@H](C(O)=O)CC1=CC=CC=C1)=O)C(C)C)=O)C)=O)[C@H](NC([C@H](CO)NC([C@H](N)C(C)C)=O)=O)CC2=CNC3=CC=CC=C32,inactive
+O=C(N[C@@H](C)C(N[C@@H](C(N[C@@H](C(N[C@H](C(O)=O)CC1=CC=CC=C1)=O)C(C)C)=O)C)=O)[C@H](NC([C@@H](CO)NC([C@H](N)C(C)C)=O)=O)CC2=CNC3=CC=CC=C32,inactive
+O=C(N[C@H](C)C(N[C@H](C(N[C@@H](C(N[C@H](C(O)=O)CC1=CC=CC=C1)=O)C(C)C)=O)C)=O)[C@H](NC([C@@H](CO)NC([C@H](N)C(C)C)=O)=O)CC2=CNC3=CC=CC=C32,inactive

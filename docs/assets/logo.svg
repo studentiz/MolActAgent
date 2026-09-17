@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title desc">
+  <title id="title">MolActAgent</title>
+  <desc id="desc">A molecular ring connected to an active agent node.</desc>
+  <defs>
+    <linearGradient id="molact-gradient" x1="12%" y1="88%" x2="88%" y2="12%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="52%" stop-color="#0EA5E9"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- A closed molecular scaffold: deliberately distinct from the old C-and-dot mark. -->
+  <path d="M48 10 79 28v36L48 82 17 64V28Z"
+        fill="none" stroke="url(#molact-gradient)" stroke-width="8"
+        stroke-linejoin="round"/>
+  <path d="M48 28 64 37v18L48 64 32 55V37Z"
+        fill="none" stroke="url(#molact-gradient)" stroke-width="6"
+        stroke-linejoin="round"/>
+  <path d="M64 37 78 20" fill="none" stroke="url(#molact-gradient)"
+        stroke-width="5" stroke-linecap="round"/>
+  <circle cx="78" cy="19" r="7" fill="#111827" stroke="#A78BFA" stroke-width="4"/>
+  <circle cx="48" cy="10" r="4" fill="#10B981"/>
+  <circle cx="17" cy="28" r="4" fill="#0EA5E9"/>
+  <circle cx="17" cy="64" r="4" fill="#10B981"/>
+  <circle cx="48" cy="82" r="4" fill="#8B5CF6"/>
+  <circle cx="79" cy="64" r="4" fill="#0EA5E9"/>
+</svg>

@@ -1,0 +1,18 @@
+We are studying three kinds of iris flowers: Iris setosa, Iris versicolor,
+and Iris virginica. Botanists tell them apart mostly by looking at the
+petals.
+
+  - Setosa flowers have very short, narrow petals and are easy to spot;
+    they look quite different from the other two species.
+  - Versicolor flowers have medium-long, medium-wide petals.
+  - Virginica flowers have the longest and widest petals; they overlap
+    a fair amount with versicolor, especially on the smaller end of
+    virginica and the larger end of versicolor, so deciding between
+    those two is the harder boundary in this dataset.
+
+The sepals (the green leaf-like parts under the flower) overlap more
+across all three species, so they are weaker clues than the petals.
+Our goal is to look at a flower's measurements and decide which of the
+three species it most likely belongs to, and to explain *why* using the
+petal/sepal numbers — including being honest when a flower sits near
+the versicolor / virginica boundary.

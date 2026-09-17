@@ -1,0 +1,7 @@
+{
+  "sepal_length_cm": "How long the green leaf-like part under the petals is, measured in centimetres. Bigger irises usually have longer sepals.",
+  "sepal_width_cm": "How wide that same green leaf-like part is, measured in centimetres.",
+  "petal_length_cm": "How long the colourful petal of the flower is, measured in centimetres. Setosa petals are very short, versicolor petals are medium, and virginica petals are the longest.",
+  "petal_width_cm": "How wide the colourful petal is, measured in centimetres. Setosa petals are very narrow, versicolor petals are medium, and virginica petals are the widest.",
+  "species": "Which kind of iris flower this is — one of 'setosa', 'versicolor', or 'virginica'. This is the column we want to predict for new flowers."
+}

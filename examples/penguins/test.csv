@@ -1,0 +1,7 @@
+sample_id,bill_length_mm,bill_depth_mm,flipper_length_mm,body_mass_g,species
+penguin_T00,44.1,19.7,196.0,4400.0,Adelie
+penguin_T01,40.9,16.6,187.0,3200.0,Chinstrap
+penguin_T02,49.8,15.9,229.0,5950.0,Gentoo
+penguin_T03,46.2,14.5,209.0,4800.0,Gentoo
+penguin_T04,43.3,14.0,208.0,4575.0,Gentoo
+penguin_T05,50.8,17.3,228.0,5600.0,Gentoo

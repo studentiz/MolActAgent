@@ -1,0 +1,50 @@
+# Local API credentials (do not commit). The example llm_config.jsonc
+# files under examples/ are templates with placeholder keys and ARE
+# tracked; only the project-root credential files are ignored.
+/LLM_API.txt
+/llm_config.jsonc
+/llm_config.json
+/llm_config.yaml
+/llm_config.yml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+
+# Runtime logs
+logs/
+
+# Generated example outputs (produced by `molactagent run`)
+examples/*/outputs/
+reports/
+
+# Research / benchmark output artefacts (kept locally; not part of
+# the repo deliverable). Source CSVs are still tracked — only the
+# LOOCV / ablation OUTPUTS are ignored.
+data/loocv_*
+data/ablation_*
+data/prior_*
+data/tabpfn_*
+data/refactor_*.md
+data/processed/
+data/raw/
+data/report_*.html
+data/report_*.md
+data/results.json
+data/tmp_*.csv
+
+# Inputs whose provenance must be documented before public release
+data/A2058.csv
+data/drug_*.csv
+
+# IDE / OS noise
+.DS_Store
+.idea/
+.vscode/
+
+# Local source archive used to bootstrap this checkout
+/原项目/

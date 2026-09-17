@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+  <title>MolActAgent — Evidence-grounded molecular activity prediction</title>
+  <meta name="description" content="MolActAgent turns small molecular datasets into activity predictions with cited evidence, calibrated confidence, and human-readable explanations." />
+  <meta property="og:title" content="MolActAgent" />
+  <meta property="og:description" content="An evidence-grounded molecular activity agent." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+  <style>
+    /* ============================================================
+       DESIGN TOKENS
+       ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+                   "Helvetica Neue", "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+      font-size: 17px;
+      line-height: 1.47;
+      font-weight: 400;
+      letter-spacing: -0.011em;
+      color: var(--c-ink);
+      background: var(--c-bg);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+    :root {
+      --c-bg: #ffffff;
+      --c-bg-soft: #fafafa;
+      --c-bg-deep: #f4f4f6;
+      --c-bg-elev: #ffffff;
+      --c-ink: #0a0a0b;
+      --c-ink-2: #36363a;
+      --c-ink-3: #6e6e73;
+      --c-ink-4: #a8a8ad;
+      --c-line: rgba(10, 10, 11, 0.07);
+      --c-line-2: rgba(10, 10, 11, 0.14);
+      --c-accent: #0066ff;
+      --c-accent-2: #5856d6;
+      --c-accent-glow: rgba(0, 102, 255, 0.18);
+      --c-code-bg: #0c0c0e;
+      --c-code-ink: #e8e8ec;
+      --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 14px rgba(0, 0, 0, 0.05);
+      --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.08), 0 24px 60px rgba(0, 0, 0, 0.08);
+      --shadow-code: 0 24px 60px rgba(0, 102, 255, 0.10), 0 12px 36px rgba(0, 0, 0, 0.18);
+      --nav-bg: rgba(255, 255, 255, 0.72);
+      --grad-accent: linear-gradient(118deg, #0066ff 0%, #5856d6 60%, #c34cff 100%);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --c-bg: #000000;
+        --c-bg-soft: #0a0a0a;
+        --c-bg-deep: #131316;
+        --c-bg-elev: #131316;
+        --c-ink: #fafafa;
+        --c-ink-2: #d2d2d7;
+        --c-ink-3: #a1a1a6;
+        --c-ink-4: #6e6e73;
+        --c-line: rgba(255, 255, 255, 0.10);
+        --c-line-2: rgba(255, 255, 255, 0.20);
+        --c-accent: #2997ff;
+        --c-accent-2: #7d7aff;
+        --c-accent-glow: rgba(41, 151, 255, 0.30);
+        --c-code-bg: #050507;
+        --c-code-ink: #f5f5f7;
+        --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.4);
+        --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.6), 0 24px 60px rgba(0, 0, 0, 0.5);
+        --shadow-code: 0 24px 60px rgba(41, 151, 255, 0.18), 0 12px 36px rgba(0, 0, 0, 0.6);
+        --nav-bg: rgba(15, 15, 17, 0.72);
+        --grad-accent: linear-gradient(118deg, #2997ff 0%, #7d7aff 60%, #c34cff 100%);
+      }
+    }
+
+    /* ============================================================
+       TYPOGRAPHY
+       ============================================================ */
+    h1, h2, h3, h4 { color: var(--c-ink); font-weight: 600; line-height: 1.06; letter-spacing: -0.026em; }
+    h1 { font-size: clamp(72px, 12vw, 168px); font-weight: 700; letter-spacing: -0.05em; line-height: 0.92; }
+    h2 { font-size: clamp(34px, 5vw, 56px); letter-spacing: -0.034em; line-height: 1.08; }
+    h3 { font-size: clamp(20px, 2.2vw, 24px); letter-spacing: -0.022em; line-height: 1.18; }
+    h4 { font-size: 17px; letter-spacing: -0.012em; line-height: 1.4; }
+    p  { color: var(--c-ink-3); font-size: 18px; line-height: 1.55; letter-spacing: -0.011em; }
+    .eyebrow {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--c-accent);
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+    .eyebrow-mono {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      color: var(--c-accent);
+      font-weight: 500;
+    }
+    a { color: var(--c-accent); text-decoration: none; transition: color 0.2s ease; }
+    a:hover { color: var(--c-accent-2); }
+    code.inline {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.92em;
+      background: var(--c-bg-deep);
+      padding: 2px 8px;
+      border-radius: 6px;
+      letter-spacing: 0;
+      color: var(--c-ink);
+    }
+    @media (prefers-color-scheme: dark) {
+      code.inline { background: rgba(255, 255, 255, 0.06); }    }
+
+    /* ============================================================
+       LAYOUT
+       ============================================================ */
+    .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+    .container--narrow { max-width: 760px; }
+    .container--wide { max-width: 1200px; }
+    section { padding: 120px 0; position: relative; }
+    section.tight { padding: 80px 0; }
+    @media (max-width: 768px) {
+      section { padding: 80px 0; }
+      section.tight { padding: 56px 0; }
+    }
+    .bg-soft { background: var(--c-bg-soft); }
+    .bg-deep { background: var(--c-bg-deep); }
+
+    .section-head { text-align: center; margin-bottom: 80px; }
+    .section-head .eyebrow { margin-bottom: 16px; }
+    .section-head h2 { margin-bottom: 18px; max-width: 22ch; margin-left: auto; margin-right: auto; }
+    .section-head p { font-size: 21px; color: var(--c-ink-3); max-width: 56ch; margin: 0 auto; }
+
+    /* ============================================================
+       NAV
+       ============================================================ */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      background: var(--nav-bg);
+      backdrop-filter: saturate(180%) blur(24px);
+      -webkit-backdrop-filter: saturate(180%) blur(24px);
+      border-bottom: 1px solid var(--c-line);
+      height: 56px; display: flex; align-items: center;
+      transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    nav.is-hidden { transform: translateY(-100%); }
+    .nav-inner {
+      max-width: 1080px; width: 100%; margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 24px;
+    }
+    .nav-brand {
+      font-weight: 600; font-size: 17px; color: var(--c-ink); letter-spacing: -0.018em;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .nav-brand-mark {
+      width: 28px; height: 28px;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .nav-brand-mark img { width: 100%; height: 100%; display: block; }
+    .nav-links { display: flex; align-items: center; gap: 28px; }
+    .nav-links a {
+      font-size: 13px; color: var(--c-ink); opacity: 0.78; letter-spacing: -0.005em;
+      position: relative;
+    }
+    .nav-links a:hover { opacity: 1; }
+    .nav-links a:not(.nav-cta)::after {
+      content: ''; position: absolute; left: 0; right: 0; bottom: -6px;
+      height: 1.5px; background: var(--c-ink); border-radius: 1px;
+      transform: scaleX(0); transform-origin: left;
+      transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .nav-links a:not(.nav-cta):hover::after { transform: scaleX(1); }
+    @media (max-width: 720px) {
+      .nav-links a:not(.nav-cta) { display: none; }
+    }
+    .nav-cta {
+      display: inline-flex !important; align-items: center; gap: 6px;
+      padding: 6px 16px; background: var(--c-ink); color: var(--c-bg) !important;
+      border-radius: 980px; opacity: 1 !important; font-weight: 500 !important;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .nav-cta:hover { opacity: 0.85 !important; transform: translateY(-1px); }
+    .nav-cta svg { width: 14px; height: 14px; }
+
+    /* ============================================================
+       HERO — product name FIRST (Apple convention)
+       ============================================================ */
+    .hero {
+      position: relative;
+      padding-top: 156px; padding-bottom: 144px;
+      text-align: center;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .hero-orbs { position: absolute; inset: 0; pointer-events: none; z-index: -1; }
+    .orb {
+      position: absolute; border-radius: 50%;
+      filter: blur(80px);
+      will-change: transform;
+      opacity: 0.55;
+    }
+    @media (prefers-color-scheme: dark) { .orb { opacity: 0.45; } }
+    .orb-1 {
+      width: 480px; height: 480px;
+      background: radial-gradient(circle, #0066ff 0%, transparent 70%);
+      top: -120px; left: 50%; transform: translateX(-70%);
+      animation: orb-drift-1 18s ease-in-out infinite alternate;
+    }
+    .orb-2 {
+      width: 380px; height: 380px;
+      background: radial-gradient(circle, #5856d6 0%, transparent 70%);
+      top: 20px; left: 50%; transform: translateX(20%);
+      animation: orb-drift-2 22s ease-in-out infinite alternate;
+    }
+    .orb-3 {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, #c34cff 0%, transparent 70%);
+      top: 220px; left: 50%; transform: translateX(-130%);
+      animation: orb-drift-3 26s ease-in-out infinite alternate;
+      opacity: 0.40;
+    }
+    @keyframes orb-drift-1 {
+      0%   { transform: translateX(-70%) translateY(0); }
+      100% { transform: translateX(-50%) translateY(40px); }
+    }
+    @keyframes orb-drift-2 {
+      0%   { transform: translateX(20%) translateY(0); }
+      100% { transform: translateX(0%) translateY(-30px); }
+    }
+    @keyframes orb-drift-3 {
+      0%   { transform: translateX(-130%) translateY(0); }
+      100% { transform: translateX(-110%) translateY(50px); }
+    }
+    .hero .container { position: relative; z-index: 1; }
+
+    /* Product name — the hero's primary identity.
+       Solid color (not gradient text). Reason: background-clip: text
+       on very large gradient text triggers a WebKit/Chromium glyph-
+       clipping artifact (the rightmost curve of "G" was rendering
+       partially transparent). Solid colour is the bulletproof
+       refined Apple-style choice anyway; the gradient identity is
+       still carried by the brand mark above, the "One verdict."
+       accent in the philosophy section, and every feature-card icon. */
+    .hero h1 {
+      margin-bottom: 24px;
+      color: var(--c-ink);
+      letter-spacing: -0.04em;
+      opacity: 0;
+      animation: brand-in 1s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+    }
+    @keyframes brand-in {
+      0%   { opacity: 0; transform: translateY(28px) scale(0.96); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    /* The hero no longer carries a centered brand mark — logos
+       belong in the header (top-left of the nav), not centered
+       above the wordmark. The hero relies on the orbs background
+       and the wordmark itself for visual weight. */
+
+    /* Tagline directly under the brand — sub-headline weight */
+    .hero .tagline {
+      font-size: clamp(26px, 3.8vw, 44px);
+      font-weight: 500;
+      line-height: 1.15;
+      letter-spacing: -0.026em;
+      color: var(--c-ink);
+      max-width: 22ch;
+      margin: 0 auto 28px;
+      opacity: 0;
+      animation: fade-up 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
+    }
+    .hero .tagline em {
+      font-style: normal;
+      color: var(--c-ink-3);
+    }
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero .lead {
+      font-size: clamp(17px, 1.8vw, 20px);
+      color: var(--c-ink-3);
+      max-width: 50ch; margin: 0 auto 44px;
+      line-height: 1.55;
+      letter-spacing: -0.011em;
+      opacity: 0;
+      animation: fade-up 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards;
+    }
+
+    .hero-actions {
+      display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+      opacity: 0;
+      animation: fade-up 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.75s forwards;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 28px; border-radius: 980px;
+      font-size: 15px; font-weight: 500; letter-spacing: -0.005em;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                  background 0.2s ease, box-shadow 0.25s ease;
+      cursor: pointer; border: 1px solid transparent;
+      white-space: nowrap;
+      will-change: transform;
+    }
+    .btn-primary {
+      background: var(--c-ink); color: var(--c-bg) !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24); }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--c-ink) !important;
+      border-color: var(--c-line-2);
+      backdrop-filter: blur(12px);
+    }
+    @media (prefers-color-scheme: dark) {
+      .btn-secondary { background: rgba(255, 255, 255, 0.06); }
+    }
+    .btn-secondary:hover { transform: translateY(-2px); background: var(--c-bg-elev); }
+    .btn svg { width: 14px; height: 14px; stroke-width: 2.4; transition: transform 0.25s ease; }
+    .btn:hover svg { transform: translateX(2px); }
+
+    .hero-meta {
+      margin-top: 64px;
+      display: inline-flex; align-items: center; gap: 26px;
+      padding: 11px 22px;
+      background: var(--c-bg-elev);
+      border: 1px solid var(--c-line);
+      border-radius: 980px;
+      box-shadow: var(--shadow-1);
+      flex-wrap: wrap; justify-content: center;
+      opacity: 0;
+      animation: fade-up 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.9s forwards;
+    }
+    .hero-meta-item {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--c-ink-2);
+      letter-spacing: -0.005em; font-weight: 500;
+    }
+    .hero-meta-item .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #34c759;
+      box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.45);
+      animation: pulse 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.45); }
+      70%  { box-shadow: 0 0 0 8px rgba(52, 199, 89, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); }
+    }
+    @media (max-width: 560px) {
+      .hero-meta { gap: 14px; padding: 12px 18px; }
+    }
+
+
+    /* ============================================================
+       CODE — Mac chrome window, two side-by-side snippets so the
+       "two equivalent ways to configure" message lands visually.
+       ============================================================ */
+    .code-section { padding: 120px 0; }
+    .code-grid {
+      display: grid;
+      grid-template-columns: 0.85fr 1.15fr;
+      gap: 64px;
+      align-items: center;
+      max-width: 1120px; margin: 0 auto;
+    }
+    @media (max-width: 900px) { .code-grid { grid-template-columns: 1fr; gap: 40px; } }
+    .code-grid .copy h2 { font-size: clamp(30px, 3.8vw, 44px); margin-bottom: 22px; max-width: 14ch; }
+    .code-grid .copy p { font-size: 18px; }
+    .code-grid .copy p + p { margin-top: 14px; }
+
+    .code-window {
+      background: var(--c-code-bg);
+      border-radius: 16px;
+      box-shadow: var(--shadow-code);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .code-chrome {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .code-chrome .light { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+    .code-chrome .light:nth-child(2) { background: #febc2e; }
+    .code-chrome .light:nth-child(3) { background: #28c840; }
+    .code-chrome .filename {
+      margin-left: auto; margin-right: auto;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      font-size: 12px;
+      color: rgba(245, 245, 247, 0.55);
+    }
+    pre.code-block {
+      padding: 26px 28px 30px;
+      color: var(--c-code-ink);
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      overflow-x: auto;
+      letter-spacing: 0;
+      tab-size: 2;
+      margin: 0;
+      background: var(--c-code-bg);
+      white-space: pre;
+    }
+    pre.code-block::-webkit-scrollbar { height: 10px; }
+    pre.code-block::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 5px; }
+    .code-block .kw  { color: #ff7b72; }
+    .code-block .fn  { color: #d2a8ff; }
+    .code-block .str { color: #a5d6ff; }
+    .code-block .num { color: #f0b46e; }
+    .code-block .com { color: #8b949e; font-style: italic; }
+    .code-block .var { color: #ffa657; }
+
+    /* ============================================================
+       FEATURES
+       ============================================================ */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+    }
+    .feature-card {
+      background: var(--c-bg-elev);
+      border: 1px solid var(--c-line);
+      border-radius: 22px;
+      padding: 32px;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                  box-shadow 0.4s ease,
+                  border-color 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: var(--grad-accent);
+      opacity: 0;
+      border-radius: 22px;
+      padding: 1px;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      -webkit-mask-composite: xor;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    .feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-2); }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: var(--grad-accent);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 22px; color: white;
+      box-shadow: 0 6px 20px var(--c-accent-glow);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .feature-card:hover .feature-icon { transform: rotate(-6deg) scale(1.05); }
+    .feature-icon svg { width: 22px; height: 22px; stroke-width: 2; }
+    .feature-card h3 { font-size: 21px; margin-bottom: 10px; letter-spacing: -0.022em; }
+    .feature-card p { font-size: 15px; color: var(--c-ink-3); line-height: 1.55; }
+
+    /* ============================================================
+       DOCS
+       ============================================================ */
+    .doc-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+    @media (max-width: 900px) { .doc-grid { grid-template-columns: 1fr; } }
+    .doc-card {
+      background: var(--c-bg-elev);
+      border: 1px solid var(--c-line);
+      border-radius: 22px;
+      padding: 36px;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                  box-shadow 0.4s ease;
+      display: flex; flex-direction: column;
+      min-height: 240px;
+      text-decoration: none !important;
+      color: var(--c-ink) !important;
+    }
+    .doc-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-2); }
+    .doc-card .doc-eyebrow {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--c-accent); margin-bottom: 12px;
+    }
+    .doc-card h3 { font-size: 24px; margin-bottom: 12px; letter-spacing: -0.022em; }
+    .doc-card p { font-size: 15px; color: var(--c-ink-3); line-height: 1.55; flex: 1; }
+    .doc-card .arrow-link {
+      margin-top: 20px;
+      font-size: 14px; color: var(--c-accent); font-weight: 500;
+      display: inline-flex; align-items: center; gap: 4px;
+      transition: gap 0.25s ease;
+    }
+    .doc-card:hover .arrow-link { gap: 10px; }
+
+    /* ============================================================
+       CLOSING
+       ============================================================ */
+    .closing { text-align: center; }
+    .closing h2 { margin-bottom: 18px; max-width: 22ch; margin-left: auto; margin-right: auto; }
+    .closing p { font-size: 19px; max-width: 50ch; margin: 0 auto 36px; }
+    .closing-actions {
+      display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+    }
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+    footer {
+      background: var(--c-bg-soft);
+      padding: 64px 0 40px;
+      border-top: 1px solid var(--c-line);
+      font-size: 13px; color: var(--c-ink-4);
+      letter-spacing: -0.005em;
+    }
+    .footer-inner {
+      max-width: 1080px; margin: 0 auto; padding: 0 24px;
+      display: flex; flex-wrap: wrap;
+      justify-content: space-between; align-items: flex-start;
+      gap: 32px;
+    }
+    .footer-brand h4 {
+      font-size: 17px; color: var(--c-ink); margin-bottom: 8px; letter-spacing: -0.018em;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .footer-brand-mark {
+      width: 22px; height: 22px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .footer-brand-mark img { width: 100%; height: 100%; display: block; }
+    .footer-brand p { font-size: 13px; max-width: 38ch; color: var(--c-ink-4); line-height: 1.55; }
+    .footer-links {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, max-content));
+      gap: 24px 56px;
+    }
+    .footer-col h5 {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--c-ink); margin-bottom: 14px;
+    }
+    .footer-col a {
+      display: block; color: var(--c-ink-4); margin-bottom: 10px; font-size: 13px;
+      transition: color 0.2s ease, transform 0.2s ease;
+    }
+    .footer-col a:hover { color: var(--c-ink); transform: translateX(2px); }
+    .footer-legal {
+      max-width: 1080px; margin: 48px auto 0; padding: 24px 24px 0;
+      border-top: 1px solid var(--c-line);
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+      font-size: 12px; color: var(--c-ink-4);
+    }
+
+    /* ============================================================
+       SCROLL PROGRESS BAR — fixed at top of viewport, fills
+       horizontally as the user scrolls. Visual cue that the page
+       has substance, plus a continuously animating element that
+       gives the page a "live" feel.
+       ============================================================ */
+    .scroll-progress {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--grad-accent);
+      transform-origin: left center;
+      transform: scaleX(0);
+      z-index: 1001;
+      pointer-events: none;
+      box-shadow: 0 0 8px var(--c-accent-glow);
+      transition: transform 0.08s linear;
+    }
+
+    /* ============================================================
+       NAV — section-link active state (the link for the section
+       currently in view glows). Plus a subtle mouse-follow
+       "spotlight" on the nav that signals interactivity.
+       ============================================================ */
+    .nav-links a:not(.nav-cta).is-current {
+      opacity: 1;
+      color: var(--c-accent);
+    }
+    .nav-links a:not(.nav-cta).is-current::after {
+      transform: scaleX(1);
+      background: var(--c-accent);
+    }
+    .nav-brand-mark img {
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .nav-brand:hover .nav-brand-mark img {
+      transform: rotate(-6deg) scale(1.05);
+    }
+
+    /* ============================================================
+       3D CARD TILT — feature cards and doc cards subtly tilt
+       toward the cursor on mousemove, then ease back to neutral
+       on leave. A small but high-impact touch — the page feels
+       physical instead of flat.
+       ============================================================ */
+    .feature-card, .doc-card {
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+
+    /* ============================================================
+       SECTION SEPARATORS — soft fade-in glow line that animates
+       as the user scrolls past, suggesting forward motion through
+       the page rather than discrete blocks.
+       ============================================================ */
+    section + section::before {
+      content: '';
+      position: absolute; top: 0; left: 50%;
+      width: 1px; height: 32px;
+      background: linear-gradient(to bottom, transparent, var(--c-line-2), transparent);
+      transform: translateX(-50%);
+    }
+
+    /* ============================================================
+       BUTTONS — press feedback (active scale-down) + subtle ripple
+       glow on hover.  Magnetic mouse-follow already in JS.
+       ============================================================ */
+    .btn:active { transform: scale(0.96) !important; transition: transform 0.1s ease !important; }
+    .btn-primary { position: relative; overflow: hidden; }
+    .btn-primary::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(120px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.18), transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    .btn-primary:hover::before { opacity: 1; }
+
+    /* ============================================================
+       CURSOR-FOLLOWING GLOW — a single soft radial gradient
+       follows the mouse around the page. Off on touch / coarse
+       pointers and when reduced motion is requested. Subtle
+       enough to read as "atmosphere", not a spotlight.
+       ============================================================ */
+    .cursor-glow {
+      position: fixed; top: 0; left: 0;
+      width: 320px; height: 320px;
+      pointer-events: none; z-index: 0;
+      background: radial-gradient(circle, rgba(0, 102, 255, 0.10), transparent 70%);
+      transform: translate(-50%, -50%);
+      transition: opacity 0.4s ease;
+      opacity: 0;
+      will-change: transform;
+    }
+    .cursor-glow.is-active { opacity: 1; }
+    @media (pointer: coarse), (prefers-reduced-motion: reduce) {
+      .cursor-glow { display: none; }
+    }
+
+    /* ============================================================
+       SCROLL-TRIGGERED REVEALS
+       ============================================================ */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.is-visible { opacity: 1; transform: translateY(0); }
+
+    .reveal-stagger > * {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal-stagger.is-visible > * { opacity: 1; transform: translateY(0); }
+    .reveal-stagger.is-visible > *:nth-child(1) { transition-delay: 0.05s; }
+    .reveal-stagger.is-visible > *:nth-child(2) { transition-delay: 0.10s; }
+    .reveal-stagger.is-visible > *:nth-child(3) { transition-delay: 0.15s; }
+    .reveal-stagger.is-visible > *:nth-child(4) { transition-delay: 0.20s; }
+    .reveal-stagger.is-visible > *:nth-child(5) { transition-delay: 0.25s; }
+    .reveal-stagger.is-visible > *:nth-child(6) { transition-delay: 0.30s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal, .reveal-stagger > * { opacity: 1; transform: none; transition: none; }
+      .hero h1, .hero .tagline, .hero .lead, .hero-actions, .hero-meta {
+        opacity: 1; transform: none; animation: none;
+      }
+      .orb { animation: none; }
+      .hero-meta-item .dot { animation: none; box-shadow: none; }
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Scroll progress indicator + cursor glow.  Both are decorative
+       and disabled gracefully under reduced-motion / coarse-pointer
+       conditions. -->
+  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+  <div class="cursor-glow"     id="cursorGlow"     aria-hidden="true"></div>
+
+  <!-- ============================================================
+       NAV
+       ============================================================ -->
+  <nav id="topnav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="#top"><span class="nav-brand-mark"><img src="assets/logo.svg" alt="" /></span>MolActAgent</a>
+      <div class="nav-links">
+        <a href="#code">Code</a>
+        <a href="#docs">Docs</a>
+        <a class="nav-cta" href="https://github.com/studentiz/MolActAgent" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.79 23.4c.6.1.82-.26.82-.58v-2c-3.34.72-4.05-1.6-4.05-1.6-.55-1.4-1.34-1.77-1.34-1.77-1.1-.75.08-.74.08-.74 1.21.08 1.85 1.24 1.85 1.24 1.07 1.84 2.81 1.31 3.5 1 .1-.78.42-1.32.76-1.62-2.66-.3-5.46-1.33-5.46-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.62-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.21.7.82.58A12 12 0 0 0 12 .3"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="top">
+
+    <!-- ============================================================
+         HERO — product name first
+         ============================================================ -->
+    <section class="hero">
+      <div class="hero-orbs" aria-hidden="true">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+      </div>
+      <div class="container">
+        <span class="eyebrow">Open source · v0.3</span>
+        <h1>MolActAgent</h1>
+        <p class="tagline">A molecular activity agent <em>that shows its work.</em></p>
+        <p class="lead">
+          Drop-in for small molecular datasets — every prediction comes back with cited evidence, calibrated confidence, and a paragraph you can hand to a domain expert.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#code">
+            See the code
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </a>
+          <a class="btn btn-secondary" href="https://github.com/studentiz/MolActAgent" target="_blank" rel="noopener">
+            View on GitHub
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 17L17 7M7 7h10v10"/></svg>
+          </a>
+        </div>
+        <div class="hero-meta">
+          <div class="hero-meta-item"><span class="dot"></span> Real-LLM validated</div>
+          <div class="hero-meta-item"><span class="dot"></span> Vendor-neutral</div>
+          <div class="hero-meta-item"><span class="dot"></span> MIT licensed</div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ============================================================
+         CODE — minimal example + side-by-side configuration tabs
+         ============================================================ -->
+    <section class="code-section bg-soft" id="code">
+      <div class="container container--wide">
+        <div class="code-grid">
+          <div class="copy reveal">
+            <span class="eyebrow">From zero to verdict</span>
+            <h2>Three lines. One verdict.</h2>
+            <p>If you have ever called <code class="inline">.fit(X, y)</code>, you already know how to use MolActAgent.</p>
+            <p>The example below uses the bundled <code class="inline">iris</code> dataset, so it runs as soon as you install the package and add your LLM key — no data preparation needed.</p>
+          </div>
+          <div class="reveal">
+            <div class="code-window">
+              <div class="code-chrome">
+                <span class="light"></span>
+                <span class="light"></span>
+                <span class="light"></span>
+                <span class="filename">quickstart.py</span>
+              </div>
+<pre class="code-block"><span class="kw">import</span> molactagent <span class="kw">as</span> ca
+
+<span class="com"># Bundled example: 24 reference flowers + 6 unknowns to classify.</span>
+iris = ca.datasets.<span class="fn">load_iris_flowers</span>()
+
+<span class="com"># Plug in any OpenAI-compatible LLM endpoint. Your key, your model.</span>
+clf = ca.<span class="fn">MolActAgentClassifier</span>(
+    api_key=<span class="str">"sk-..."</span>,
+    base_url=<span class="str">"https://api.deepseek.com"</span>,
+    model_name=<span class="str">"deepseek-chat"</span>,
+)
+
+clf.<span class="fn">fit</span>(iris.X_train, iris.y_train)
+<span class="kw">print</span>(clf.<span class="fn">predict</span>(iris.X_test))
+<span class="com"># &rarr; ['setosa' 'versicolor' 'setosa' 'versicolor' 'virginica' 'virginica']</span></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         FEATURES
+         ============================================================ -->
+    <section id="features">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">What's inside</span>
+          <h2>Everything an activity agent should give you.</h2>
+          <p>Every design decision is documented; every claim is testable; every interface is first-class.</p>
+        </div>
+        <div class="features-grid reveal-stagger">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M12 9v3M9 16l-2-1M15 16l2-1"/></svg>
+            </div>
+            <h3>Two-actor reasoning</h3>
+            <p>Python decides who to look at; the LLM decides what they mean. The witness baseline keeps the LLM honest.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12c0-4.97 4.03-9 9-9 2.5 0 4.76 1.02 6.4 2.66M21 12c0 4.97-4.03 9-9 9-2.5 0-4.76-1.02-6.4-2.66M16 8h5V3M8 16H3v5"/></svg>
+            </div>
+            <h3>Built for small data</h3>
+            <p>Production-quality verdicts on as few as twelve labelled samples — the regime where deep models can't even start to train.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+            </div>
+            <h3>Honest interpretability</h3>
+            <p>Per-sample reports cite drivers, counter-evidence considered, and confidence caveats — not post-hoc rationalisation.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            </div>
+            <h3>Drop-in scikit-learn</h3>
+            <p>Standard <code class="inline">fit</code> / <code class="inline">predict</code> / <code class="inline">predict_proba</code> / <code class="inline">score</code>. Slots straight into <code class="inline">cross_val_score</code> and <code class="inline">Pipeline</code>.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+            </div>
+            <h3>Real-LLM validated</h3>
+            <p>End-to-end test suite runs against real LLM endpoints, not mocks. Verdicts you ship were earned by a real model.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+            </div>
+            <h3>Vendor-neutral</h3>
+            <p>OpenAI, DeepSeek, Anthropic-via-OpenRouter, Qwen, Mistral, Gemini, Ollama, vLLM — anything OpenAI-compatible works.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         DOCS
+         ============================================================ -->
+    <section class="bg-soft" id="docs">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">Documentation</span>
+          <h2>Read whichever fits your style.</h2>
+          <p>The README, the end-to-end tutorial, the architectural design notes — all written in the same plain, careful prose.</p>
+        </div>
+        <div class="doc-grid reveal-stagger">
+          <a class="doc-card" href="https://github.com/studentiz/MolActAgent#readme" target="_blank" rel="noopener">
+            <span class="doc-eyebrow">README · 5 min</span>
+            <h3>Overview</h3>
+            <p>What MolActAgent is, what it does well, and where it fits in the small-data ML toolbox. The right place to start.</p>
+            <span class="arrow-link">Read the README →</span>
+          </a>
+          <a class="doc-card" href="https://github.com/studentiz/MolActAgent/blob/main/docs/tutorial.md" target="_blank" rel="noopener">
+            <span class="doc-eyebrow">Tutorial · End-to-end</span>
+            <h3>Beginner's tour</h3>
+            <p>A terminal-first walkthrough. From "what's a terminal" to running the full classifier on your own data.</p>
+            <span class="arrow-link">Open the tutorial →</span>
+          </a>
+          <a class="doc-card" href="https://github.com/studentiz/MolActAgent/blob/main/docs/design.md" target="_blank" rel="noopener">
+            <span class="doc-eyebrow">Architecture · Deep dive</span>
+            <h3>Design document</h3>
+            <p>The architectural reference: every stage of the pipeline, every hyperparameter, every design decision and the reasoning behind it.</p>
+            <span class="arrow-link">Read the design notes →</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         CLOSING
+         ============================================================ -->
+    <section class="closing tight bg-deep">
+      <div class="container container--narrow reveal">
+        <span class="eyebrow">Ready when you are</span>
+        <h2>Pick a dataset. Get a verdict you can defend.</h2>
+        <p>Three lines of code, one API key, and you're predicting activity — with cited evidence on every result.</p>
+        <div class="closing-actions">
+          <a class="btn btn-primary" href="https://github.com/studentiz/MolActAgent/blob/main/docs/tutorial.md" target="_blank" rel="noopener">
+            Read the tutorial
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </a>
+          <a class="btn btn-secondary" href="https://github.com/studentiz/MolActAgent" target="_blank" rel="noopener">
+            Browse the source
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 17L17 7M7 7h10v10"/></svg>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================================================
+       FOOTER
+       ============================================================ -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <h4><span class="footer-brand-mark"><img src="assets/logo.svg" alt="" /></span>MolActAgent</h4>
+        <p>A molecular activity agent that shows its work, with cited evidence on every result.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h5>Project</h5>
+          <a href="https://github.com/studentiz/MolActAgent" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://github.com/studentiz/MolActAgent/issues" target="_blank" rel="noopener">Issues</a>
+          <a href="https://github.com/studentiz/MolActAgent/releases" target="_blank" rel="noopener">Releases</a>
+        </div>
+        <div class="footer-col">
+          <h5>Docs</h5>
+          <a href="https://github.com/studentiz/MolActAgent#readme" target="_blank" rel="noopener">README</a>
+          <a href="https://github.com/studentiz/MolActAgent/blob/main/docs/tutorial.md" target="_blank" rel="noopener">Tutorial</a>
+          <a href="https://github.com/studentiz/MolActAgent/blob/main/docs/design.md" target="_blank" rel="noopener">Design</a>
+        </div>
+        <div class="footer-col">
+          <h5>Example</h5>
+          <a href="https://github.com/studentiz/MolActAgent/tree/main/examples/iris_flowers" target="_blank" rel="noopener">Iris classification</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-legal">
+      <span>© 2026 MolActAgent contributors. Released under the MIT License.</span>
+      <span>Crafted with care.</span>
+    </div>
+  </footer>
+
+  <script>
+    /* Scroll reveal */
+    (() => {
+      const items = document.querySelectorAll('.reveal, .reveal-stagger');
+      if (!('IntersectionObserver' in window)) {
+        items.forEach(el => el.classList.add('is-visible'));
+        return;
+      }
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+      items.forEach(el => io.observe(el));
+    })();
+
+    /* Auto-hide nav on scroll-down */
+    (() => {
+      const nav = document.getElementById('topnav');
+      if (!nav) return;
+      let lastY = window.scrollY;
+      let ticking = false;
+      const threshold = 8;
+      window.addEventListener('scroll', () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+          const y = window.scrollY;
+          if (y > 96 && y - lastY > threshold) {
+            nav.classList.add('is-hidden');
+          } else if (lastY - y > threshold || y < 96) {
+            nav.classList.remove('is-hidden');
+          }
+          lastY = y;
+          ticking = false;
+        });
+      }, { passive: true });
+    })();
+
+    /* Magnetic buttons + hover-spotlight CSS variable */
+    (() => {
+      const fine = window.matchMedia('(pointer: fine)').matches;
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!fine || reduceMotion) return;
+      document.querySelectorAll('.btn').forEach(btn => {
+        btn.addEventListener('mousemove', (e) => {
+          const r = btn.getBoundingClientRect();
+          const localX = e.clientX - r.left;
+          const localY = e.clientY - r.top;
+          const dx = (localX - r.width / 2) * 0.18;
+          const dy = (localY - r.height / 2) * 0.18;
+          btn.style.transform = `translate(${dx}px, ${dy}px)`;
+          // Drive the ::before radial-gradient spotlight position.
+          btn.style.setProperty('--mx', `${localX}px`);
+          btn.style.setProperty('--my', `${localY}px`);
+        });
+        btn.addEventListener('mouseleave', () => { btn.style.transform = ''; });
+      });
+    })();
+
+    /* Hero orb parallax */
+    (() => {
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduceMotion) return;
+      const orbs = document.querySelectorAll('.orb');
+      if (!orbs.length) return;
+      let ticking = false;
+      window.addEventListener('scroll', () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+          const y = window.scrollY;
+          orbs.forEach((orb, i) => {
+            orb.style.translate = `0 ${y * (0.05 + i * 0.03)}px`;
+          });
+          ticking = false;
+        });
+      }, { passive: true });
+    })();
+
+    /* Scroll progress bar — fills horizontally as the user scrolls
+       through the page. Updates throttled via requestAnimationFrame. */
+    (() => {
+      const bar = document.getElementById('scrollProgress');
+      if (!bar) return;
+      let ticking = false;
+      const update = () => {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        const ratio = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+        bar.style.transform = `scaleX(${ratio})`;
+        ticking = false;
+      };
+      window.addEventListener('scroll', () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(update);
+      }, { passive: true });
+      update();
+    })();
+
+    /* Section-nav active state — highlight the nav link whose
+       section is currently most in view. Uses IntersectionObserver
+       with a viewport-centred root margin so the active link tracks
+       the section the user is reading, not just the topmost one. */
+    (() => {
+      const links = Array.from(document.querySelectorAll('.nav-links a:not(.nav-cta)'));
+      if (!links.length || !('IntersectionObserver' in window)) return;
+      const sections = links
+        .map(a => {
+          const id = a.getAttribute('href');
+          if (!id || !id.startsWith('#')) return null;
+          return document.querySelector(id);
+        })
+        .filter(Boolean);
+      const linkBySection = new Map();
+      sections.forEach((s, i) => linkBySection.set(s, links[i]));
+      const setActive = (target) => {
+        links.forEach(l => l.classList.remove('is-current'));
+        const link = linkBySection.get(target);
+        if (link) link.classList.add('is-current');
+      };
+      const io = new IntersectionObserver((entries) => {
+        // Pick the entry with the largest intersection ratio that's
+        // currently intersecting; falls back to the most recently
+        // observed if multiple cross at once.
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible[0]) setActive(visible[0].target);
+      }, {
+        // Trigger when section is in the middle band of the viewport.
+        rootMargin: '-40% 0px -50% 0px',
+        threshold: [0, 0.1, 0.5, 1],
+      });
+      sections.forEach(s => io.observe(s));
+    })();
+
+    /* 3D card tilt — feature & doc cards subtly tilt toward the
+       cursor on mousemove. Disabled on touch / reduced-motion. */
+    (() => {
+      const fine = window.matchMedia('(pointer: fine)').matches;
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!fine || reduceMotion) return;
+      const cards = document.querySelectorAll('.feature-card, .doc-card');
+      const max = 5; // max tilt in degrees — subtle, not gimmicky
+      cards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+          const r = card.getBoundingClientRect();
+          const px = (e.clientX - r.left) / r.width;   // 0..1
+          const py = (e.clientY - r.top)  / r.height;  // 0..1
+          const rx = (0.5 - py) * (max * 2);           // tilt around X axis
+          const ry = (px - 0.5) * (max * 2);           // tilt around Y axis
+          card.style.transform =
+            `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-4px)`;
+        });
+        card.addEventListener('mouseleave', () => {
+          card.style.transform = '';
+        });
+      });
+    })();
+
+    /* Cursor-following glow — a soft radial gradient follows the
+       mouse around the page. A single fixed-position element so
+       the cost is just one transform per frame. */
+    (() => {
+      const fine = window.matchMedia('(pointer: fine)').matches;
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!fine || reduceMotion) return;
+      const glow = document.getElementById('cursorGlow');
+      if (!glow) return;
+      let tx = 0, ty = 0;     // target
+      let cx = 0, cy = 0;     // current (eased)
+      const follow = () => {
+        cx += (tx - cx) * 0.18;
+        cy += (ty - cy) * 0.18;
+        glow.style.transform = `translate(${cx}px, ${cy}px) translate(-50%, -50%)`;
+        requestAnimationFrame(follow);
+      };
+      window.addEventListener('mousemove', (e) => {
+        tx = e.clientX; ty = e.clientY;
+        glow.classList.add('is-active');
+      }, { passive: true });
+      window.addEventListener('mouseleave', () => glow.classList.remove('is-active'));
+      requestAnimationFrame(follow);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+name: molactagent_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # Core: supported Python range is >=3.10,<3.13.
+  - python>=3.10,<3.13
+  - numpy>=1.24
+  - pandas>=2.0
+  - scikit-learn>=1.3
+  - scipy>=1.10
+  # Chemistry preprocessing (ma.pp.chemistry, ma.datasets.load_bslt_regression):
+  - rdkit>=2023.09
+  # Optional file-format readers (matches pyproject.toml [all] extra):
+  - pyyaml>=6.0
+  - openpyxl>=3.1
+  - pyarrow>=14.0
+  # Baseline-comparison classifier in ma.tl.compare_baselines:
+  - xgboost>=1.7
+  # Test runner:
+  - pytest>=7.0
+  - pip
+  - pip:
+    # OpenAI-compatible client (no conda-forge package on every channel):
+    - openai>=1.0
