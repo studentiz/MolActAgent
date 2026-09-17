@@ -285,6 +285,10 @@
     .summary-item span { color: var(--muted); font-size: 13px; }
 
     section.content-section { padding: 92px 0; }
+    .docs-intro {
+      border-bottom: 1px solid var(--line);
+      background: #edf2ed;
+    }
     .section-heading {
       max-width: 700px;
       margin-bottom: 44px;
@@ -331,6 +335,22 @@
       letter-spacing: -0.025em;
     }
     .method-card p { margin-bottom: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .architecture-note {
+      margin: 16px 0 0;
+      padding: 18px 20px;
+      border: 1px solid var(--line-strong);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .architecture-note strong { color: var(--forest); }
+    .architecture-note a { color: var(--forest); font-weight: 650; text-decoration: none; }
+    .architecture-note code {
+      color: var(--forest);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+    }
 
     .quickstart {
       padding: 92px 0;
@@ -421,6 +441,11 @@
       text-decoration: none;
     }
     .doc-link:hover { border-color: var(--forest); }
+    .doc-link-primary {
+      border-color: var(--forest);
+      box-shadow: inset 0 3px 0 var(--forest);
+    }
+    .doc-link-primary:hover { background: #f7fbf7; }
     .doc-link small {
       display: block;
       margin-bottom: 18px;
@@ -507,10 +532,10 @@
       </a>
       <div class="nav-right">
         <nav class="nav-links" aria-label="Primary navigation">
-          <a href="#method">Method</a>
+          <a href="#architecture">Architecture</a>
           <a href="#quickstart">Quick start</a>
-          <a href="#scope">Scope</a>
-          <a href="#docs">Docs</a>
+          <a href="https://github.com/studentiz/MolActAgent/blob/main/docs/tutorial.md" target="_blank" rel="noopener">Tutorial</a>
+          <a href="https://github.com/studentiz/MolActAgent/blob/main/docs/design.md" target="_blank" rel="noopener">Design</a>
         </nav>
         <a class="github-link" href="https://github.com/studentiz/MolActAgent" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .3a12 12 0 0 0-3.79 23.4c.6.1.82-.26.82-.58v-2c-3.34.72-4.05-1.6-4.05-1.6-.55-1.4-1.34-1.77-1.34-1.77-1.1-.75.08-.74.08-.74 1.21.08 1.85 1.24 1.85 1.24 1.07 1.84 2.81 1.31 3.5 1 .1-.78.42-1.32.76-1.62-2.66-.3-5.46-1.33-5.46-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.62-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.21.7.82.58A12 12 0 0 0 12 .3"/></svg>
@@ -528,8 +553,8 @@
           <h1>Small datasets.<br /><span>Explicit reference comparisons.</span></h1>
           <p>MolActAgent is a Python package for molecular activity prediction when the labelled reference set is small. It selects comparable rows, sends those comparisons to an OpenAI-compatible language model, and keeps the reasoning record with the result.</p>
           <div class="actions">
-            <a class="button primary" href="#quickstart">Read the quick start</a>
-            <a class="button secondary" href="https://github.com/studentiz/MolActAgent" target="_blank" rel="noopener">View source</a>
+            <a class="button primary" href="https://github.com/studentiz/MolActAgent/blob/main/docs/tutorial.md" target="_blank" rel="noopener">Read the tutorial</a>
+            <a class="button secondary" href="https://github.com/studentiz/MolActAgent/blob/main/docs/design.md" target="_blank" rel="noopener">Read the design notes</a>
           </div>
           <ul class="meta" aria-label="Project details">
             <li>Python 3.10–3.12</li>
@@ -538,25 +563,29 @@
           </ul>
         </div>
 
-        <div class="diagram" aria-label="The four stages of a MolActAgent prediction">
-          <div class="diagram-title">Prediction path</div>
+        <div class="diagram" aria-label="MolActAgent technical architecture at a glance">
+          <div class="diagram-title">Architecture at a glance</div>
           <div class="diagram-step">
             <span class="step-number">01</span>
-            <div><strong>Reference table</strong><span>labelled rows and numeric features</span></div>
+            <div><strong>io.py + preprocessing</strong><span>validate tables, filter variance, prepare features</span></div>
           </div>
           <div class="diagram-step">
             <span class="step-number">02</span>
-            <div><strong>Similarity search</strong><span>nearby rows selected per candidate class</span></div>
+            <div><strong>neighbors.py</strong><span>feature similarity and neighbourhood context select references</span></div>
           </div>
           <div class="diagram-step">
             <span class="step-number">03</span>
-            <div><strong>Structured comparison</strong><span>the model sees the selected rows, not the whole table</span></div>
+            <div><strong>prompts.py + llm.py</strong><span>tuple prompts, parallel calls, parsing, validation, and retries</span></div>
+          </div>
+          <div class="diagram-step">
+            <span class="step-number">04</span>
+            <div><strong>result.py + report.py</strong><span>aggregate votes and preserve references, confidence, and attribution</span></div>
           </div>
           <div class="diagram-result">
             <span>result</span>
-            <strong>label or value + evidence record</strong>
+            <strong>typed prediction + evidence record</strong>
           </div>
-          <p class="diagram-note">Python controls the reference set. The language model supplies a comparison; Python aggregates the returned votes.</p>
+          <p class="diagram-note">Python controls the data path and aggregation. The language model is used only for structured comparisons over selected rows.</p>
         </div>
       </div>
     </section>
@@ -570,35 +599,66 @@
       </div>
     </section>
 
-    <section class="content-section" id="method">
+    <section class="content-section docs-intro" id="docs">
       <div class="wrap">
         <div class="section-heading">
-          <p class="section-label">Method</p>
-          <h2>Deterministic selection, model-assisted comparison.</h2>
-          <p>The package separates the parts that can be checked numerically from the part that benefits from language-model reasoning. That separation makes it possible to inspect the references, prompts, votes, and final aggregation independently.</p>
+          <p class="section-label">Start here</p>
+          <h2>Two documents, two ways in.</h2>
+          <p>Use the tutorial to run the project. Use the design notes to understand what happens between the input table and the final result.</p>
+        </div>
+        <div class="docs-grid">
+          <a class="doc-link doc-link-primary" href="https://github.com/studentiz/MolActAgent/blob/main/docs/tutorial.md" target="_blank" rel="noopener">
+            <small>Practical guide</small>
+            <h3>Tutorial</h3>
+            <p>Installation, configuration, the iris example, the CLI, regression, and your own data.</p>
+            <span class="read">Open tutorial →</span>
+          </a>
+          <a class="doc-link doc-link-primary" href="https://github.com/studentiz/MolActAgent/blob/main/docs/design.md" target="_blank" rel="noopener">
+            <small>Technical reference</small>
+            <h3>Design notes</h3>
+            <p>The module map, contextual similarity, tuple prompts, aggregation, CCR regression, result schemas, and reports.</p>
+            <span class="read">Open design notes →</span>
+          </a>
+          <a class="doc-link" href="https://github.com/studentiz/MolActAgent/tree/main/examples" target="_blank" rel="noopener">
+            <small>Source tree</small>
+            <h3>Examples</h3>
+            <p>Small tabular and SMILES datasets used by the repository examples.</p>
+            <span class="read">Browse examples →</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section" id="architecture">
+      <div class="wrap">
+        <div class="section-heading">
+          <p class="section-label">Architecture</p>
+          <h2>The shared engine, with a separate regression branch.</h2>
+          <p>The public interfaces are thin layers around the same engine. The cards below are the short version; the full module map and call graph live in the design notes.</p>
         </div>
         <div class="method-grid">
           <article class="method-card">
-            <span class="number">01 / validate</span>
-            <h3>Prepare the tables</h3>
-            <p>Check identifiers, labels, feature columns, missing values, and task type before any model call.</p>
+            <span class="number">01 / io + fit</span>
+            <h3>Prepare the data</h3>
+            <p><code>io.py</code> validates tables; <code>MolActAgent.fit</code> applies the variance filter and <code>DataPreprocessor</code>.</p>
           </article>
           <article class="method-card">
-            <span class="number">02 / select</span>
-            <h3>Find comparable rows</h3>
-            <p>Use contextual feature similarity to retain the nearest labelled references for each test sample.</p>
+            <span class="number">02 / neighbors.py</span>
+            <h3>Select references</h3>
+            <p><code>NeighborFinder</code> blends feature and neighbourhood similarity, then selects candidate classes and top-k rows.</p>
           </article>
           <article class="method-card">
-            <span class="number">03 / compare</span>
-            <h3>Ask for a constrained result</h3>
-            <p>Give the model a small, structured comparison and parse its label, value, drivers, and uncertainty fields.</p>
+            <span class="number">03 / prompts.py + llm.py</span>
+            <h3>Run comparisons</h3>
+            <p><code>PromptBuilder</code> creates tuple prompts; <code>LLMClient</code> handles parallel calls, parsing, validation, and retries.</p>
           </article>
           <article class="method-card">
             <span class="number">04 / aggregate</span>
-            <h3>Keep the record</h3>
-            <p>Combine tuple-level votes in Python and expose the selected references, confidence basis, and raw result.</p>
+            <h3>Assemble the result</h3>
+            <p>Python combines tuple votes and exposes confidence, driver attribution, result wrappers, and reports.</p>
           </article>
         </div>
+        <p class="architecture-note"><strong>Regression path:</strong> <code>CrossClassificationRegressor</code> runs target-bin and feature-cluster classification phases, then deduplicates selected references before numeric aggregation. <a href="https://github.com/studentiz/MolActAgent/blob/main/docs/design.md#19-the-ccr-regression-backend" target="_blank" rel="noopener">See the design notes →</a></p>
       </div>
     </section>
 
@@ -680,35 +740,6 @@ details = clf.<span class="code-name">predict_full</span>(iris.X_test)[0]
       </div>
     </section>
 
-    <section class="content-section" id="docs">
-      <div class="wrap">
-        <div class="section-heading">
-          <p class="section-label">Documentation</p>
-          <h2>Start with the source, then go deeper.</h2>
-          <p>The repository is the canonical documentation. These links take you to the parts most people need first.</p>
-        </div>
-        <div class="docs-grid">
-          <a class="doc-link" href="https://github.com/studentiz/MolActAgent#readme" target="_blank" rel="noopener">
-            <small>Overview</small>
-            <h3>README</h3>
-            <p>Installation, Python and CLI examples, configuration, data requirements, and limitations.</p>
-            <span class="read">Open README →</span>
-          </a>
-          <a class="doc-link" href="https://github.com/studentiz/MolActAgent/blob/main/docs/tutorial.md" target="_blank" rel="noopener">
-            <small>Walkthrough</small>
-            <h3>Tutorial</h3>
-            <p>Run the iris example from the terminal, then move to regression and your own tables.</p>
-            <span class="read">Open tutorial →</span>
-          </a>
-          <a class="doc-link" href="https://github.com/studentiz/MolActAgent/blob/main/docs/design.md" target="_blank" rel="noopener">
-            <small>Reference</small>
-            <h3>Design notes</h3>
-            <p>Engine stages, aggregation rules, result schemas, evaluation tools, and implementation details.</p>
-            <span class="read">Open design notes →</span>
-          </a>
-        </div>
-      </div>
-    </section>
   </main>
 
   <footer>
@@ -718,6 +749,8 @@ details = clf.<span class="code-name">predict_full</span>(iris.X_test)[0]
       <div class="footer-links">
         <a href="https://github.com/studentiz/MolActAgent" target="_blank" rel="noopener">GitHub</a>
         <a href="https://github.com/studentiz/MolActAgent/issues" target="_blank" rel="noopener">Issues</a>
+        <a href="https://github.com/studentiz/MolActAgent/blob/main/docs/tutorial.md" target="_blank" rel="noopener">Tutorial</a>
+        <a href="https://github.com/studentiz/MolActAgent/blob/main/docs/design.md" target="_blank" rel="noopener">Design</a>
         <a href="https://github.com/studentiz/MolActAgent/blob/main/LICENSE" target="_blank" rel="noopener">License</a>
       </div>
     </div>

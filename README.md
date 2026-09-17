@@ -8,6 +8,15 @@ MolActAgent is a Python package for classification and regression when the label
 
 > MolActAgent is research software. A model-generated explanation is not an independent scientific citation, and the confidence score is not a calibrated probability. Validate results against suitable baselines and domain knowledge before using them in a real study.
 
+## Start here
+
+| If you want to... | Read |
+| --- | --- |
+| Run the first example from installation to prediction | [Tutorial](docs/tutorial.md) |
+| Understand the engine, regression backend, result schema, and design decisions | [Design notes](docs/design.md) |
+
+The tutorial is the practical entry point. The design notes are the technical reference. The rest of this README is a compact orientation to both.
+
 ## What is included
 
 | Part | Purpose |
@@ -20,14 +29,98 @@ MolActAgent is a Python package for classification and regression when the label
 
 The core input is a numeric table. Chemistry helpers can convert SMILES to RDKit descriptors, MACCS keys, Morgan fingerprints, and scaffolds before prediction.
 
-## How a prediction is made
+## Architecture
 
-1. Python validates the reference and test tables, removes unusable columns, and applies the requested scaling.
-2. A contextual similarity search selects the nearest labelled rows for the classes relevant to each test sample.
-3. The selected rows are assembled into a structured comparison. The language model returns a constrained result with a label or numeric estimate, feature drivers, and supporting or opposing evidence.
-4. Python aggregates the comparisons into the final result. The raw votes, selected references, confidence basis, and driver attribution remain available to the caller.
+The public interfaces are thin layers around one shared prediction engine. Python owns input validation, preprocessing, reference selection, response checks, and aggregation. The language model is used inside the structured comparison stage.
 
-The language model does not receive the whole dataset by default. The deterministic selection step controls which reference rows enter each comparison.
+```mermaid
+flowchart TB
+    subgraph public["Public API"]
+        cli["CLI<br/>molactagent.cli"]
+        pipeline["Pipeline<br/>run_prediction / run_classification / run_regression"]
+        estimators["Estimator layer<br/>MolActAgentClassifier / MolActAgentRegressor"]
+        engine_api["Engine API<br/>MolActAgent"]
+        pp["Preprocessing and datasets<br/>ma.pp / ma.datasets"]
+        tools["Downstream analysis<br/>ma.tl / ma.metrics"]
+    end
+
+    subgraph orchestration["Input and orchestration"]
+        load["io.load_table<br/>CSV · TSV · Excel · Parquet · JSON"]
+        validate["io.validate_inputs"]
+        prepare["io.prepare_for_agent<br/>X · y · feature names · descriptions · background"]
+        config["config.load_llm_config<br/>file · environment · keyword arguments"]
+        client["llm.LLMClient<br/>OpenAI-compatible endpoint"]
+    end
+
+    subgraph engine["Shared MolActAgent engine"]
+        fit["agent.MolActAgent.fit<br/>variance filter + DataPreprocessor"]
+        neighbors["neighbors.NeighborFinder<br/>feature similarity + neighbourhood signature"]
+        candidates["Adaptive top-M / top-k<br/>candidate classes and reference rows"]
+        prompts["prompts.PromptBuilder<br/>discriminative features · alignment tally<br/>reference texture blocks · JSON schema"]
+        calls["Parallel tuple calls"]
+        checks["Parse / schema validation / retry<br/>soft baseline override"]
+        aggregate["Aggregation<br/>votes · confidence · driver attribution"]
+    end
+
+    subgraph ccr["CCR regression branch"]
+        target["Target view<br/>equal-frequency target bins"]
+        feature["Feature view<br/>cosine feature clusters"]
+        phases["Two internal classification passes<br/>reuse the MolActAgent engine"]
+        references["Winning classes → contextual top-k references<br/>deduplicate by reference index"]
+        numeric["Numeric aggregation<br/>confidence · distance · mean · median"]
+    end
+
+    subgraph outputs["Outputs and downstream use"]
+        results["result.py<br/>ClassificationResult / RegressionResult"]
+        reports["report.py<br/>summary + Markdown / HTML reports"]
+        analysis["tl / metrics<br/>LOOCV · k-fold · baselines · calibration"]
+    end
+
+    cli --> pipeline
+    estimators --> fit
+    engine_api --> fit
+    pp --> prepare
+
+    pipeline --> load
+    load --> validate
+    validate --> prepare
+    prepare --> fit
+
+    config --> client
+    client --> calls
+
+    fit --> neighbors
+    neighbors --> candidates
+    candidates --> prompts
+    prompts --> calls
+    calls --> checks
+    checks --> aggregate
+    aggregate --> results
+
+    aggregate --> reports
+    pipeline --> reports
+    results --> analysis
+    tools -. post-hoc analysis .-> results
+
+    fit -. task = regression .-> target
+    fit -. task = regression .-> feature
+    target --> phases
+    feature --> phases
+    phases -. shared selection / prompt / LLM stages .-> neighbors
+    phases --> references
+    references --> numeric
+    numeric --> results
+
+    classDef deterministic fill:#eaf5ef,stroke:#2f7d5a,color:#163c2d;
+    classDef llm fill:#fff4d6,stroke:#a37b00,color:#4e3b00;
+    classDef output fill:#e8f0fb,stroke:#426a9b,color:#19324e;
+
+    class load,validate,prepare,config,fit,neighbors,candidates,prompts,checks,aggregate,target,feature,references,numeric deterministic;
+    class client,calls,phases llm;
+    class results,reports,analysis output;
+```
+
+The detailed rationale and call graph are in [docs/design.md](docs/design.md), especially [§11 Module map and data flow](docs/design.md#11-module-map-and-data-flow), [§18 Aggregation](docs/design.md#18-stage-7--aggregation-calibration-attribution), and [§19 CCR regression](docs/design.md#19-the-ccr-regression-backend).
 
 ## Installation
 
