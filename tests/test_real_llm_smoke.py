@@ -254,11 +254,9 @@ def test_real_llm_iris_cli_inprocess(
         "molactagent.pipeline.build_llm_client",
         lambda cfg: real_llm_client,
     )
-    cfg_path = _project_root() / "LLM_API.txt"
-
     cli_dir = tmp_path / "real_cli"
     from molactagent.cli import main as cli_main
-    rc = cli_main([
+    cli_args = [
         "--quiet", "run",
         "-r", str(iris_holdout_csvs["reference"]),
         "-t", str(iris_holdout_csvs["test"]),
@@ -267,10 +265,23 @@ def test_real_llm_iris_cli_inprocess(
         "--k", "3",
         "--feature-descriptions", str(iris_holdout_csvs["feature_descriptions"]),
         "--background", f"@{iris_holdout_csvs['background']}",
-        "--llm-config", str(cfg_path),
-        "--profile", "deepseek",
         "-o", str(cli_dir),
-    ])
+    ]
+    # Mirror the fixture's resolution order.  In CI and local smoke runs
+    # credentials commonly come from MOLACTAGENT_* environment variables;
+    # passing a non-existent legacy path would make the CLI fail before it
+    # could apply those environment values.
+    for candidate in (
+        _project_root() / "LLM_API.txt",
+        _project_root() / "llm_config.jsonc",
+    ):
+        if candidate.exists():
+            cli_args.extend([
+                "--llm-config", str(candidate),
+                "--profile", "deepseek",
+            ])
+            break
+    rc = cli_main(cli_args)
     assert rc == 0
     summary = pd.read_csv(cli_dir / "summary.csv")
     y_pred = summary["predicted_label"].tolist()
