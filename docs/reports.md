@@ -115,7 +115,10 @@ renderer. Retain the original prediction JSON alongside the report.
 The named-compound viewer is enabled by adding a `report_context` mapping
 to a classification record. Classification records without that mapping
 keep their existing layout. Regression reports also keep their existing
-renderer. `class_labels`, `explanation` and `title` remain supported.
+renderer. The [regression backend is experimental](experimental-regression.md),
+remains under development, and is not evaluated in the manuscript;
+it is shared for community exploration and collaboration.
+`class_labels`, `explanation` and `title` remain supported.
 
 The CLI and prediction pipelines do not automatically build this optional
 name/value mapping. Their existing `--per-sample` behavior remains as

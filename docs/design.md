@@ -1,5 +1,12 @@
 # MolActAgent: Design and Implementation
 
+> **Experimental regression support.** The regression backend remains
+> under development and is not evaluated in the accompanying manuscript.
+> We share it to support community exploration and collaboration.
+> Its reliability and applicability require further validation.
+> Regression details below describe the exploratory implementation;
+> see [status and limitations](experimental-regression.md).
+
 > A complete, ground-up account of what MolActAgent is, why it is shaped
 > the way it is, and how every component works in enough detail that a
 > careful reader could re-implement the system from scratch.
@@ -96,14 +103,16 @@ continuous value), a calibrated confidence score, and a
 human-readable Markdown / HTML report explaining *why* — every
 claim grounded in real numbers from your reference set.
 
-Two task families are supported through a single unified pipeline:
+The implementation contains the classification workflow and an
+experimental regression extension:
 
 - **Classification**, for any number of distinct classes.
   MolActAgent adaptively narrows the comparison to the M classes in
   contention for each test sample (typically M=2; sometimes M=3
   near a boundary) and runs a contrastive 1-test-vs-M-references
   analysis per LLM call.
-- **Regression**, for continuous targets. MolActAgent reformulates
+- **Experimental regression**, for continuous targets, outside the
+  manuscript's evaluation. MolActAgent reformulates
   regression as *two* multi-class classifications — one over
   equal-frequency target bins, one over unsupervised feature-space
   clusters — then aggregates the picks of both views into a
@@ -1544,6 +1553,12 @@ This schema is what `report.py` consumes and what the optional
 `generate_explanation` LLM call expands into a Markdown narrative.
 
 ## 19. The CCR regression backend
+
+> **Experimental regression support.** This backend remains under
+> development and is not evaluated in the accompanying manuscript.
+> It is shared for community exploration and collaboration; its
+> reliability and applicability require further validation.
+> See [status and limitations](experimental-regression.md).
 
 When `task == "regression"`, `MolActAgent.predict_one` delegates
 to `CrossClassificationRegressor` (CCR), in

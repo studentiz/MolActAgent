@@ -2,6 +2,10 @@
 
 ## Unreleased — 2026-10-17
 
+- Focused the README on classification and evidence reports. Marked the
+  retained regression documentation, examples and API docstrings as an
+  experimental community extension outside the manuscript's evaluation;
+  the regression implementation and interfaces are unchanged.
 - Added an optional interactive HTML evidence viewer for named compounds,
   enabled by presentation metadata in a classification record. The public
   `render_html_report` signature and existing classification/regression

@@ -1,5 +1,10 @@
 """scikit-learn-compatible regressor wrapper around the CCR backend.
 
+Experimental support: this backend remains under development and is not
+evaluated in the accompanying manuscript. It is shared for community
+exploration and collaboration; reliability and applicability require
+further validation. See ``docs/experimental-regression.md``.
+
 Mirrors the design of :class:`MolActAgentClassifier` but for the
 regression path. Same posture: a thin projection layer over
 :class:`molactagent.agent.MolActAgent` (which itself delegates to
@@ -13,8 +18,8 @@ What's specific to regression:
   values; callers can do ``mask = np.isfinite(y_pred)`` to filter.
 - ``predict_with_interval`` exposes the empirical [min, max] of the
   picked references' actual targets — see ``docs/design.md`` §19.7.
-  This is an honest tight bracket, not a parametric CI.
-- ``predict_with_confidence`` exposes the calibrated CCR confidence
+  This is an empirical reference range, not a calibrated prediction interval.
+- ``predict_with_confidence`` exposes a heuristic CCR confidence score
   (mean of the per-phase classification confidences, restricted to
   phases that produced a winner).
 - ``score`` returns R² (the sklearn ``RegressorMixin`` contract) and
@@ -48,6 +53,11 @@ from ._base import (
 
 class MolActAgentRegressor(RegressorMixin, BaseEstimator):
     """sklearn-style regressor backed by the CCR engine.
+
+    Experimental support: this backend remains under development and is
+    not evaluated in the accompanying manuscript. It is shared for
+    community exploration and collaboration; reliability and applicability
+    require further validation. See ``docs/experimental-regression.md``.
 
     Parameters
     ----------

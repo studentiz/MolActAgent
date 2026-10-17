@@ -1,5 +1,11 @@
 # BSLT — Brine-Shrimp Lethality regression example
 
+> **Experimental regression support.** The regression backend remains
+> under development and is not evaluated in the accompanying manuscript.
+> We share it to support community exploration and collaboration.
+> Its reliability and applicability require further validation.
+> See [status and limitations](../../docs/experimental-regression.md).
+
 A small (16-row) dataset of natural-product / drug-lead compounds
 with a continuous bioactivity target. Used as the regression
 counterpart to the iris (classification) and penguins (regression

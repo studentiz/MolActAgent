@@ -4,7 +4,7 @@ Small-data molecular activity prediction with explicit reference comparisons.
 
 [![Tests](https://github.com/studentiz/MolActAgent/actions/workflows/tests.yml/badge.svg)](https://github.com/studentiz/MolActAgent/actions/workflows/tests.yml) [![Python](https://img.shields.io/badge/python-3.10--3.12-3776AB.svg)](https://www.python.org/) [![License](https://img.shields.io/github/license/studentiz/MolActAgent.svg)](LICENSE)
 
-MolActAgent is a Python package for classification and regression when the labelled dataset is small. It combines deterministic feature-space comparisons with an OpenAI-compatible language model. For each test sample, the package selects nearby reference rows, asks the model to compare them, and returns the prediction together with the rows and feature-level details used in the decision.
+MolActAgent is a Python package for molecular activity classification when the labelled dataset is small. It combines deterministic feature-space comparisons with an OpenAI-compatible language model. For each test sample, the package selects nearby reference rows, asks the model to compare them, and returns the prediction together with the rows and feature-level details used in the decision.
 
 > MolActAgent is research software. A model-generated explanation is not an independent scientific citation, and the confidence score is not a calibrated probability. Validate results against suitable baselines and domain knowledge before using them in a real study.
 
@@ -13,7 +13,7 @@ MolActAgent is a Python package for classification and regression when the label
 | If you want to... | Read |
 | --- | --- |
 | Run the first example from installation to prediction | [Tutorial](docs/tutorial.md) |
-| Understand the engine, regression backend, result schema, and design decisions | [Design notes](docs/design.md) |
+| Understand the classification engine, result schema, and design decisions | [Design notes](docs/design.md) |
 | Explore a full evidence report without an API key | [HTML report guide](docs/reports.md) · [Offline example](examples/evidence_report) |
 
 The tutorial is the practical entry point. The design notes are the technical reference. The rest of this README is a compact orientation to both.
@@ -23,8 +23,7 @@ The tutorial is the practical entry point. The design notes are the technical re
 | Part | Purpose |
 | --- | --- |
 | `MolActAgentClassifier` | scikit-learn-style classification with `fit`, `predict`, `predict_proba`, and `score` |
-| `MolActAgentRegressor` | Regression through the package's cross-classification backend, with intervals and confidence scores |
-| `run_classification` / `run_regression` | File-oriented pipelines that validate inputs and write summary and interpretability reports |
+| `run_classification` | File-oriented pipeline that validates inputs and writes summary and interpretability reports |
 | `molactagent` CLI | Validation, batch prediction, JSON/CSV/JSONL output, and config-file setup |
 | `ma.pp` and `ma.datasets` | Tabular preprocessing, SMILES featurisation, and bundled examples |
 
@@ -38,8 +37,8 @@ The public interfaces are thin layers around one shared prediction engine. Pytho
 flowchart TB
     subgraph public["Public API"]
         cli["CLI<br/>molactagent.cli"]
-        pipeline["Pipeline<br/>run_prediction / run_classification / run_regression"]
-        estimators["Estimator layer<br/>MolActAgentClassifier / MolActAgentRegressor"]
+        pipeline["Pipeline<br/>run_classification"]
+        estimators["Estimator layer<br/>MolActAgentClassifier"]
         engine_api["Engine API<br/>MolActAgent"]
         pp["Preprocessing and datasets<br/>ma.pp / ma.datasets"]
         tools["Downstream analysis<br/>ma.tl / ma.metrics"]
@@ -63,16 +62,8 @@ flowchart TB
         aggregate["Aggregation<br/>votes · confidence · driver attribution"]
     end
 
-    subgraph ccr["CCR regression branch"]
-        target["Target view<br/>equal-frequency target bins"]
-        feature["Feature view<br/>cosine feature clusters"]
-        phases["Two internal classification passes<br/>reuse the MolActAgent engine"]
-        references["Winning classes → contextual top-k references<br/>deduplicate by reference index"]
-        numeric["Numeric aggregation<br/>confidence · distance · mean · median"]
-    end
-
     subgraph outputs["Outputs and downstream use"]
-        results["result.py<br/>ClassificationResult / RegressionResult"]
+        results["result.py<br/>ClassificationResult"]
         reports["report.py<br/>summary + Markdown / HTML reports"]
         analysis["tl / metrics<br/>LOOCV · k-fold · baselines · calibration"]
     end
@@ -103,25 +94,16 @@ flowchart TB
     results --> analysis
     tools -. post-hoc analysis .-> results
 
-    fit -. task = regression .-> target
-    fit -. task = regression .-> feature
-    target --> phases
-    feature --> phases
-    phases -. shared selection / prompt / LLM stages .-> neighbors
-    phases --> references
-    references --> numeric
-    numeric --> results
-
     classDef deterministic fill:#eaf5ef,stroke:#2f7d5a,color:#163c2d;
     classDef llm fill:#fff4d6,stroke:#a37b00,color:#4e3b00;
     classDef output fill:#e8f0fb,stroke:#426a9b,color:#19324e;
 
-    class load,validate,prepare,config,fit,neighbors,candidates,prompts,checks,aggregate,target,feature,references,numeric deterministic;
-    class client,calls,phases llm;
+    class load,validate,prepare,config,fit,neighbors,candidates,prompts,checks,aggregate deterministic;
+    class client,calls llm;
     class results,reports,analysis output;
 ```
 
-The detailed rationale and call graph are in [docs/design.md](docs/design.md), especially [§11 Module map and data flow](docs/design.md#11-module-map-and-data-flow), [§18 Aggregation](docs/design.md#18-stage-7--aggregation-calibration-attribution), and [§19 CCR regression](docs/design.md#19-the-ccr-regression-backend).
+The detailed rationale and call graph are in [docs/design.md](docs/design.md), especially [§11 Module map and data flow](docs/design.md#11-module-map-and-data-flow) and [§18 Aggregation](docs/design.md#18-stage-7--aggregation-calibration-attribution).
 
 ## Installation
 
@@ -200,39 +182,6 @@ print(result.vote_summary)
 
 `predict_proba` is a normalised weighted-vote distribution. It is useful for comparing the classes considered by the engine, but it should not be read as a statistically calibrated probability without an external calibration study.
 
-## Quick start: SMILES regression
-
-Install the chemistry extra first:
-
-```bash
-python -m pip install -e ".[chem]"
-```
-
-The BSLT example converts SMILES to features and then uses the regression estimator:
-
-```python
-import molactagent as ma
-
-data = ma.datasets.load_bslt_regression(
-    descriptors=True,
-    maccs=True,
-    morgan=False,
-)
-
-reg = ma.MolActAgentRegressor(
-    target_name="standard_value",
-    feature_names=data.feature_names,
-    feature_descriptions=data.feature_descriptions,
-    background=ma.pp.chemistry.BSLT_BACKGROUND,
-    k=3,
-    max_workers=4,
-)
-reg.fit(data.X[:-4], data.y[:-4])
-predictions, lower, upper = reg.predict_with_interval(data.X[-4:])
-```
-
-Regression is implemented by the cross-classification backend: the target is viewed through binned and feature-derived classification phases, and the selected reference targets are recombined into a numeric estimate. Compare it with an appropriate conventional regression baseline for your dataset.
-
 ## Command-line usage
 
 Create a local JSONC config file and replace its placeholder values:
@@ -288,8 +237,8 @@ additional LLM call.
 
 The viewer is enabled by an optional `report_context` mapping passed in a
 classification record to the existing `render_html_report` function.
-The CLI's default output and regression reports keep their existing
-behavior. See the [report guide](docs/reports.md) for the context schema
+The CLI's default output keeps its existing behavior.
+See the [report guide](docs/reports.md) for the context schema
 and instructions for your own predictions.
 
 ## Configuration
@@ -320,7 +269,7 @@ For a classification run, the reference table must contain:
 - numeric feature columns shared with the test table;
 - one label column with at least two classes.
 
-For regression, the target column must be numeric. Feature descriptions and a short background file are optional, but they make the comparisons easier to interpret. See the files under [`examples/iris_flowers`](examples/iris_flowers) and [`examples/bslt`](examples/bslt) for complete layouts.
+Feature descriptions and a short background file are optional, but they make the comparisons easier to interpret. See [`examples/iris_flowers`](examples/iris_flowers) for a complete classification input layout, and the [chemistry tutorial](docs/tutorial.md#162--compound-chemistry-smiles--molactagent-in-one-call) for SMILES featurisation.
 
 ## Documentation and development
 

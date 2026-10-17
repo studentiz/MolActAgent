@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#faf8f2" />
-  <meta name="description" content="MolActAgent is a Python package for small-data molecular activity classification and regression with explicit reference comparisons." />
+  <meta name="description" content="MolActAgent is a Python package for small-data molecular activity classification with explicit reference comparisons and traceable evidence reports." />
   <link rel="canonical" href="https://studentiz.github.io/MolActAgent/" />
   <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
   <title>MolActAgent | Small-data molecular activity prediction</title>
@@ -889,7 +889,7 @@
     <section class="summary-strip" aria-label="Project capabilities">
       <div class="wrap summary-grid">
         <div class="summary-item"><strong>Classification</strong><span>Multi-class labelled tables</span></div>
-        <div class="summary-item"><strong>Regression</strong><span>Cross-classification backend</span></div>
+        <div class="summary-item"><strong>Experimental</strong><span>Regression · community exploration</span></div>
         <div class="summary-item"><strong>Chemistry</strong><span>SMILES → RDKit features</span></div>
         <div class="summary-item"><strong>Interfaces</strong><span>Python API + CLI</span></div>
       </div>
@@ -899,7 +899,7 @@
       <div class="wrap">
         <div class="section-heading">
           <p class="section-kicker">What it does</p>
-          <h2>One reference-comparison engine for three common tasks.</h2>
+          <h2>Classify activity, prepare features, and explore extensions.</h2>
           <p>Start with a small labelled dataset. Choose the interface that matches your workflow, then inspect the references and evidence behind each result.</p>
         </div>
         <div class="capability-grid">
@@ -910,9 +910,9 @@
             <code>ma.MolActAgentClassifier</code>
           </article>
           <article class="capability-card">
-            <span class="card-number">02 / REGRESS</span>
-            <h3>Estimate continuous values</h3>
-            <p>Use the cross-classification regression backend to select evidence and aggregate reference targets into a numeric estimate.</p>
+            <span class="card-number">02 / EXPERIMENTAL</span>
+            <h3>Explore regression</h3>
+            <p>The regression backend remains under development and is not evaluated in the manuscript. It is shared for community exploration and collaboration and requires further validation. Read the <a href="https://github.com/studentiz/MolActAgent/blob/main/docs/experimental-regression.md" target="_blank" rel="noopener">experimental status</a>.</p>
             <code>ma.MolActAgentRegressor</code>
           </article>
           <article class="capability-card">
@@ -1020,7 +1020,7 @@ result = clf.<span class="code-name">predict_full</span>(iris.X_test)[0]
         <div class="section-heading">
           <p class="section-kicker">Technical architecture</p>
           <h2>The public API is thin; the comparison engine is shared.</h2>
-          <p>CLI commands, file pipelines, and estimators converge on the same deterministic selection and structured LLM stages. Regression adds two internal classification views before numeric aggregation.</p>
+          <p>CLI commands, file pipelines, and estimators converge on the same deterministic selection and structured LLM stages. The experimental regression extension is outside the manuscript's evaluation and adds two internal classification views before numeric aggregation.</p>
         </div>
         <div class="architecture-map" aria-label="MolActAgent technical architecture">
           <span class="arch-label">Entry points</span>
@@ -1045,7 +1045,7 @@ result = clf.<span class="code-name">predict_full</span>(iris.X_test)[0]
             </div>
           </div>
           <div class="arch-branch">
-            <div class="branch-header"><strong>CCR regression branch</strong><span>continuous target → selected references → numeric estimate</span></div>
+            <div class="branch-header"><strong>Experimental CCR regression branch</strong><span>Under development · not evaluated in the manuscript</span></div>
             <div class="arch-row branch-flow">
               <div class="arch-node"><span>TARGET VIEW</span><strong>Equal-frequency bins</strong><code>target classification</code></div>
               <div class="arch-arrow" aria-hidden="true">→</div>
@@ -1058,7 +1058,7 @@ result = clf.<span class="code-name">predict_full</span>(iris.X_test)[0]
           </div>
           <div class="arch-output"><strong>Typed result + report</strong><span>prediction · confidence · references · feature attribution · supporting / counter-evidence</span></div>
         </div>
-        <p class="architecture-footnote">For the complete module map, call graph, schemas, and regression details, read the <a href="https://github.com/studentiz/MolActAgent/blob/main/docs/design.md" target="_blank" rel="noopener">design notes</a>.</p>
+        <p class="architecture-footnote">For the complete module map, call graph, schemas, and experimental regression details, read the <a href="https://github.com/studentiz/MolActAgent/blob/main/docs/design.md" target="_blank" rel="noopener">design notes</a>.</p>
       </div>
     </section>
 
@@ -1079,7 +1079,7 @@ result = clf.<span class="code-name">predict_full</span>(iris.X_test)[0]
           <a class="doc-card" href="https://github.com/studentiz/MolActAgent/blob/main/docs/tutorial.md" target="_blank" rel="noopener">
             <small>Practical guide</small>
             <h3>Run the tutorial</h3>
-            <p>Installation, configuration, iris classification, the CLI, regression, and your own data.</p>
+            <p>Installation, configuration, iris classification, the CLI, experimental regression, and your own data.</p>
             <span class="read">Open tutorial →</span>
           </a>
           <a class="doc-card" href="https://github.com/studentiz/MolActAgent/blob/main/docs/design.md" target="_blank" rel="noopener">

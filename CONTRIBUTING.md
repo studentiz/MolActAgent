@@ -2,6 +2,13 @@
 
 Issues and pull requests are welcome. Please keep changes focused, explain the scientific or user-facing motivation, and add or update tests for behavioural changes.
 
+## Exploring experimental regression
+
+The regression backend remains under development and is not evaluated
+in the accompanying manuscript. It is shared for community exploration
+and collaboration. Reproducible evaluations, failure cases and method
+improvements are welcome; see [experimental regression support](docs/experimental-regression.md).
+
 ## Development setup
 
 The reproducible environment is:

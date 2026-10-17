@@ -1,5 +1,10 @@
 # MolActAgent — A Friendly, Step-by-Step Tutorial
 
+> **Scope.** The accompanying manuscript evaluates classification.
+> Regression is an experimental extension that remains under development.
+> It is shared for community exploration and collaboration and needs
+> further validation. See [experimental regression support](experimental-regression.md).
+
 Welcome! This tutorial is written for **complete beginners** — even if
 you have never used Python, the command line, or an AI service, you
 should be able to follow along. We will go slowly and explain every
@@ -187,8 +192,8 @@ If you see that line, MolActAgent is installed correctly.
    showing the per-class vote tally, the top features that drove
    every decision, and how the final confidence was calibrated.
 
-That's it for classification. **Regression works exactly the same
-way** — under the hood, MolActAgent reformulates regression as
+The **experimental regression extension** reuses the classification
+engine. Under the hood, MolActAgent reformulates regression as
 *two* classifications (one over equal-frequency target bins, one
 over unsupervised feature clusters), runs the same contrastive
 engine on each, picks the nearest references in each predicted
@@ -795,6 +800,12 @@ fixable by enlarging or rebalancing the reference set.
 
 ## 11. Predicting continuous values (regression)
 
+> **Experimental regression support.** The regression backend remains
+> under development and is not evaluated in the accompanying manuscript.
+> We share it to support community exploration and collaboration.
+> Its reliability and applicability require further validation.
+> Read the [status and limitations](experimental-regression.md) before using these examples.
+
 MolActAgent's regression flow shares the same intuition as the
 classification flow — **find similar references, let the LLM
 interpret what they imply** — but instead of a class label the
@@ -938,6 +949,10 @@ means even 32 classes only contrast two at a time.
 
 ### Performance
 
+These are exploratory results from a small repository example, outside
+the manuscript's evaluation. They do not establish general regression
+performance or readiness for routine use.
+
 LOOCV against the bundled penguins reference set (n=24, body mass
 in grams):
 
@@ -949,10 +964,10 @@ in grams):
 | RF | 360.01 | 0.540 | 0.746 | 334.50 |
 | **MolActAgent (CCR)** | **353.89** | **0.532** | **0.755** | **242.70** |
 
-MolActAgent matches the best ML baselines on aggregate error and
-holds the **lowest median absolute error of any method tested** —
-i.e. it's the most *typically* accurate regressor on this dataset
-in addition to producing a per-sample explanation report.
+In this example, CCR has the lowest reported median absolute error,
+while several baselines have lower MAE or higher R². The mixed results
+motivate further evaluation; the explanation report does not validate
+the numerical predictions.
 
 ---
 
@@ -1340,6 +1355,10 @@ needed). The returned `PipelineOutput` has:
 
 ### Regression from Python
 
+> **Experimental:** this API remains under development and is not
+> evaluated in the manuscript. It is retained for collaborative exploration;
+> see [experimental regression support](experimental-regression.md).
+
 The same pattern works for regression — just call `run_regression`
 and point at a continuous-numeric column:
 
@@ -1463,7 +1482,7 @@ questions** and are exposed as separate axes by design:
   `docs/design.md` §18.2). It additionally discounts for small
   reference pools and inconclusive-tuple rates.
 
-The regression counterpart:
+The experimental regression counterpart (outside the manuscript's evaluation):
 
 ```python
 data = ma.datasets.load_penguins()

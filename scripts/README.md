@@ -6,11 +6,16 @@ against baselines, and explore design alternatives. None of it is
 part of the user-facing API and none of it is shipped in the
 package wheel.
 
+Regression scripts and examples are **experimental**, remain under
+development and are not evaluated in the accompanying manuscript. They
+are shared for community exploration and collaboration and require
+further validation. See [status and limitations](../docs/experimental-regression.md).
+
 For end-user examples, look at:
 
 - `examples/iris_flowers/` — multi-class classification.
-- `examples/penguins/` — regression on numeric morphometrics.
-- `examples/bslt/` — chemistry regression (SMILES → descriptors → CCR).
+- `examples/penguins/` — experimental regression on numeric morphometrics.
+- `examples/bslt/` — experimental chemistry regression (SMILES → descriptors → CCR).
 - `docs/tutorial.md` — the canonical step-by-step tutorial.
 
 ## What's here, in rough categories

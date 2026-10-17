@@ -1,5 +1,10 @@
 """MolActAgent — LLM-driven contrastive predictor with a layered Python API.
 
+Regression support is experimental, remains under development, and is
+not evaluated in the accompanying manuscript. It is shared for community
+exploration and collaboration; reliability and applicability require
+further validation. See ``docs/experimental-regression.md``.
+
 Public surface, organised by intent:
 
 Engine layer (the original surface — unchanged, every existing test

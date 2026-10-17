@@ -686,8 +686,13 @@ def run_regression(
     target_column: str,
     **kwargs,
 ) -> PipelineOutput:
-    """Regression-only convenience wrapper around
+    """Experimental regression convenience wrapper around
     :func:`run_prediction`.
+
+    The regression backend remains under development and is not evaluated
+    in the accompanying manuscript. It is shared for community exploration
+    and collaboration; reliability and applicability require further
+    validation. See ``docs/experimental-regression.md``.
 
     Argument ``target_column`` is a semantic alias for
     ``label_column`` — same column-pointer mechanism, different

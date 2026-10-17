@@ -1,9 +1,14 @@
-"""MolActAgent's regression backend — Cross-Classification Regressor (CCR).
+"""MolActAgent's experimental regression backend — CCR.
+
+This backend remains under development and is not evaluated in the
+accompanying manuscript. It is shared for community exploration and
+collaboration; reliability and applicability require further validation.
+See ``docs/experimental-regression.md``.
 
 CCR reformulates regression as TWO multi-class classification problems
 whose predictions are intersected to pick a small set of reference
 samples whose true target values are then combined into a numeric
-verdict. This is the deployed regression backend; MolActAgent's
+verdict. This is the current experimental regression backend; MolActAgent's
 ``predict_one`` for ``task='regression'`` delegates here.
 
 Pipeline per test sample:
@@ -449,12 +454,17 @@ def _synthesize_driver_attribution(
 # ── main class ─────────────────────────────────────────────────────
 
 class CrossClassificationRegressor:
-    """The deployed MolActAgent regression backend.
+    """The experimental MolActAgent regression backend.
+
+    This backend remains under development and is not evaluated in the
+    accompanying manuscript. It is shared for community exploration and
+    collaboration; reliability and applicability require further
+    validation. See ``docs/experimental-regression.md``.
 
     Composes two ``MolActAgent`` instances internally — one for the
     target-bin view, one for the feature-cluster view — runs them in
     sequence on each test sample, and aggregates their selections
-    into a numeric verdict with an honest confidence estimate.
+    into a numeric estimate with a heuristic confidence score.
 
     Use directly when you want fine-grained control:
 
