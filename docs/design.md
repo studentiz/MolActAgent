@@ -1858,13 +1858,17 @@ also assert the auto-detected task matches.
 
 ## 22. Report rendering
 
-[`molactagent/report.py`](../molactagent/report.py) handles all
-output rendering. The functions split into three layers:
+[`molactagent/report.py`](../molactagent/report.py) is the public entry
+point for output rendering. It delegates classification records with
+optional name/value metadata to
+[`molactagent/_evidence_report.py`](../molactagent/_evidence_report.py).
+The functions split into three layers:
 
 ### 22.1 Per-sample HTML report
 
-`render_html_report(result, *, explanation, class_labels, title)`
-produces one self-contained HTML file with five sections:
+`render_html_report(result, explanation="", class_labels=None,
+title="MolActAgent Report")` produces a self-contained HTML file.
+Without a `report_context` mapping, the classification layout has five sections:
 
 1. **Hero** — verdict badge in the dominant class colour,
    confidence number, evidence-basis caption.
@@ -1893,6 +1897,38 @@ green, red, blue, orange, purple, cyan, yellow, pink
 
 Class N maps to `palette[N % len(palette)]`. `Inconclusive` /
 `Mixed` / unknown classes always render as grey (`#8e8e93`).
+
+#### Optional named-compound evidence viewer
+
+Dispatch checks regression first, then a classification `report_context`
+mapping, then the existing classification renderer. The public function
+signature is unchanged. Neither rendering path calls a model.
+
+`report_context` supplies compound names, per-reference feature values,
+feature labels and definitions, initial comparison selection and
+provenance text. This is presentation metadata, not prediction input.
+The embedded payload separates the original record from this context;
+the renderer does not mutate either. Original feature codes and the raw
+prediction JSON remain inspectable even when displayed prose expands
+reference identifiers to chemical names.
+
+The viewer includes all recorded supporting/opposing evidence,
+uncertainty and feature-attribution rationales. Selecting a comparison
+updates the reference names, alignment counts, full interpretation,
+drivers, validation fields and complete discriminative feature table.
+`display_features` changes ordering only. It never limits that table to
+a selected subset. Aggregation shows all comparison interpretations,
+class weights, score components and retrieved reference pools.
+
+JSON script delimiters are escaped, and dynamic content is inserted
+with `textContent`. Template substitution does not reinterpret tokens
+inside user text. The HTML embeds its CSS, JavaScript and data and
+requires no external assets or requests. JavaScript must be enabled.
+
+The CLI does not construct this optional mapping automatically.
+See the [report guide](reports.md) for the schema and the
+[offline example](../examples/evidence_report) for an executable export.
+Regression and aggregate interpretability reports retain their current layouts.
 
 ### 22.2 Per-sample Markdown report
 

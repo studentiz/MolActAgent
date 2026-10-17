@@ -14,6 +14,7 @@ MolActAgent is a Python package for classification and regression when the label
 | --- | --- |
 | Run the first example from installation to prediction | [Tutorial](docs/tutorial.md) |
 | Understand the engine, regression backend, result schema, and design decisions | [Design notes](docs/design.md) |
+| Explore a full evidence report without an API key | [HTML report guide](docs/reports.md) · [Offline example](examples/evidence_report) |
 
 The tutorial is the practical entry point. The design notes are the technical reference. The rest of this README is a compact orientation to both.
 
@@ -266,6 +267,31 @@ molactagent run \
 
 The default run writes `summary.csv`, `interpretability.md`, and `interpretability.html` to `outputs/`. Add `--per-sample` when per-row reports are needed. Use `--format jsonl`, `--format json`, `--format csv`, or `--format tsv` when another program should consume stdout.
 
+## Interactive chemical evidence reports
+
+The HTML evidence viewer keeps the complete decision trace accessible:
+supporting and opposing evidence, every saved feature rationale, a
+reference-comparison selector, numerical feature tables, weighted class
+support and the original prediction JSON. Chemical names and feature
+definitions make the recorded comparisons easier to read.
+
+Try the clearly labelled illustrative example without an API key:
+
+```bash
+python examples/evidence_report/render.py
+```
+
+Open `examples/evidence_report/outputs/evidence_report.html` in a browser.
+The example uses synthetic activity labels and handwritten explanations;
+it is not an experimental result. Exporting a saved record requires no
+additional LLM call.
+
+The viewer is enabled by an optional `report_context` mapping passed in a
+classification record to the existing `render_html_report` function.
+The CLI's default output and regression reports keep their existing
+behavior. See the [report guide](docs/reports.md) for the context schema
+and instructions for your own predictions.
+
 ## Configuration
 
 Credentials can be supplied in any one of these ways:
@@ -300,6 +326,7 @@ For regression, the target column must be numeric. Feature descriptions and a sh
 
 - [Tutorial](docs/tutorial.md) — a complete CLI and Python walkthrough;
 - [Design notes](docs/design.md) — the engine, aggregation rules, result schema, and evaluation tools;
+- [HTML report guide](docs/reports.md) — full evidence, named references and offline export;
 - [Examples](examples) — small tabular and chemistry datasets;
 - [Tests](tests) — offline tests plus opt-in real-endpoint smoke tests.
 

@@ -567,10 +567,19 @@ def render_html_report(
     class_labels=None,
     title: str = "MolActAgent Report",
 ) -> str:
-    """Render a per-sample HTML report. Branches on ``result['task']``
-    (defaults to classification for back-compat)."""
+    """Render a standalone report without making an LLM call.
+
+    Classification records with a ``report_context`` mapping use the
+    interactive named-compound evidence viewer. Other classification and
+    regression records retain their existing renderers. Context supplies
+    display names, feature definitions and reference values; it does not
+    alter the prediction record or the aggregation.
+    """
     if result.get("task") == "regression":
         return _render_regression_html_report(result, explanation, title)
+    if isinstance(result.get("report_context"), dict):
+        from ._evidence_report import render_named_evidence_report
+        return render_named_evidence_report(result, explanation, title, class_labels)
     return _render_classification_html_report(result, explanation, class_labels, title)
 
 

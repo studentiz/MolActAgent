@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased — 2026-10-17
+
+- Added an optional interactive HTML evidence viewer for named compounds,
+  enabled by presentation metadata in a classification record. The public
+  `render_html_report` signature and existing classification/regression
+  rendering paths remain compatible.
+- Preserved complete supporting and opposing explanations, feature
+  rationales, local comparisons, numerical values, aggregation details
+  and the original prediction record in the viewer.
+- Added an offline illustrative example and a report guide covering
+  export, reference-name mappings, feature definitions and interpretation.
+- Added report regression tests for lossless records, script delimiter
+  escaping and template-token handling.
+
 ## 0.3.0 — 2026-09-17
 
 - Rebranded the original codebase as MolActAgent.

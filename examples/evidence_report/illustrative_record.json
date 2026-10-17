@@ -1,0 +1,108 @@
+{
+  "task": "classification",
+  "test_index": "T0",
+  "final_label": "active",
+  "candidate_classes": ["active", "inactive"],
+  "confidence": 0.5,
+  "reason": "Illustrative record: T0 receives two active votes in the synthetic comparison set.",
+  "supporting_evidence": "The donor count and polar surface area of T0 match R0 and R1. These are numerical similarities, not evidence of a biological mechanism.",
+  "opposing_evidence": "Molecular mass matches R2 in the first comparison. This opposing alignment is retained alongside the supporting features.",
+  "uncertainty": "All activity labels, weights and explanations in this example are synthetic. No experimental or model performance can be inferred.",
+  "test_feature_values": {"MolWt": 108.14, "NumHDonors": 1, "TPSA": 20.23},
+  "key_features_per_class": {"active": ["NumHDonors", "TPSA"], "inactive": ["MolWt"]},
+  "vote_summary": {
+    "per_class": {"active": {"votes": 2, "weighted": 1.5}, "inactive": {"votes": 0, "weighted": 0.0}},
+    "n_degenerate": 0
+  },
+  "confidence_basis": {
+    "basis_text": "Illustrative weights and score for exploring the interface; not an estimated probability.",
+    "margin_score": 1.0,
+    "sample_size_score": 0.5,
+    "coverage_score": 1.0,
+    "rationale": "The synthetic score is 1.0 × 0.5 × 1.0 = 0.5."
+  },
+  "reference_info": {
+    "total_reference_samples": 4,
+    "class_reference_counts": {"active": 2, "inactive": 2},
+    "class_neighbor_indices": {"active": [0, 1], "inactive": [2, 3]},
+    "n_degenerate_excluded": 0
+  },
+  "driver_attribution": [
+    {
+      "feature": "NumHDonors", "description": "Number of hydrogen-bond donor groups.",
+      "n_cited": 2, "class_strength": {"active": 1.0, "inactive": 0.0},
+      "weighted_score": 1.0, "dominant_class": "active",
+      "rationales": [
+        "Illustrative comparison 1: T0 and R0 each have one donor; R2 has none.",
+        "Illustrative comparison 2: T0 and R1 each have one donor; R3 has none."
+      ]
+    },
+    {
+      "feature": "TPSA", "description": "Topological polar surface area in square angstroms.",
+      "n_cited": 2, "class_strength": {"active": 0.8, "inactive": 0.0},
+      "weighted_score": 0.8, "dominant_class": "active",
+      "rationales": [
+        "Illustrative comparison 1: T0 matches the polar surface area of R0.",
+        "Illustrative comparison 2: T0 matches the polar surface area of R1."
+      ]
+    },
+    {
+      "feature": "MolWt", "description": "Average molecular mass in daltons.",
+      "n_cited": 1, "class_strength": {"active": 0.0, "inactive": 0.24},
+      "weighted_score": -0.24, "dominant_class": "inactive",
+      "rationales": ["Illustrative comparison 1: T0 and R2 have equal molecular mass, opposing the donor and surface-area alignments."]
+    }
+  ],
+  "tuple_results": [
+    {
+      "ref_indices": {"active": 0, "inactive": 2}, "label": "active", "confidence": 0.8,
+      "n_aligned": {"active": 2, "inactive": 1}, "n_neutral": 0,
+      "discriminative_features": ["MolWt", "NumHDonors", "TPSA"],
+      "summary": "Illustrative interpretation: T0 matches R0 on donor count and polar surface area. Molecular mass instead matches R2. The synthetic local decision is active, with the conflicting mass alignment retained explicitly.",
+      "counter_evidence": "Molecular mass is closer to R2. A matching descriptor alone does not establish matching biological activity.",
+      "uncertainty": "This is a handwritten example. The displayed references do not constitute measured activity evidence.",
+      "supporting_features": ["NumHDonors", "TPSA"], "opposing_features": ["MolWt"],
+      "baseline_class": "active", "validated_llm": false,
+      "reason": "Illustrative record; no LLM call was made.",
+      "key_drivers": [
+        {"feature": "NumHDonors", "favored_class": "active", "strength": 0.7, "test_value": 1, "favored_value": 1, "why": "T0 and R0 share a phenolic hydrogen-bond donor in this illustrative comparison."},
+        {"feature": "TPSA", "favored_class": "active", "strength": 0.6, "test_value": 20.23, "favored_value": 20.23, "why": "The same polar surface area supports the numerical alignment with R0."},
+        {"feature": "MolWt", "favored_class": "inactive", "strength": 0.3, "test_value": 108.14, "favored_value": 108.14, "why": "The molecular mass instead matches R2; the report retains this counter-evidence."}
+      ]
+    },
+    {
+      "ref_indices": {"active": 1, "inactive": 3}, "label": "active", "confidence": 0.7,
+      "n_aligned": {"active": 3, "inactive": 0}, "n_neutral": 0,
+      "discriminative_features": ["MolWt", "NumHDonors", "TPSA"],
+      "summary": "Illustrative interpretation: T0 matches R1 on all three displayed descriptors. These positional isomers cannot be distinguished by this small descriptor subset. The synthetic class assignment does not establish equal activity or a causal mechanism.",
+      "counter_evidence": "The feature set omits the position of the methyl substituent. Descriptor agreement does not resolve this structural difference.",
+      "uncertainty": "No biological outcome is asserted. Additional structural information could distinguish the positional isomers.",
+      "supporting_features": ["MolWt", "NumHDonors", "TPSA"], "opposing_features": [],
+      "baseline_class": "active", "validated_llm": false,
+      "reason": "Illustrative record; no LLM call was made.",
+      "key_drivers": [
+        {"feature": "NumHDonors", "favored_class": "active", "strength": 0.6, "test_value": 1, "favored_value": 1, "why": "The donor count matches R1 and differs from R3."},
+        {"feature": "TPSA", "favored_class": "active", "strength": 0.5, "test_value": 20.23, "favored_value": 20.23, "why": "The polar surface area matches R1 and differs from R3."}
+      ]
+    }
+  ],
+  "report_context": {
+    "sample_name": "m-Cresol — illustrative example",
+    "reference_names": {"0": "Phenol", "1": "p-Cresol", "2": "Anisole", "3": "Phenetole"},
+    "reference_feature_values": {
+      "0": {"MolWt": 94.113, "NumHDonors": 1, "TPSA": 20.23},
+      "1": {"MolWt": 108.14, "NumHDonors": 1, "TPSA": 20.23},
+      "2": {"MolWt": 108.14, "NumHDonors": 0, "TPSA": 9.23},
+      "3": {"MolWt": 122.167, "NumHDonors": 0, "TPSA": 9.23}
+    },
+    "feature_labels": {"MolWt": "Molecular mass (Da)", "NumHDonors": "Hydrogen-bond donors", "TPSA": "Polar surface area (Å²)"},
+    "feature_descriptions": {
+      "MolWt": "Average molecular mass in daltons.",
+      "NumHDonors": "Number of hydrogen-bond donor groups.",
+      "TPSA": "Topological polar surface area in square angstroms."
+    },
+    "display_features": ["NumHDonors", "TPSA", "MolWt"],
+    "input_description": "Illustrative example only: synthetic labels, scores and handwritten explanations. No experiment or LLM inference.",
+    "footer": "MolActAgent · Offline teaching example · No activity measurements or LLM calls"
+  }
+}
