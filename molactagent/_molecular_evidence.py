@@ -1235,6 +1235,12 @@ class.
         auxiliary_block = ""
         topology_question = ""
         system = "You are a medicinal chemist performing a class-contrast analysis. The active and inactive panels share a chemical series. Identify the structural/property direction that separates the two measured classes, then place the test compound on that direction. Do not choose active because there are more active references or because the test is drug-like. When local matched pairs are available, give them priority over a broad prevalence contrast. Return only the requested JSON object. Auxiliary assays are non-target measurements; use them as supporting evidence, never as the target label. A local regression estimate is a numerical consistency check, not a final classification rule. A single local terminal-substituent change that flips a matched pair is stronger evidence than a broad prevalence trend."
+        if not context.get("legacy_panel"):
+            system = system.replace(
+                "The active and inactive panels share a chemical series.",
+                "Check whether the measured panels share a scaffold. Compare within supported series "
+                "and explain any limits when the panels span different scaffolds.",
+            )
         counts = Counter((records[idx].label for idx in train_idx))
         prior_block = f"""
 TRAINING PRIOR

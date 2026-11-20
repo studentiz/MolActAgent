@@ -77,13 +77,49 @@ def test_invalid_input_removes_reserved_outputs_before_any_calls(run_files, tmp_
 def test_output_failure_leaves_neither_json_nor_html(run_files, tmp_path, monkeypatch):
     inputs, options, live, model, _ = run_files
     output = tmp_path / "new"
-    original_replace = Path.replace
+    import os
+    original_link = os.link
 
-    def fail_second_write(path, target):
+    def fail_second_write(source, target):
         if target.name == "report.html":
             raise OSError("Write failed")
-        return original_replace(path, target)
+        return original_link(source, target)
 
-    monkeypatch.setattr(Path, "replace", fail_second_write)
+    monkeypatch.setattr(os, "link", fail_second_write)
     assert main([*inputs, *options, *live, "-o", str(output)]) == 2
-    assert not list(output.iterdir())
+    assert not (output / "predictions.json").exists()
+    assert not (output / "report.html").exists()
+    assert len(list((output / ".molactagent").glob("compound-*.json"))) == 2
+    monkeypatch.setattr(os, "link", original_link)
+    assert main([*inputs, *options, *live, "-o", str(output), "--resume"]) == 4
+    assert len(model.requests) == 1
+
+
+def test_interrupted_batch_resumes_only_unfinished_molecules(run_files, tmp_path, monkeypatch):
+    from molactagent.molecular import MolecularClassifier
+
+    inputs, options, live, model, query = run_files
+    output = tmp_path / "interrupted"
+    recording = output / "responses.json"
+    args = [*inputs, *options, *live, "-o", str(output), "--record", str(recording)]
+    predict = MolecularClassifier._predict_fold
+
+    def interrupt(self, records, index, indices, ids, identifier, tag, judge, pool):
+        if identifier == "NA":
+            raise KeyboardInterrupt()
+        return predict(self, records, index, indices, ids, identifier, tag, judge, pool)
+
+    monkeypatch.setattr(MolecularClassifier, "_predict_fold", interrupt)
+    assert main(args) == 130
+    saved = (output / ".molactagent/compound-00001.json").read_bytes()
+    assert b'query:0:panel:r0:a0' in saved
+    monkeypatch.setattr(MolecularClassifier, "_predict_fold", predict)
+    original = query.read_bytes()
+    query.write_bytes(original.replace(b"0021", b"0022"))
+    assert main([*args, "--resume"]) == 2
+    assert len(model.requests) == 1
+    query.write_bytes(original)
+    assert main([*args, "--resume"]) == 4
+    assert (output / ".molactagent/compound-00001.json").read_bytes() == saved
+    assert len(model.requests) == 1
+    assert set(json.loads(recording.read_text())["calls"]) == {"query:0:panel:r0:a0"}

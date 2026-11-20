@@ -161,7 +161,7 @@ class TestBaselineClamping:
         # Empty -> Unknown.
         assert MA._baseline_class_from_counts({}) == "Unknown"
 
-    def test_finalize_clamps_dissenting_label(self):
+    def test_finalize_preserves_validated_dissenting_label(self):
         from molactagent.agent import MolActAgent as MA
         parsed = {
             "label": "B",
@@ -174,9 +174,6 @@ class TestBaselineClamping:
             ],
             "summary": "...",
         }
-        # Baseline says A wins. The finalizer is the last guard and
-        # clamps any disagreeing label back to the baseline regardless
-        # of the LLM's stated confidence.
         record = MA._finalize_tuple(
             parsed,
             ref_indices={"A": 0, "B": 1},
@@ -186,7 +183,8 @@ class TestBaselineClamping:
             n_neutral=0,
             baseline_class="A",
         )
-        assert record["label"] == "A"
+        assert record["label"] == record["model_label"] == "B"
+        assert record["decision_source"] == "model"
         assert record["baseline_class"] == "A"
 
 
@@ -383,3 +381,40 @@ def patch_pipeline_to_fake(monkeypatch, fake_llm):
     but it's a no-op when the pipeline is already given an explicit
     ``llm_client``."""
     yield fake_llm
+
+
+@pytest.mark.parametrize("issue", [None, "wrong_measurement", "nonfinite_score", "invalid_strength"])
+def test_valid_model_dissent_and_invalid_citations_at_prediction_entry(issue, fake_llm):
+    """A correct dissent is a class vote. An invented table value is a validation failure."""
+    from tests.conftest import _parse_candidate_classes, _parse_feature_rows
+
+    def reply(messages, **kwargs):
+        prompt = messages[0]["content"] + "\n" + messages[1]["content"]
+        classes = _parse_candidate_classes(prompt)
+        features = _parse_feature_rows(prompt, len(classes))
+        target = classes.index("B")
+        return json.dumps({
+            "label": "B", "confidence": "nan" if issue == "nonfinite_score" else 0.91,
+            "summary": "The judgment favors B.",
+            "key_drivers": [
+                {"feature": row["name"], "favored_class": "B", "strength": 2 if issue == "invalid_strength" else 0.8,
+                 "test_value": 12345 if issue == "wrong_measurement" else row["test"], "favored_value": row["refs"][target]}
+                for row in features[:2]
+            ],
+        })
+
+    fake_llm.chat = reply
+    agent = MolActAgent(llm_client=fake_llm, k=1, feature_names=["f1", "f2"], max_check_retries=0)
+    agent.fit(np.array([[0., 1.], [1., 0.], [9., 10.], [10., 9.]]), np.array(["A", "A", "B", "B"]))
+    result = agent.predict_one(np.array([0.2, 1.2]))
+    comparison, = result["tuple_results"]
+    assert comparison["baseline_class"] == "A"
+    assert comparison["attempts"][0]["model_label"] == "B"
+    if issue:
+        assert result["final_label"] == "Inconclusive"
+        assert comparison["decision_source"] == "invalid_response"
+        assert not comparison["attempts"][0]["accepted"]
+    else:
+        assert comparison["label"] == comparison["model_label"] == result["final_label"] == "B"
+        assert comparison["confidence"] == 0.91
+        assert comparison["attempts"][0]["accepted"]

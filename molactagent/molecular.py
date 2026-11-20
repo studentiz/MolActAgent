@@ -135,6 +135,8 @@ class MolecularClassifier:
             "threshold": pchembl_threshold,
             "labels_from_pchembl": labels_from_pchembl,
         }
+        self._legacy_panel = isinstance(llm_client, ReplayClient) and llm_client.legacy_panel
+        self._context["legacy_panel"] = self._legacy_panel
         self._records = None
         self._reference_ids = []
         self.recording = None
@@ -195,6 +197,7 @@ class MolecularClassifier:
         values = reference[pchembl_column] if pchembl_column else [None] * len(ids)
         records = []
         by_structure = {}
+        groups = {}
         for row, (smiles, identifier, label, measured) in enumerate(
             zip(reference[smiles_column], ids, labels, values)
         ):
@@ -219,6 +222,20 @@ class MolecularClassifier:
                     f"References {previous_id!r} and {identifier!r} have conflicting labels for {record.canonical}."
                 )
             records.append(record)
+            groups.setdefault(record.canonical, []).append(row)
+        self._independent_rows = []
+        self._replicates = {}
+        for group in groups.values():
+            representative = next((idx for idx in group if records[idx].pchembl is not None), group[0])
+            self._independent_rows.append(representative)
+            if len(group) > 1:
+                self._replicates[representative] = [
+                    {"reference": ids[idx], "position": idx, "pchembl": records[idx].pchembl,
+                     "label": records[idx].label,
+                     **{key: str(reference.iloc[idx][key]) for key in ("measurement", "source_url")
+                        if key in reference and pd.notna(reference.iloc[idx][key])}}
+                    for idx in group
+                ]
         self._records = records
         self._reference_ids = ids
         self._reference_digest = digest([
@@ -233,6 +250,7 @@ class MolecularClassifier:
         smiles_column: str = "smiles",
         id_column: str | None = None,
         record: bool = False,
+        _journal=None,
     ) -> list[MolecularResult]:
         if self._records is None:
             raise ValueError("Call fit with labelled reference molecules first.")
@@ -251,17 +269,37 @@ class MolecularClassifier:
         }
         if isinstance(self.client, ReplayClient):
             self.client.begin(self.settings, inputs)
+        if _journal is not None:
+            _journal.begin()
         recorder = CallRecorder(self.client, keep_responses=record)
         judge = self._make_judge(recorder)
         results = []
         records = references + queries
         with ThreadPoolExecutor(max_workers=self.workers) as pool:
             for ordinal, (query, identifier) in enumerate(zip(queries, ids)):
-                indices = [ref.row for ref in references if ref.canonical != query.canonical]
+                tag = f"query:{ordinal}"
+                if _journal is not None:
+                    saved = _journal.load(ordinal, identifier, query.canonical)
+                    if saved is not None:
+                        results.append(MolecularResult(**saved["result"]))
+                        recorder.calls.update(saved["calls"])
+                        continue
+                pool_indices = range(len(references)) if self._legacy_panel else self._independent_rows
+                indices = [idx for idx in pool_indices if references[idx].canonical != query.canonical]
                 result = self._predict_fold(
                     records, query.row, indices, self._reference_ids, identifier,
-                    f"query:{ordinal}", judge, pool,
+                    tag, judge, pool,
                 )
+                if self._replicates and not self._legacy_panel:
+                    rows = result.references + result.evidence_references
+                    for judgment in result.judgments:
+                        rows.extend(judgment.get("references", []))
+                    for row in rows:
+                        if row["position"] in self._replicates:
+                            row["measurements"] = self._replicates[row["position"]]
+                if _journal is not None:
+                    calls = {key: call for key, call in recorder.calls.items() if key.startswith(tag + ":")}
+                    _journal.save(ordinal, result, calls)
                 results.append(result)
         if isinstance(self.client, ReplayClient):
             self.client.verify_complete()

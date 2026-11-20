@@ -296,7 +296,7 @@ _CANDIDATES_RE = re.compile(
     r'Candidate classes for this comparison:\s*([^.]+)\.'
 )
 _BASELINE_RE = re.compile(
-    r'Baseline verdict from this tally:\s*\*\*([^*]+)\*\*'
+    r'Most feature alignments:\s*([^\n]+)\.\s*$', re.MULTILINE
 )
 _ALIGN_LINE_RE = re.compile(
     r'Test is numerically closest to (\S+?)_Ref on (\d+) feature'

@@ -51,6 +51,10 @@ _CALL_STATES = {
     "timeout": "Request timed out",
 }
 _HIGHLIGHT = (0.98, 0.76, 0.38)
+_REFERENCE_MENTION = re.compile(
+    r"\b(?:ref(?:erence)?s\s*[#=]?\s*(?P<group>\d+\b(?:(?:\s*,\s*(?:and\s+)?|\s+and\s+)\d+\b)*)"
+    r"|ref(?:erence)?\s*[#=]?\s*(?P<single>\d+)\b)", re.I,
+)
 
 
 def _text(value):
@@ -174,6 +178,11 @@ def _reference_table(anchor, rows, names, panel_positions):
     for row in rows:
         position = row["position"]
         name = names.get(position)
+        repeats = row.get("measurements", [])
+        repeated = ""
+        if repeats:
+            items = "".join(f'<li>{_text(rep["reference"])} · {_text(rep["label"])} {_measurement(rep)}</li>' for rep in repeats)
+            repeated = f'<details><summary>{len(repeats)} measurements of this structure</summary><ul>{items}</ul></details>'
         potency = f'<td>{_measurement(row) or "—"}</td>' if measured else ""
         views = "Retrieved panel" if position in panel_positions else "Additional comparison"
         png, _, _ = _structure(row["smiles"])
@@ -181,7 +190,7 @@ def _reference_table(anchor, rows, names, panel_positions):
   <th scope="row">{_compound_name(row["reference"], name)}</th><td>{_text(row["label"].capitalize())}</td>
   <td class="table-structure">{_image(png, f"2D structure of {name or row['reference']}")}
     <code>{_text(row["smiles"])}</code></td>
-  <td>{row["similarity"]:.3f}</td>{potency}<td>{views}</td>
+  <td>{row["similarity"]:.3f}</td>{potency}<td>{views}{repeated}</td>
 </tr>""")
     return f"""<div class="table-scroll" role="region" aria-label="Reference compounds" tabindex="0">
 <table><thead><tr><th scope="col">Compound</th><th scope="col">Input label</th>
@@ -232,19 +241,30 @@ def _citations(anchor, positions, rows, names, label):
     return f'<p class="ref-links"><strong>{label}</strong> {" · ".join(links)}</p>' if links else ""
 
 
-def _linked_text(anchor, vote, field, rows, names):
+def _shown_rows(vote, panel):
+    if vote and "references" in vote:
+        return {row["position"]: row for row in vote["references"]}
+    return panel
+
+
+def _linked_text(anchor, vote, field, rows):
     value = _evidence(vote, field)
-    evidence = vote["evidence"]
-    allowed = set(evidence.get("reference_ids", [])) | set(evidence.get("counter_reference_ids", []))
     fragments = []
     cursor = 0
-    for match in re.finditer(r"\bref(?:erence)?\s*[#=]?\s*(\d+)\b", value, re.I):
-        position = int(match.group(1))
-        if position in allowed and position in rows:
-            fragments.append(_text(value[cursor:match.start()]))
-            name = names.get(position) or rows[position]["reference"]
-            fragments.append(f'<a href="{_reference_url(anchor, position)}">{_text(name)}</a>')
-            cursor = match.end()
+    for match in _REFERENCE_MENTION.finditer(value):
+        numbers = match.group("group") or match.group("single")
+        parts = re.split(r"(\d+)", numbers)
+        if not all(int(number) in rows for number in parts[1::2]):
+            continue
+        fragments.append(_text(value[cursor:match.start()]))
+        for part in parts:
+            if part.isdigit():
+                position = int(part)
+                identifier = rows[position]["reference"]
+                fragments.append(f'<a href="{_reference_url(anchor, position)}">{_text(identifier)}</a>')
+            else:
+                fragments.append(_text(part))
+        cursor = match.end()
     fragments.append(_text(value[cursor:]))
     return "".join(fragments)
 
@@ -287,6 +307,60 @@ def _decision_summary(result, selected):
     return text, tally
 
 
+def _run_reading(result):
+    counts = result.decision.get("counts", {})
+    if not counts:
+        return result.reason or "No model judgment was recorded."
+    if result.label in CLASSES:
+        return f"The comparisons favor the {result.label} class in this assay."
+    if result.decision.get("method") == "tie":
+        return "The usable judgments tied on class votes and total model scores."
+    tags = {call.get("tag"): call.get("status") for call in result.calls}
+    failures = Counter(tags.get(vote.get("call_tag")) or "request_error"
+                       for vote in result.judgments if vote["view"] == "panel" and not vote["parsed"])
+    outcomes = [f'{counts["active"]} favored active', f'{counts["inactive"]} favored inactive',
+                f'{counts["uncertain"]} abstained']
+    failure_text = {"timeout": "timed out", "truncated": "reached the output limit",
+                    "invalid_response": "failed evidence validation", "authentication_error": "failed authentication",
+                    "request_error": "failed at the API"}
+    outcomes.extend(f'{n} {failure_text.get(status, "failed")}' for status, n in failures.items())
+    return (", ".join(outcomes) + f'. This run required {result.decision["required"]} usable class judgments.')
+
+
+def _batch_row(anchor, result, name):
+    panel = {ref["position"]: ref for ref in (result.evidence_references or result.references)}
+    rows = dict(panel)
+    selected = [v for v in result.judgments if v["view"] == result.selected_view and v["parsed"]]
+    for vote in selected:
+        rows.update({ref["position"]: ref for ref in vote.get("references", [])})
+    chosen = next((v for v in selected if v["label"] == result.label), None)
+    if chosen is None and selected:
+        chosen = next((v for v in selected if v["label"] == "Uncertain"), selected[0])
+    cited = set(chosen["evidence"].get("reference_ids", [])) if chosen else set()
+    links = []
+    for label in CLASSES:
+        options = [row for row in rows.values() if row["label"] == label and row["position"] in cited]
+        if options:
+            ref = max(options, key=lambda row: row["similarity"])
+            links.append(f'<a href="{_reference_url(anchor, ref["position"])}">{_text(ref["reference"])}</a> ({label})')
+    shown = _shown_rows(chosen, panel)
+    evidence = _linked_text(anchor, chosen, "test_position", shown) or _linked_text(anchor, chosen, "rationale", shown)
+    limitation = _linked_text(anchor, chosen, "counter_evidence", shown)
+    independent = len({row["smiles"] for row in rows.values()})
+    counts = result.decision.get("counts", {})
+    state = (f'{counts.get("active", 0) + counts.get("inactive", 0)} class votes · '
+             f'{counts.get("uncertain", 0)} abstained · {counts.get("failed", 0)} failed')
+    if not counts:
+        state = _text(result.reason)
+    label = "Predicted " + result.label if result.label in CLASSES else "Inconclusive"
+    class_name = result.label if result.label in CLASSES else "inconclusive"
+    return f"""<tr><th scope="row"><a href="#{anchor}">{_compound_name(result.identifier, name)}</a></th>
+<td><strong class="status {class_name}">{_text(label)}</strong><small>{state}</small></td>
+<td><strong>{independent} distinct structures</strong><small>{" · ".join(links)}</small></td>
+<td>{evidence or _text(_run_reading(result))}</td>
+<td>{limitation or "No chemical limitation recorded."}</td></tr>"""
+
+
 def _reference_cards(anchor, result, name, references, names, selected):
     cited = set()
     for vote in selected:
@@ -301,17 +375,18 @@ def _reference_cards(anchor, result, name, references, names, selected):
 
     marks = {}
     query_site = None
-    comparison = ""
+    matched = []
     for row in sorted(displayed, key=lambda row: row["similarity"], reverse=True):
         ends = _matched_ends(result.smiles, row["smiles"])
-        if ends:
+        if ends and (query_site is None or ends[0] == query_site):
             query_site, marks[row["position"]] = ends
-            comparison = (f'<p class="bond-note"><strong>One structural change.</strong> '
-                          f'The marked bond in {_text(name or result.identifier)} is {_text(ends[0][2])}. '
-                          f'In <a href="{_reference_url(anchor, row["position"])}">'
-                          f'{_text(names.get(row["position"]) or row["reference"])}</a> it is {_text(ends[1][2])}. '
-                          'The structures match when the two terminal atoms are replaced by the same marker.</p>')
-            break
+            matched.append(f'<a href="{_reference_url(anchor, row["position"])}">{_text(row["reference"])}</a>'
+                           f' ({_text(ends[1][2])})')
+    comparison = ""
+    if matched:
+        comparison = (f'<p class="bond-note"><strong>One structural change.</strong> Compare the marked '
+                      f'{_text(query_site[2])} bond in {_text(name or result.identifier)} with the same '
+                      f'position in {" and ".join(matched)}. Each comparison has the same remaining structure.</p>')
     cards = [_molecule(result.smiles, result.identifier, name, "Candidate · activity to assess", "query",
                        site=query_site)]
     for row in displayed:
@@ -332,14 +407,15 @@ def _source(anchor, vote):
             f'Read {_text(title.lower())} judgment {vote["repeat"] + 1}</a>')
 
 
-def _interpretation(anchor, group, rows, names, title):
+def _interpretation(anchor, group, panel, names, title):
     vote = group[0]
+    rows = _shown_rows(vote, panel)
     evidence = vote["evidence"]
     supports = _citations(anchor, evidence.get("reference_ids", []), rows, names, "Cited references")
     counter = _citations(anchor, evidence.get("counter_reference_ids", []), rows, names, "Cited for the limitation")
     same = f" · Identical evidence in {len(group)} judgments" if len(group) > 1 else ""
-    reasoning = _linked_text(anchor, vote, "rationale", rows, names)
-    caveat = _linked_text(anchor, vote, "counter_evidence", rows, names)
+    reasoning = _linked_text(anchor, vote, "rationale", rows)
+    caveat = _linked_text(anchor, vote, "counter_evidence", rows)
     if not reasoning:
         reasoning = "This response supplied no written rationale."
     if not caveat:
@@ -350,11 +426,12 @@ def _interpretation(anchor, group, rows, names, title):
 </div></section>"""
 
 
-def _judgments(anchor, result, rows, names):
+def _judgments(anchor, result, panel, names):
     blocks = []
     for vote in result.judgments:
+        rows = _shown_rows(vote, panel)
         fields = "".join(
-            f"<dt>{heading}</dt><dd>{_text(_evidence(vote, field))}</dd>"
+            f"<dt>{heading}</dt><dd>{_linked_text(anchor, vote, field, rows)}</dd>"
             for field, heading in _EVIDENCE_HEADINGS.items() if _evidence(vote, field)
         )
         if vote["error"]:
@@ -413,7 +490,8 @@ def _compound_report(anchor, result, name, names, notes):
     decided = result.label in CLASSES
     summary, tally = _decision_summary(result, selected)
     panel = result.evidence_references or result.references
-    rows = {row["position"]: row for row in panel}
+    panel_rows = {row["position"]: row for row in panel}
+    rows = dict(panel_rows)
     for vote in result.judgments:
         rows.update({row["position"]: row for row in vote.get("references", [])})
     rows = {pos: {**row, **{key: notes.get(pos, {}).get(key, "") for key in ("measurement", "source_url")}}
@@ -437,7 +515,7 @@ def _compound_report(anchor, result, name, names, notes):
             title = f"Another judgment favored {label}"
         else:
             title = f"Evidence considered for {label}"
-        argument = _interpretation(anchor, group, rows, names, title)
+        argument = _interpretation(anchor, group, panel_rows, names, title)
         standpoint = (group[0]["view"], label)
         if standpoint in seen:
             other_readings.append(argument)
@@ -451,23 +529,16 @@ def _compound_report(anchor, result, name, names, notes):
         readings.append('<p>No usable chemical interpretation was recorded for this candidate.</p>')
 
     first_vote = groups[0][0] if groups else None
-    lead = _linked_text(anchor, first_vote, "test_position", rows, names) if first_vote else ""
-    lead_html = f'<p class="lead"><strong>Model interpretation.</strong> {lead}</p>' if lead else ""
+    lead = _linked_text(anchor, first_vote, "test_position", _shown_rows(first_vote, panel_rows))
+    lead_html = f'<p class="lead"><strong>Model interpretation.</strong> {lead}</p>' if lead and decided else ""
     panel_positions = {row["position"] for row in result.references}
     reference_details = f"""<details class="record"><summary>All references shown to the LLM ({len(rows)})</summary>
-  <p>Labels and measurements come from the reference input. Fingerprint similarity is calculated from the structures.</p>
+  <p>Labels are measured activity classes. Supplied pChEMBL values are model inputs. Original measurement text and source links are provided for human review. Fingerprint similarity is calculated from the structures.</p>
   {_reference_table(anchor, rows.values(), names, panel_positions)}
 </details>""" if rows else ""
     status = f"Predicted {result.label}" if decided else "Inconclusive"
     style = result.label if decided else "inconclusive"
-    if decided:
-        meaning = f"The chemical comparisons favor the {result.label} class in this assay."
-    elif any(vote["parsed"] for vote in selected):
-        meaning = "The available comparisons leave this candidate’s activity unresolved."
-    elif result.reason and not result.calls:
-        meaning = result.reason
-    else:
-        meaning = "The run produced too few usable responses to assess this candidate."
+    meaning = _run_reading(result)
     comparison_note = ("The closest cited reference in each available class is shown. Where a class has no citation, "
                        "its closest available comparison is shown.") if displayed else ""
     repeats_note = ""
@@ -477,7 +548,7 @@ def _compound_report(anchor, result, name, names, notes):
     return f"""<article id="{anchor}" aria-labelledby="{anchor}-title">
   <header class="decision">
     <div><h2 id="{anchor}-title">{_compound_name(result.identifier, name)}</h2>
-      <p>{_text(meaning)}</p></div>
+      <p>{_text(meaning)}</p>{lead_html}</div>
     <strong class="status {style}">{_text(status)}</strong>
   </header>
   <section class="reading" id="{anchor}-comparison">
@@ -486,12 +557,12 @@ def _compound_report(anchor, result, name, names, notes):
     {_property_table(result, displayed, names) if displayed else ""}
   </section>
   <section class="reading" id="{anchor}-interpretations">
-    <h3>What supports the call, and what is still open?</h3>{lead_html}{"".join(readings)}
+    <h3>What supports the call, and what is still open?</h3>{"".join(readings)}
     <details class="record"><summary>How the final call was reached</summary><p>{_text(summary)}</p>{tally}{repeats_note}</details>
   </section>
   <div class="records">
     {reference_details}
-    {_judgments(anchor, result, rows, names) if result.judgments else ""}{_call_log(result.calls)}
+    {_judgments(anchor, result, panel_rows, names) if result.judgments else ""}{_call_log(result.calls)}
   </div>
 </article>"""
 
@@ -536,6 +607,26 @@ a:hover { color: #123344; }
 .assay { display: grid; grid-template-columns: 12rem 1fr; gap: .45rem 1rem;
   padding: .8rem 1rem; background: var(--blue-wash); border-block: 1px solid var(--line); }
 .assay p { max-width: 74ch; white-space: pre-line; }
+.batch { margin: 1.7rem 0; }
+.batch h2 { font-size: 1.35rem; margin-bottom: .35rem; }
+.batch-index { display: flex; flex-wrap: wrap; gap: .5rem 1.4rem; padding: 0; margin: .55rem 0 .85rem; list-style: none; }
+.batch-index li { border-left: .2rem solid currentColor; padding: .25rem .6rem; }
+.batch-index a { white-space: nowrap; }
+.batch table { min-width: 48rem; }
+.batch .status { display: inline-block; white-space: nowrap; }
+.batch th, .batch td { vertical-align: top; padding: .75rem .6rem; }
+.batch td small { display: block; color: var(--quiet); margin-top: .45rem; }
+.batch tbody tr:nth-child(even) { background: #f8faf9; }
+.batch td:nth-last-child(-n+2) { width: 26%; }
+@media (max-width: 42rem) {
+  .batch table, .batch tbody, .batch tr, .batch td, .batch th { display: block; min-width: 0; }
+  .batch thead { position: absolute; clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; }
+  .batch tbody tr { border-block-start: 1px solid var(--line); padding: .75rem 0; }
+  .batch th, .batch td { padding: .15rem .4rem; border: 0; }
+  .batch td:nth-last-child(-n+2) { width: auto; }
+  .batch td:nth-last-child(2)::before { content: "Model evidence · "; font-weight: 650; }
+  .batch td:last-child::before { content: "Limitation · "; font-weight: 650; }
+}
 .contents { margin: 1rem 0; }
 .contents ul { display: flex; flex-wrap: wrap; gap: .3rem 1.5rem; padding-left: 1.2rem; }
 article { background: #fff; border: 1px solid var(--line); margin-top: 1.6rem; overflow-wrap: anywhere; }
@@ -648,14 +739,28 @@ def render_molecular_report(results, *, endpoint, run, series="", reference_name
     names = reference_names or {}
     sections = []
     contents = []
+    class_links = {label: [] for label in (*CLASSES, "Inconclusive")}
     for index, result in enumerate(results):
         anchor = f"compound-{index + 1}"
         name = query_names[index] if index < len(query_names) else ""
         sections.append(_compound_report(anchor, result, name, names, reference_notes or {}))
-        contents.append(f'<li><a href="#{anchor}">{_text(name or result.identifier)}</a> '
-                        f'· {_text(result.label.capitalize())}</li>')
-    navigation = (f'<nav class="contents" aria-label="Compounds"><ul>{"".join(contents)}</ul></nav>'
-                  if len(contents) > 1 else "")
+        contents.append(_batch_row(anchor, result, name))
+        class_links[result.label].append(f'<a href="#{anchor}">{_text(result.identifier)}</a>')
+    navigation = ""
+    if len(contents) > 1:
+        groups = []
+        for label, links in class_links.items():
+            if links:
+                heading = "Predicted " + label if label in CLASSES else label
+                entries = ", ".join(links) if len(contents) <= 12 else str(len(links))
+                groups.append(f'<li><strong>{_text(heading)}</strong> · {entries}</li>')
+        navigation = f"""<section class="batch"><h2>Compare the candidates</h2>
+<ul class="batch-index" aria-label="Batch predictions">{"".join(groups)}</ul>
+<p>Read the predicted class alongside the measured compounds behind it. Select a candidate to inspect its structures and measurements.</p>
+<div class="table-scroll" role="region" tabindex="0" aria-label="Candidate decisions">
+<table><thead><tr><th scope="col">Candidate</th><th scope="col">Decision and main-panel judgments</th>
+<th scope="col">References shown and cited analogs</th><th scope="col">Model evidence</th>
+<th scope="col">Limit of the comparison</th></tr></thead><tbody>{"".join(contents)}</tbody></table></div></section>"""
     cutoff = run.get("pchembl_threshold")
     rule = " · Active at or above this value" if run.get("labels_from_pchembl") else ""
     cutoff_html = f'<p>Assay pChEMBL cutoff · {_text(cutoff)}{rule}</p>' if cutoff is not None else ""

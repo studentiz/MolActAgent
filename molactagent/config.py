@@ -626,7 +626,7 @@ EXAMPLE_JSONC = """\
 // Rules:
 //   * Keep exactly ONE configuration object active (uncommented) below.
 //   * Required fields: api_key, base_url, model_name.
-//   * Optional: temperature (default 0.0), max_tokens (default 2000),
+//   * Optional: temperature (default 0.0), max_tokens (molecular default 16384),
 //     timeout (default 120), max_retries (default 10).
 //   * Replace REPLACE-WITH-YOUR-OWN-KEY with your real API key.
 //   * To switch vendors: comment out the active block and uncomment
@@ -639,7 +639,7 @@ EXAMPLE_JSONC = """\
   "base_url": "https://api.deepseek.com",
   "model_name": "deepseek-chat",
   "temperature": 0.0,
-  "max_tokens": 2000,
+  "max_tokens": 16384,
   "timeout": 120,
   "max_retries": 10
 }

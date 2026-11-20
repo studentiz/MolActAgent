@@ -69,6 +69,18 @@ from .utils import validate_inputs
 logger = logging.getLogger(__name__)
 
 
+def _check_score(record, field, issues):
+    raw = record.get(field)
+    try:
+        value = float(raw)
+    except (TypeError, ValueError, OverflowError):
+        value = float("nan")
+    if isinstance(raw, bool) or not 0 <= value <= 1:
+        issues.append(f"Provide a finite {field} between 0 and 1.")
+    else:
+        record[field] = value
+
+
 class MolActAgent:
     def __init__(
         self,
@@ -643,6 +655,8 @@ class MolActAgent:
                 "candidate_classes": candidate_classes,
                 "ref_indices": ref_indices,
                 "label": "Unknown",
+                "model_label": None,
+                "decision_source": "indistinguishable_references",
                 "confidence": 0.0,
                 "class_scores": {
                     c: round(1.0 / len(candidate_classes), 3)
@@ -671,24 +685,7 @@ class MolActAgent:
         ]
         disc_set = set(disc_names)
 
-        # Per-feature multi-way alignment tally: which class's
-        # reference is numerically closest to Test on this
-        # feature?
-        #
-        # This is the **witness layer** in action (see
-        # docs/design.md §5). The tally is a deterministic,
-        # embarrassing-to-get-wrong computation Python performs
-        # and presents to the LLM as ground truth. The LLM is
-        # told to default to the argmax of this tally unless it
-        # has decisive domain-grounded evidence to override it
-        # (the "soft baseline check" in ``_check_tuple``).
-        #
-        # Tie semantics: when ≥2 classes are exactly equidistant
-        # to Test on a feature, that feature contributes to the
-        # ``n_neutral`` bucket rather than splitting the vote.
-        # Splitting would let the LLM treat the feature as
-        # informative when it carries no discriminative signal;
-        # routing it to neutral keeps the witness honest.
+        # Count nearest reference values per feature. Equidistant values are neutral.
         abs_diffs = np.abs(disc_refs - test_disc)
         min_per_feature = abs_diffs.min(axis=0)
         n_aligned = {cls: 0 for cls in candidate_classes}
@@ -757,6 +754,7 @@ class MolActAgent:
 
         last_response = ""
         last_issues: list[str] = ["No response yet"]
+        attempts = []
         for attempt in range(self.max_check_retries + 1):
             tag = (
                 f"{tag_prefix}_ANA"
@@ -764,14 +762,20 @@ class MolActAgent:
                 else f"{tag_prefix}_ANA_r{attempt}"
             )
             raw = self.llm.chat(
-                msgs, tag=tag, max_tokens=2000,
+                msgs, tag=tag, max_tokens=getattr(self.llm, "max_tokens", 2000),
                 temperature=self.llm_temperature,
             )
             last_response = raw
             logger.debug(f"[{tag}] raw:\n{raw}")
 
+            call = getattr(self.llm, "last_call", None) or {}
             parsed = self._safe_parse_tuple_json(raw)
-            if parsed is None:
+            proposed = parsed.get("label") if isinstance(parsed, dict) else None
+            attempt_record = {"tag": tag, "model_label": proposed, "service": dict(call)}
+            attempts.append(attempt_record)
+            if call.get("truncated") or call.get("finish_reason") not in (None, "stop"):
+                last_issues = ["The response was incomplete. Return a concise, complete judgment."]
+            elif not isinstance(parsed, dict):
                 last_issues = [
                     "Output was not valid JSON. Emit ONLY the JSON "
                     "object described in the schema, with no markdown "
@@ -784,14 +788,29 @@ class MolActAgent:
                     baseline_class=baseline_class,
                 )
                 if ok:
-                    return self._finalize_tuple(
+                    for driver in fixed["key_drivers"]:
+                        pos = disc_names.index(driver["feature"])
+                        ref = candidate_classes.index(driver["favored_class"])
+                        for field, measured in (("test_value", test_disc[pos]),
+                                                ("favored_value", disc_refs[ref, pos])):
+                            try:
+                                matches = np.isclose(float(driver[field]), measured, atol=0.000051, rtol=0)
+                            except (KeyError, TypeError, ValueError):
+                                matches = False
+                            if not matches:
+                                issues.append(f"Check {field} for {driver['feature']} against the table.")
+                    ok = not issues
+                if ok:
+                    result = self._finalize_tuple(
                         fixed, ref_indices, candidate_classes, disc_names,
-                        n_aligned=n_aligned,
-                        n_neutral=n_neutral,
-                        baseline_class=baseline_class,
+                        n_aligned=n_aligned, n_neutral=n_neutral, baseline_class=baseline_class,
                     )
+                    attempt_record["accepted"] = True
+                    result["attempts"] = attempts
+                    return result
                 last_issues = issues
 
+            attempt_record.update(accepted=False, issues=list(last_issues))
             logger.info(
                 f"[{tag_prefix}] CHECK failed (attempt {attempt}): "
                 f"{'; '.join(last_issues[:3])}"
@@ -801,53 +820,14 @@ class MolActAgent:
                     msgs, last_response, last_issues,
                 )
 
-        # Validation exhausted: still return the deterministic baseline
-        # verdict + alignment counts so this tuple contributes useful
-        # information instead of falling through to Unknown.
-        logger.warning(
-            f"[{tag_prefix}] LLM validation exhausted after "
-            f"{self.max_check_retries + 1} attempts; "
-            f"falling back to deterministic baseline ({baseline_class})"
+        result = self._fallback_tuple(ref_indices, candidate_classes, "; ".join(last_issues))
+        result.update(
+            baseline_class=baseline_class, n_aligned=n_aligned, n_neutral=int(n_neutral),
+            discriminative_features=disc_names, decision_source="invalid_response", attempts=attempts,
+            reason=f"No valid model judgment after {self.max_check_retries + 1} attempts.",
+            uncertainty="; ".join(last_issues),
         )
-        total_aligned = sum(n_aligned.values())
-        if total_aligned > 0:
-            class_scores = {
-                cls: round(n / total_aligned, 3)
-                for cls, n in n_aligned.items()
-            }
-        else:
-            eq = round(1.0 / len(candidate_classes), 3)
-            class_scores = {cls: eq for cls in candidate_classes}
-        sorted_scores = sorted(class_scores.values(), reverse=True)
-        margin = sorted_scores[0] - (
-            sorted_scores[1] if len(sorted_scores) > 1 else 0.0
-        )
-        confidence = round(0.5 * margin + 0.4, 3)
-        return {
-            "candidate_classes": candidate_classes,
-            "ref_indices": ref_indices,
-            "label": baseline_class,
-            "confidence": confidence,
-            "class_scores": class_scores,
-            "n_aligned": n_aligned,
-            "n_neutral": int(n_neutral),
-            "baseline_class": baseline_class,
-            "summary": (
-                f"Numerical alignment tally: {n_aligned}. "
-                "(LLM rationale unavailable.)"
-            ),
-            "reason": (
-                f"Validation failed {self.max_check_retries + 1} times "
-                f"({'; '.join(last_issues[:2])}); used deterministic "
-                "baseline."
-            ),
-            "discriminative_features": disc_names,
-            "key_drivers": [],
-            "supporting_features": [],
-            "opposing_features": [],
-            "counter_evidence": "",
-            "uncertainty": "LLM rationale unavailable; relied on tally.",
-        }
+        return result
 
     # ── tuple-level parsing & validation ─────────────────────────────
 
@@ -885,14 +865,7 @@ class MolActAgent:
 
     @staticmethod
     def _baseline_class_from_counts(n_aligned: dict[str, int]) -> str:
-        """Verdict from the deterministic alignment tally alone.
-
-        The class with the most feature-votes wins. Ties (or all-zero
-        counts) collapse to ``"Unknown"`` so the LLM has the freedom to
-        break the deadlock with a domain-grounded argument — but if
-        there is a unique top class, that is the baseline the LLM is
-        expected to match.
-        """
+        """Return the unique alignment-count leader, or Unknown for a tie."""
         if not n_aligned:
             return "Unknown"
         sorted_counts = sorted(
@@ -915,38 +888,24 @@ class MolActAgent:
         n_aligned: dict[str, int] | None = None,
         baseline_class: str = "Unknown",
     ) -> tuple[bool, dict, list[str]]:
-        """Rule-based validation of the parsed tuple JSON.
-
-        Returns ``(ok, possibly-mutated-parsed, issues)``. The most
-        important check is that the LLM's ``label`` matches the
-        deterministic baseline class. Overrides are accepted only
-        when the cited drivers clearly and unanimously contradict the
-        baseline (handled by clamping the label in
-        ``_finalize_tuple``, not by failing here).
-        """
+        """Check the proposed class and cited evidence against the supplied comparison."""
         issues: list[str] = []
-        n_aligned = n_aligned or {}
         candidate_set = set(candidate_classes)
         valid_labels = candidate_set | {"Unknown"}
 
         label = parsed.get("label")
-        if label not in valid_labels:
+        if not isinstance(label, str) or label not in valid_labels:
             issues.append(
                 f"`label` must be one of {sorted(valid_labels)!r}; "
                 f"got {label!r}."
             )
 
-        try:
-            conf = float(parsed.get("confidence", 0.5))
-            parsed["confidence"] = max(0.0, min(1.0, conf))
-        except (TypeError, ValueError):
-            parsed["confidence"] = 0.5
+        _check_score(parsed, "confidence", issues)
 
         drivers = parsed.get("key_drivers", [])
-        if not isinstance(drivers, list) or len(drivers) < 2:
-            issues.append(
-                "`key_drivers` must be a list of at least 2 entries."
-            )
+        minimum = min(2, len(disc_set))
+        if not isinstance(drivers, list) or len(drivers) < minimum:
+            issues.append(f"Give at least {minimum} drivers from the supplied table.")
         else:
             seen = set()
             cleaned = []
@@ -954,7 +913,7 @@ class MolActAgent:
                 if not isinstance(d, dict):
                     continue
                 fn = d.get("feature")
-                if fn not in disc_set:
+                if not isinstance(fn, str) or fn not in disc_set:
                     issues.append(
                         f"`key_drivers` cites '{fn}' which is not a "
                         "discriminative feature in the table."
@@ -964,23 +923,19 @@ class MolActAgent:
                     continue
                 seen.add(fn)
                 fav = d.get("favored_class")
-                if fav not in candidate_set:
+                if not isinstance(fav, str) or fav not in candidate_set:
                     issues.append(
                         f"`key_drivers[{fn}].favored_class` must be one "
                         f"of {sorted(candidate_set)!r}; got {fav!r}."
                     )
                     continue
-                try:
-                    s = float(d.get("strength", 0.5))
-                    d["strength"] = max(0.0, min(1.0, s))
-                except (TypeError, ValueError):
-                    d["strength"] = 0.5
+                _check_score(d, "strength", issues)
                 d.setdefault("why", "")
                 cleaned.append(d)
             parsed["key_drivers"] = cleaned
-            if len(cleaned) < 2 and not issues:
+            if len(cleaned) < minimum and not issues:
                 issues.append(
-                    "Need at least 2 valid driver entries; please retry "
+                    f"Need at least {minimum} valid driver entries; please retry "
                     "and only cite features that exist in the table "
                     "with valid favored_class values."
                 )
@@ -995,73 +950,9 @@ class MolActAgent:
             if not isinstance(parsed.get(k), str):
                 parsed[k] = ""
 
-        # Soft baseline check — IMPORTANT: this is an *optimisation
-        # gate*, not a permission gate.
-        #
-        # The witness ALWAYS wins. ``_finalize_tuple`` (called next)
-        # unconditionally clamps the per-tuple ``label`` to the
-        # alignment-tally baseline whenever they disagree. That clamp
-        # is the load-bearing safety net.
-        #
-        # What the soft check does: when the LLM's label disagrees
-        # with the baseline AND its drivers don't decisively favour
-        # the LLM's pick (sum of strengths in the LLM's direction
-        # ≤ sum of strengths in the baseline's direction + 1.0), we
-        # add a ``CHECK FAILED`` issue and ask the LLM to retry. The
-        # retry is the LLM's chance to either:
-        #   (a) align its label with the baseline, OR
-        #   (b) strengthen its drivers in support of its pick.
-        # Either outcome leaves the per-tuple drivers consistent with
-        # the verdict that ``_finalize_tuple`` will assign.
-        #
-        # Why we DON'T retry when ``override_strong`` is true: the
-        # LLM has clearly committed to its choice with strong
-        # rationale; further retries would just re-emit the same
-        # output and burn LLM calls. We accept the strong-driver case
-        # without retry — the clamp in ``_finalize_tuple`` will still
-        # set the verdict to baseline, but at least we save the round
-        # trip. The only cost is a per-tuple record where the cited
-        # drivers favour a different class than the final clamped
-        # ``label``; that is documented and downstream code (notably
-        # the driver-attribution aggregation) treats the drivers as
-        # the LLM's *raw rationale* rather than as committed votes
-        # for the verdict.
-        #
-        # Threshold rationale (``+ 1.0``): a typical strength is
-        # 0.5-0.9 per driver and there are 3-6 drivers per tuple, so
-        # ``+ 1.0`` corresponds to "the LLM's drivers outweigh the
-        # baseline-favouring drivers by roughly one full
-        # high-confidence driver". Below this threshold we judge the
-        # LLM's commitment too tentative to skip the retry.
-        if (
-            not issues
-            and baseline_class in candidate_set
-            and parsed.get("label") in candidate_set
-            and parsed.get("label") != baseline_class
-        ):
-            drivers_clean = parsed["key_drivers"]
-            same_dir = sum(
-                d["strength"] for d in drivers_clean
-                if d["favored_class"] == baseline_class
-            )
-            opp_dir = sum(
-                d["strength"] for d in drivers_clean
-                if d["favored_class"] == parsed["label"]
-            )
-            override_strong = opp_dir > same_dir + 1.0
-            if not override_strong:
-                tally_text = ", ".join(
-                    f"{cls}: {n}" for cls, n in n_aligned.items()
-                )
-                issues.append(
-                    f"The deterministic alignment tally ({tally_text}) "
-                    f"identifies baseline = {baseline_class}, and your "
-                    "selected drivers do not provide a decisive "
-                    "counter-argument. Set `label` to "
-                    f"'{baseline_class}' or substantially strengthen "
-                    f"the drivers favouring '{parsed['label']}'."
-                )
-
+        if not issues and label in candidate_set and drivers:
+            if not any(d["favored_class"] == label for d in parsed["key_drivers"]):
+                issues.append("Cite a measured feature that supports the proposed class, or return Unknown.")
         return (len(issues) == 0), parsed, issues
 
     @staticmethod
@@ -1074,30 +965,7 @@ class MolActAgent:
         n_neutral: int = 0,
         baseline_class: str = "Unknown",
     ) -> dict:
-        """Build the canonical tuple record.
-
-        Two design commitments are baked in here:
-
-        1. **``class_scores`` come from the deterministic alignment
-           tally**, never from the LLM's driver-strength sums. This
-           keeps per-tuple scoring reproducible and not biased by
-           the LLM's narrative. The LLM's drivers are kept to power
-           explanations and feature attribution; they do NOT
-           influence which class wins.
-        2. **``label`` is the alignment-tally baseline whenever
-           there's a real candidate class to clamp to.** The LLM
-           gets to PROPOSE a label inside the tuple's evidence
-           record, but the per-tuple verdict is anchored by the
-           witness. Even when ``_check_tuple`` accepted the LLM's
-           "strong override", we clamp here — see the long comment
-           in ``_check_tuple`` for why the soft check is an
-           optimisation gate, not a permission gate.
-
-           The witness ALWAYS wins. Reading either function's
-           comments without the other has historically caused
-           confusion; both are documented as one decision so the
-           contract is unambiguous.
-        """
+        """Keep the validated model decision and its numerical comparison together."""
         n_aligned = n_aligned or {}
         drivers = parsed["key_drivers"]
         total_aligned = sum(n_aligned.values())
@@ -1115,21 +983,14 @@ class MolActAgent:
             class_scores = {cls: eq for cls in candidate_classes}
 
         label = parsed["label"]
-        if (
-            baseline_class in candidate_classes
-            and label in candidate_classes
-            and label != baseline_class
-        ):
-            # The witness wins. See the contract documented above
-            # and in the soft-check comment in ``_check_tuple``.
-            label = baseline_class
-
         confidence = float(parsed["confidence"])
 
         return {
             "candidate_classes": candidate_classes,
             "ref_indices": ref_indices,
             "label": label,
+            "model_label": label,
+            "decision_source": "model_abstention" if label == "Unknown" else "model",
             "confidence": confidence,
             "class_scores": class_scores,
             "n_aligned": dict(n_aligned),
@@ -1596,6 +1457,8 @@ class MolActAgent:
             "candidate_classes": list(candidate_classes),
             "ref_indices": ref_indices,
             "label": "Unknown",
+            "model_label": None,
+            "decision_source": "request_failure",
             "confidence": 0.0,
             "class_scores": {
                 c: round(1.0 / max(1, len(candidate_classes)), 3)

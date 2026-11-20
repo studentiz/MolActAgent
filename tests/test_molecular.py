@@ -61,6 +61,17 @@ def test_molecular_votes_can_disagree_with_nearest_reference(molecules):
     assert result.label == "inactive"
 
 
+def test_written_references_use_lab_ids_from_the_comparison(molecules):
+    reference, query = molecules
+    rationale = "Compare refs 1 and 2. Ref 0 is absent. The cutoff is 1000 nM."
+    client = Replies([(evidence_reply("active", rationale=rationale), False)])
+    result, = MolecularClassifier(client, repeats=1).fit(reference, id_column="id").predict(query)
+    html = report_for(result)
+    assert ('Compare <a href="#compound-1-ref-1">active-ref</a> and '
+            '<a href="#compound-1-ref-2">inactive-ref</a>. Ref 0 is absent. The cutoff is 1000 nM.') in html
+    assert 'href="#compound-1-ref-0"' not in html
+
+
 def test_truncated_response_retries_and_replays(molecules, tmp_path):
     reference, query = molecules
     classifier = MolecularClassifier(
@@ -222,3 +233,46 @@ def test_repeated_explanations_and_reference_measurements(molecules):
     assert "Identical evidence in 3 judgments" in html
     assert "&lt;5 nM" in html and 'href="https://example.org/A"' in html
     assert "javascript:" not in html and "Individual LLM judgments (3)" in html
+
+
+def test_repeated_measurements_use_one_panel_slot_and_keep_sources(molecules):
+    ref, query = molecules
+    ref = pd.concat([ref, ref.iloc[[1]].assign(id="repeat", measurement="12 nM")], ignore_index=True)
+    model = Replies([(evidence_reply("active"), False)])
+    result = MolecularClassifier(model, repeats=1).fit(ref, id_column="id").predict(query)[0]
+    assert len(result.references) == 2
+    replicates = result.references[0]["measurements"]
+    assert [r["reference"] for r in replicates] == ["active-ref", "repeat"]
+    assert replicates[1]["measurement"] == "12 nM"
+    assert "2 measurements of this structure" in report_for(result)
+    assert "The active and inactive panels share a chemical series." not in str(model.requests)
+
+
+def test_mixed_transport_failure_is_reported_as_a_run_status(molecules):
+    from molactagent._molecular_recording import ModelRequestError
+
+    ref, query = molecules
+
+    class Timeouts(Replies):
+        def chat(self, **kwargs):
+            if ":r0:" in kwargs["tag"]:
+                return super().chat(**kwargs)
+            raise ModelRequestError("APITimeoutError")
+
+    model = Timeouts([(evidence_reply("active"), False)])
+    result = MolecularClassifier(model, workers=1).fit(ref).predict(query)[0]
+    assert result.decision["counts"] == dict(active=1, inactive=0, uncertain=0, failed=4)
+    assert "1 favored active, 0 favored inactive, 0 abstained, 4 timed out" in report_for(result)
+
+
+def test_measurement_text_is_display_only_and_numeric_potency_is_sent(molecules):
+    ref, query = molecules
+
+    def request(text, potency):
+        measured = ref.assign(measurement=text, pchembl=[6.0, potency, 4.0])
+        model = Replies([(evidence_reply("active"), False)])
+        MolecularClassifier(model, repeats=1).fit(measured, pchembl_column="pchembl").predict(query)
+        return model.requests[0]["messages"]
+
+    assert request("12 nM", 7.1) == request("archived 12 nM", 7.1)
+    assert request("12 nM", 7.1) != request("12 nM", 7.9)

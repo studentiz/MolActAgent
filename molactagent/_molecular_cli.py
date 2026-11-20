@@ -37,6 +37,7 @@ def add_molecular_parser(commands):
     parser.add_argument("--workers", type=int, help="Parallel model calls (default: 4).")
     parser.add_argument("--plain-json", action="store_true", default=None, help="Omit the API JSON-mode parameter.")
     parser.add_argument("--output-dir", "-o", type=Path, help="Save predictions.json and report.html without overwriting.")
+    parser.add_argument("--resume", action="store_true", help="Resume a live batch with the same inputs, settings and output paths.")
     recording = parser.add_mutually_exclusive_group()
     recording.add_argument("--replay", type=Path, help="Replay responses and settings with no API connection.")
     recording.add_argument("--record", type=Path, help="Save model responses and run settings.")
@@ -185,10 +186,34 @@ def run_molecular(args):
     if record_path:
         paths.append(record_path)
 
-    with _reserve_outputs(paths):
+    journal = None
+    if args.resume and (replay or not paths):
+        raise ValueError("--resume requires a live run with --output-dir or --record.")
+    if len(set(path.resolve() for path in paths)) != len(paths):
+        raise ValueError("Each output needs its own path.")
+    for path in paths:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if not args.resume and path.exists():
+            raise ValueError(f"Output already exists at {path}. Choose a new path.")
+    with ExitStack() as stack:
+        if paths and not replay:
+            from ._molecular_batch import BatchJournal
+
+            journal_dir = output_dir / ".molactagent" if output_dir else record_path.with_name("." + record_path.name + ".checkpoints")
+            endpoint = str(getattr(getattr(client, "client", None), "base_url", ""))
+            manifest = {
+                "schema": 1, "software": runtime_versions(), "model": client.model_name,
+                "service_sha256": hashlib.sha256(endpoint.encode()).hexdigest(),
+                "settings": classifier.settings, "command": command,
+                "destinations": [str(path.resolve()) for path in paths],
+            }
+            journal = BatchJournal(journal_dir, manifest, paths, args.resume)
+            stack.callback(journal.close)
+        else:
+            stack.enter_context(_reserve_outputs(paths))
         results = classifier.predict(
             test, smiles_column=columns["smiles_column"], id_column=columns["id_column"],
-            record=record_path is not None,
+            record=record_path is not None, _journal=journal,
         )
         metadata = {
             **classifier.settings,
@@ -209,7 +234,10 @@ def run_molecular(args):
                 reference_names=dict(enumerate(reference_names)), query_names=query_names,
                 reference_notes=reference_notes,
             )
-        _write_outputs(outputs)
+        if journal is None:
+            _write_outputs(outputs)
+        else:
+            journal.finish(outputs)
 
     if output_dir:
         for result in results:

@@ -61,16 +61,14 @@ class ReplayClient:
         self.inputs = payload["inputs"]
         versions = runtime_versions()
         for field in ("molactagent", "rdkit"):
-            # 0.5.1 changed the report. Its molecular requests and vote rules are
-            # identical to 0.5.0, and replay still checks each request digest.
-            if (field == "molactagent" and versions[field] == "0.5.1"
-                    and payload["versions"].get(field) == "0.5.0"):
+            if field == "molactagent" and payload["versions"].get(field) in {"0.5.0", "0.5.1"}:
                 continue
             if payload["versions"].get(field) != versions[field]:
                 raise ReplayError(
                     f"Recording version differs for {field}: expected {payload['versions'].get(field)!r}, "
                     f"running {versions[field]!r}. Use the release and dependencies that made this recording."
                 )
+        self.legacy_panel = payload["versions"]["molactagent"] in {"0.5.0", "0.5.1"}
         self._calls = payload["calls"]
         self._local = threading.local()
         self._lock = threading.Lock()

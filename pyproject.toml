@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "molactagent"
-version = "0.5.1"
-description = "Evidence-grounded molecular activity classification for small datasets, with SMILES featurisation, traceable explanations, HTML reports, and a friendly CLI."
+version = "0.6.0"
+description = "An AI agent for prioritizing compounds from small bioactivity assays using measured reference structures and language-model judgments."
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 license = "MIT"
