@@ -18,6 +18,7 @@ def add_molecular_parser(commands):
     parser.add_argument("--reference", required=True, help="Labelled reference table.")
     parser.add_argument("--test", required=True, help="Query table with SMILES.")
     parser.add_argument("--id-column", help="Optional unique ID column in both tables.")
+    parser.add_argument("--name-column", help="Display-name column for the HTML report (default: name if present).")
     parser.add_argument("--smiles-column", default="smiles")
     parser.add_argument("--label-column", default="label")
     parser.add_argument("--pchembl-column", help="Optional measured pChEMBL column in reference data.")
@@ -36,6 +37,15 @@ def add_molecular_parser(commands):
     return parser
 
 
+def _display_names(table, column):
+    if column is not None and column not in table.columns:
+        raise ValueError(f"Missing name column {column!r}.")
+    column = column or "name"
+    if column not in table.columns:
+        return []
+    return table[column].astype("string").fillna("").str.strip().tolist()
+
+
 def run_molecular(args):
     from ._molecular_recording import ReplayClient
     from .molecular import MolecularClassifier
@@ -43,6 +53,8 @@ def run_molecular(args):
 
     reference = load_table(args.reference)
     test = load_table(args.test)
+    reference_names = _display_names(reference, args.name_column)
+    query_names = _display_names(test, args.name_column)
     endpoint = load_background(args.endpoint) or "Binary activity classification."
     if args.replay:
         if any((args.llm_config, args.profile, args.api_key, args.base_url,
@@ -97,7 +109,10 @@ def run_molecular(args):
         args.output_dir.mkdir(parents=True, exist_ok=True)
         (args.output_dir / "predictions.json").write_text(payload, encoding="utf-8")
         (args.output_dir / "report.html").write_text(
-            render_molecular_report(results, endpoint=endpoint, run=metadata),
+            render_molecular_report(
+                results, endpoint=endpoint, run=metadata, series=args.series,
+                reference_names=dict(enumerate(reference_names)), query_names=query_names,
+            ),
             encoding="utf-8",
         )
         for result in results:

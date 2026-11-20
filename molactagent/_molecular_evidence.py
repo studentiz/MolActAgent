@@ -633,8 +633,8 @@ class ReferenceJudge:
         records: list[MoleculeRecord],
         query_idx: int,
         train_idx: list[int],
-    ) -> list[dict] | None:
-        """Focused view for an ambiguous halogen deletion within one scaffold.
+    ) -> tuple[list[dict], list[int]] | None:
+        """Build the halogen deletion prompt and return its reference rows.
 
         This is used when the closest same-scaffold reference has more
         halogens than the test.  The reference's measured class is on the
@@ -716,10 +716,11 @@ OUTPUT (JSON only)
   "rationale": "2-4 concise sentences"
 }}
 """
-        return [
+        messages = [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ]
+        return messages, ordered
 
     def build_stereo_gate_pair_prompt(
         self,
@@ -727,8 +728,8 @@ OUTPUT (JSON only)
         records: list[MoleculeRecord],
         query_idx: int,
         train_idx: list[int],
-    ) -> list[dict] | None:
-        """Focused gate for an exact opposite active enantiomer.
+    ) -> tuple[list[dict], list[int]] | None:
+        """Build the stereo gate prompt and return its reference rows.
 
         The comparison is deliberately limited to one active exact
         constitution and one inactive terminal-class reference.  The LLM
@@ -824,10 +825,11 @@ OUTPUT (JSON only)
   "rationale": "2-4 concise sentences"
 }}
 """
-        return [
+        messages = [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ]
+        return messages, [active_ref, inactive_ref]
 
     @staticmethod
     def _sidechain_neighbors(

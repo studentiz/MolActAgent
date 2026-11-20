@@ -53,6 +53,21 @@ def _panel_decision(choices: list[FinalChoice]):
     return label, confidence / counts[label]
 
 
+def _reference_rows(records, query_index, indices, reference_ids):
+    query = records[query_index]
+    return [
+        {
+            "reference": reference_ids[index],
+            "position": index,
+            "smiles": records[index].canonical,
+            "label": records[index].label,
+            "similarity": tanimoto(query.morgan, records[index].morgan),
+            "pchembl": records[index].pchembl,
+        }
+        for index in indices
+    ]
+
+
 class MolecularClassifier:
     """Predict active or inactive by contrasting groups of measured references.
 
@@ -233,7 +248,7 @@ class MolecularClassifier:
             self._judgment("panel", repeat, vote) for repeat, vote in enumerate(panel_choices)
         ]
         if self.profile == "focused":
-            focused = self._focused_views(records, query_index, indices, tag, judge, pool)
+            focused = self._focused_views(records, query_index, indices, reference_ids, tag, judge, pool)
             for view, choice, evidence in focused:
                 judgments.extend(evidence)
                 if choice is None or not choice.parsed_ok or choice.label not in CLASSES:
@@ -244,17 +259,7 @@ class MolecularClassifier:
                         continue
                 label, confidence, selected = choice.label, choice.confidence, view
 
-        panel = [
-            {
-                "reference": reference_ids[index],
-                "position": index,
-                "smiles": records[index].canonical,
-                "label": records[index].label,
-                "similarity": tanimoto(query.morgan, records[index].morgan),
-                "pchembl": records[index].pchembl,
-            }
-            for index in (*active, *inactive)
-        ]
+        panel = _reference_rows(records, query_index, (*active, *inactive), reference_ids)
         calls = [
             value["metadata"] for key, value in sorted(judge.llm.calls.items())
             if key.startswith(f"{tag}:")
@@ -265,8 +270,8 @@ class MolecularClassifier:
         )
 
     @staticmethod
-    def _judgment(view, number, decision):
-        return {
+    def _judgment(view, number, decision, *, references=None):
+        judgment = {
             "view": view,
             "repeat": number,
             "label": decision.label,
@@ -274,19 +279,26 @@ class MolecularClassifier:
             "evidence": {
                 key: decision.parsed[key]
                 for key in ("class_contrast", "test_position", "counter_evidence", "rationale",
-                            "pchembl_estimate", "scaffold_type")
+                            "pchembl_estimate", "scaffold_type", "halogen_change_interpretation",
+                            "terminal_class_match", "decisive_reference")
                 if key in decision.parsed
             },
             "parsed": decision.parsed_ok,
             "error": decision.error,
         }
+        if references is not None:
+            judgment["references"] = references
+        return judgment
 
-    def _focused_views(self, records, query_index, indices, tag, judge, pool):
+    def _focused_views(self, records, query_index, indices, reference_ids, tag, judge, pool):
         views = []
         deletion = judge.build_halogen_deletion_prompt(self.task_name, records, query_index, indices)
         if deletion:
-            choice = judge.judge_panel(deletion, tag=f"{tag}:halogen_deletion")
-            views.append(("halogen_deletion", choice, [self._judgment("halogen_deletion", 0, choice)]))
+            messages, related = deletion
+            choice = judge.judge_panel(messages, tag=f"{tag}:halogen_deletion")
+            references = _reference_rows(records, query_index, related, reference_ids)
+            evidence = self._judgment("halogen_deletion", 0, choice, references=references)
+            views.append(("halogen_deletion", choice, [evidence]))
         stereo = judge.build_stereo_gate_pair_prompt(self.task_name, records, query_index, indices)
         if not stereo:
             return views
@@ -304,7 +316,8 @@ class MolecularClassifier:
                 judge.judge, prompt, pair_id=pair_index, active_ref=active,
                 inactive_ref=inactive, tag=f"{tag}:pair{pair_index}", active_side=active_side,
             ))
-        choice = judge.judge_panel(stereo, tag=f"{tag}:stereo_gate_pair")
+        messages, related = stereo
+        choice = judge.judge_panel(messages, tag=f"{tag}:stereo_gate_pair")
         choices = [future.result() for future in pair_futures]
         evidence = [
             {
@@ -313,10 +326,14 @@ class MolecularClassifier:
                 if vote.choice in ("A", "B") else "Inconclusive",
                 "confidence": vote.confidence, "evidence": vote.parsed,
                 "parsed": vote.parsed_ok, "error": vote.error,
+                "references": _reference_rows(
+                    records, query_index, (vote.active_ref, vote.inactive_ref), reference_ids,
+                ),
             }
             for pair_index, vote in enumerate(choices)
         ]
-        evidence.append(self._judgment("stereo_gate_pair", 0, choice))
+        references = _reference_rows(records, query_index, related, reference_ids)
+        evidence.append(self._judgment("stereo_gate_pair", 0, choice, references=references))
         if choice.parsed_ok and choice.label in CLASSES and choice.confidence >= 0.6:
             views.append(("stereo_gate_pair", choice, evidence))
         else:

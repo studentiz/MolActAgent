@@ -8,6 +8,12 @@ MolActAgent is a Python package for molecular activity classification from small
 
 > MolActAgent is research software. A model-generated explanation is not an independent scientific citation, and the confidence score is not a calibrated probability. Validate results against suitable baselines and domain knowledge before using them in a real study.
 
+## What's New in 0.4.1
+
+- SMILES reports show the recorded chemical rationale, side-by-side molecule structures, counter-evidence and disagreement alongside each prediction.
+- Compound names can appear alongside IDs, and focused judgments link to the reference structures used in that comparison.
+- The GitHub Pages example and tutorial use the same tagged code and recorded responses. [Full changelog](CHANGELOG.md)
+
 ## What's New in 0.4.0
 
 - Added the SMILES binary classifier in the `molactagent molecular` command and the `MolecularClassifier` Python interface.
@@ -172,9 +178,10 @@ molactagent molecular \
   --output-dir molecular-output
 ```
 
-Open `molecular-output/report.html` to inspect the references and individual
-judgments. The tutorial covers pinned dependencies, using your own model and
-SMILES tables, and reading the results. [Tutorial](docs/tutorial.md#predict-from-smiles) · [Example report](https://studentiz.github.io/MolActAgent/molecular-example.html)
+Open `molecular-output/report.html` to compare structures and read the chemical
+rationale and counter-evidence for the prediction. The tutorial covers pinned
+dependencies, using your own model and SMILES tables, and reading the results.
+[Tutorial](docs/tutorial.md#predict-from-smiles) · [Example report](https://studentiz.github.io/MolActAgent/molecular-example.html)
 
 ## Quick Start With Numeric Tables
 

@@ -1,7 +1,7 @@
-id,smiles,label
-A1,Oc1ccccc1,active
-A2,Cc1ccc(O)cc1,active
-A3,COc1ccccc1O,active
-I1,COc1ccccc1,inactive
-I2,Cc1ccccc1,inactive
-I3,OCc1ccccc1,inactive
+id,smiles,label,name
+A1,Oc1ccccc1,active,Phenol
+A2,Cc1ccc(O)cc1,active,p-Cresol
+A3,COc1ccccc1O,active,Guaiacol
+I1,COc1ccccc1,inactive,Anisole
+I2,Cc1ccccc1,inactive,Toluene
+I3,OCc1ccccc1,inactive,Benzyl alcohol

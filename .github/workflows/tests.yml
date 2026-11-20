@@ -50,7 +50,9 @@ jobs:
             --replay examples/molecular/responses.json \
             --output-dir molecular-output
           python - <<'PY'
+          import base64
           import json
+          import re
           from pathlib import Path
 
           output = Path("molecular-output")
@@ -58,5 +60,13 @@ jobs:
           assert result["identifier"] == "Q1" and result["label"] == "active"
           assert [row["reference"] for row in result["references"]] == ["A2", "A1", "A3", "I3", "I2", "I1"]
           assert [vote["label"] for vote in result["judgments"]] == ["active"] * 5
-          assert (output / "report.html").read_bytes() == Path("docs/molecular-example.html").read_bytes()
+          # Cairo's raster encoding can vary by platform. Compare the report
+          # around the depictions and check that every embedded PNG is present.
+          png = re.compile(rb'(?<=src="data:image/png;base64,)[A-Za-z0-9+/=]+')
+          actual = (output / "report.html").read_bytes()
+          expected = Path("docs/molecular-example.html").read_bytes()
+          depictions = png.findall(actual)
+          assert len(depictions) == 9
+          assert all(base64.b64decode(value).startswith(b"\x89PNG\r\n\x1a\n") for value in depictions)
+          assert png.sub(b"[PNG]", actual) == png.sub(b"[PNG]", expected)
           PY

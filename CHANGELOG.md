@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1 — 2026-11-20
+
+- Redesigned SMILES evidence reports for experimental review with 2D query and reference structures, calculated properties, and recorded chemical rationale, counter-evidence and disagreement.
+- Added optional compound names in SMILES reports and retained the reference rows for each focused model judgment.
+
 ## 0.4.0 — 2026-11-20
 
 - Added an opt-in SMILES binary classifier for labelled active and inactive references. Python and CLI use the same molecular engine.

@@ -30,6 +30,10 @@ parsing and aggregation. The replay client matches requests by digest and
 returns recorded responses. Live predictions depend on the service response,
 including any provider-side routing. [Run the example](tutorial.md#predict-from-smiles)
 
+Each focused judgment carries the reference rows used in its comparison.
+The HTML report reads these rows and the stored judgment evidence to show how
+the recorded conclusion relates to the inputs. [Read the report guide](reports.md#reports-from-smiles)
+
 ## Feature-table Engine
 
 The remainder of this document describes the feature-table engine used by

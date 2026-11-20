@@ -8,11 +8,11 @@ phenolic hydroxyl. Run the example offline first and then try a live model.
 
 ### Install the Example Environment
 
-Use Python 3.12 for the pinned example. Activate the environment before
-running the commands in the rest of this section.
+Use Python 3.12 and the dependency constraints from the `v0.4.1` checkout.
+Activate the environment before running the prediction commands.
 
 ```bash
-git clone --branch v0.4.0 https://github.com/studentiz/MolActAgent.git
+git clone --branch v0.4.1 https://github.com/studentiz/MolActAgent.git
 cd MolActAgent
 python3.12 -m venv .venv
 source .venv/bin/activate
@@ -36,11 +36,12 @@ molactagent molecular \
   --output-dir molecular-output
 ```
 
-The command prints `Q1    active`. The report includes three reference
-molecules per class and five saved model judgments. Open
-`molecular-output/report.html` in your browser and expand a judgment to read
-its comparison and counter-evidence. `predictions.json` contains the same
-decision plus the call metadata. [View the example report](https://studentiz.github.io/MolActAgent/molecular-example.html)
+The command prints `Q1    active`. Open `molecular-output/report.html` in
+your browser. It shows why the recorded judgments placed 4-fluorophenol
+with the active references, how its structure compares with p-cresol and
+benzyl alcohol, and where the reference evidence is limited. Expand the
+recorded judgments to read the evidence from each of the five responses.
+`predictions.json` contains the decision and call metadata. [View the example report](https://studentiz.github.io/MolActAgent/molecular-example.html)
 
 Replaying checks the request fingerprint before returning each stored
 response. The replay performs retrieval, parses the model responses and
@@ -76,8 +77,9 @@ is private.
 Put `smiles,label` in your reference CSV and `smiles` in your query CSV.
 Supply both `active` and `inactive` labels from one assay definition. Use
 `--endpoint` to describe that assay and the labelling criterion. If both
-tables contain IDs, pass their column name as `--id-column`. Column names can
-also be set with `--smiles-column` and `--label-column`. If the reference
+tables contain IDs, pass their column name as `--id-column`. Add a `name`
+column to show chemical names in the report. Column names can also be set
+with `--name-column`, `--smiles-column` and `--label-column`. If the reference
 file has measured pChEMBL, pass its column and the assay cutoff via
 `--pchembl-column` and `--pchembl-threshold`.
 

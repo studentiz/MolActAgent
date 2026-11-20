@@ -2,11 +2,29 @@
 
 ## Reports From SMILES
 
-The molecular CLI writes `report.html` and `predictions.json`. The report
-links each prediction with its retrieved references, their similarities,
-the selected view and the individual model judgments. Expand a judgment
-to see its chemical comparison, rationale and counter-evidence. The JSON
-also records the model calls and failure status.
+The molecular CLI writes `report.html` and `predictions.json`. Open the
+self-contained HTML file in a browser to review each compound.
+
+1. Read the assay and label definition alongside the predicted label. The
+   heading reports agreement among the model judgments used for that decision
+   and flags inconclusive results.
+2. Compare the test structure with the displayed active and inactive
+   references. For a panel decision, the report highlights the nearest
+   reference in each class. A focused decision shows references from the
+   recorded comparison that supplied the call. Reference labels and any
+   input pChEMBL values come from the supplied table.
+3. Read the chemical rationale and counter-evidence on the same page. The
+   report quotes a recorded supporting judgment and links to its evidence record.
+   Dissenting judgments appear with their own source. Inconclusive decisions
+   show the conflicting interpretations or explain why usable votes were absent.
+4. Expand the property comparison, the full reference panel or the recorded
+   judgments to inspect the details. The property values are calculated
+   from SMILES. The model evidence score is uncalibrated.
+
+Add a `name` column to either input table to display chemical names alongside
+IDs. Use `--name-column` to select a different shared column. The JSON contains
+the decision, references, judgments and call metadata, including retries
+and truncation flags when available.
 
 Try the complete teaching example with recorded model responses. [Tutorial](tutorial.md#replay-a-complete-prediction) · [Example report](https://studentiz.github.io/MolActAgent/molecular-example.html)
 
