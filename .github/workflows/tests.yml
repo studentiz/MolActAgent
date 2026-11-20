@@ -47,5 +47,7 @@ jobs:
           python-version: "3.12"
       - name: Install pinned example dependencies
         run: python -m pip install -e ".[chem]" -c examples/molecular/constraints.txt
-      - name: Verify both published reports and molecular decisions
+      - name: Verify published reports and molecular decisions
         run: python scripts/verify_molecular_examples.py
+      - name: Match the scientific figures to the recorded cell assay
+        run: python motion/scripts/verify_evidence.py

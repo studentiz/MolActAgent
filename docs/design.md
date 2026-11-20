@@ -1,16 +1,10 @@
 # How MolActAgent makes a prediction
 
-Can the measured reference compounds support an activity assessment for
-your candidate in this assay? Compare the candidate with compounds tested
-under comparable conditions. The recorded decision shows which references
-supported a class and where the available evidence left the question open.
+A chemist who has measured a handful of compounds in one assay can use those observations to choose the next candidate. MolActAgent combines local, example-based learning with a language model. Deterministic chemistry supplies comparable structures and values. The language model weighs what those comparisons mean for the stated endpoint. The agent retains the evidence, checks the response and combines usable judgments.
 
-MolActAgent has two engines with different decision rules. The SMILES
-engine asks a language model (LLM) to judge a panel of active and inactive
-compounds. The feature-table engine compares rows of numeric features and
-enforces a numeric baseline for conflicting class labels within each
-comparison. Both engines address the assay and class definitions you
-supply.
+For example, Q2 in the cell assay has fluorine where measured active R2 has chlorine and measured inactive R5 has a hydroxyl group. Those two measurements come from the same cell assay. The model used the substitutions to support its prediction for Q2. The chemical inference, the observed labels, and the actual records are available side by side. [Cell-assay report](https://studentiz.github.io/MolActAgent/cell-assay.html#compound-2)
+
+The SMILES engine compares groups of active and inactive structures. The numeric-table engine compares a candidate with one feature row per candidate class. Both retain the model's validated decision. Their retrieval, validation and aggregation rules differ.
 
 - [Molecular binary classification](#molecular-binary-classification) explains assay inputs, reference panels and the recorded CDK2 example.
 - [Focused molecular comparisons](#focused-molecular-comparisons) explains when a local comparison can replace the panel result.
@@ -43,7 +37,7 @@ Use stable IDs and specify stereochemistry in the SMILES where known.
 RDKit parses the structures and produces canonical isomeric SMILES.
 MolActAgent rejects invalid structures and conflicting labels for an
 identical canonical reference structure. For each query it excludes
-references with the same canonical SMILES. The query is `Inconclusive`
+references with the same canonical SMILES. Each other distinct isomeric structure occupies one reference slot. The first replicate with a supplied pChEMBL value represents the structure, or the first row if all lack one. Other measurements and their individual IDs remain on its record. The query is `Inconclusive`
 if this leaves either class absent.
 
 Optional reference pChEMBL values supply numeric activity evidence to the
@@ -233,41 +227,28 @@ numeric baseline. A tied or zero tally gives `Unknown`. A tuple with
 identical reference values on every feature returns `Unknown` without
 asking the model.
 
-The model sees that tally alongside the feature values and neighboring
-rows. It proposes a class or `Unknown`, reports a score and identifies
-drivers, counter-evidence and uncertainty. The response check requires a
-recognized label and at least two valid drivers citing distinct retained
-features and candidate classes. It normalizes numeric scores to the
-allowed range and can ask for corrections.
+The language model receives the tally alongside the feature table, neighboring rows, feature definitions and assay background. It judges which differences matter here. The validator checks the cited feature names, candidate classes, and quoted candidate and reference values against the displayed precision. A proposed class needs a driver supporting it. The local record retains the measured alignment and the accepted model decision separately.
 
-| Situation | Saved tuple label |
+| Outcome of a comparison | Effect on the decision |
 | --- | --- |
-| The baseline is a candidate class and the model proposes a different candidate class | The engine saves the numeric baseline. If the model's driver strengths for its proposed class sum to more than the strengths for the baseline class plus **1.0**, the reply can pass without a correction on that point. The final label still follows the baseline. |
-| The model returns a valid `Unknown` | The tuple stays `Unknown` and casts no class vote, even if the baseline names a class. |
-| The baseline is `Unknown` and the model supplies a valid candidate class | The model's class can become the tuple label. |
-| Response validation runs out of attempts | The engine uses the numeric baseline, with an alignment-derived weight and an explanation of the fallback. It keeps no model drivers for that tuple. |
-| The model call fails with an exception | The engine records an `Unknown` tuple with the call error. |
+| Valid model judgment, including a class different from the alignment leader | The accepted class and its model score go into the vote. The record saves `model_label`, `baseline_class` and `decision_source`. |
+| Valid model abstention | The record saves `Unknown` with source `model_abstention`. |
+| No valid reply after the correction attempts | The record saves `Unknown` with source `invalid_response` and the validation issue. |
+| Request failure or indistinguishable reference feature values | The reason is retained. The comparison has no class vote. |
 
-The tuple's `class_scores` come from normalized alignment counts, or
-uniform values when all counts are zero. A saved model rationale can
-favor another class after a conflicting label has been resolved by the
-baseline. Read the saved `label` and `baseline_class` alongside the
-interpretation. The validator's driver-strength check is a rule for
-requesting a correction, with up to three correction attempts by default.
+In v0.5.1 the numeric engine could replace a valid model label with the alignment leader. Use the original tag to reconstruct those historical runs. A saved historical field has the meaning assigned by its originating version.
 
 ### Combine tuple results
 
 A decisive tuple adds its weight to the total for its **saved** class.
-The aggregation uses the accepted model score, or a weight of 0.5 for a
-missing or zero score. For a validation fallback, the weight is
-`0.4 + 0.5 × (highest alignment proportion − runner-up proportion)`.
-`Unknown` tuples add no class weight.
+The aggregation uses the accepted model score. A score of zero adds zero
+weight. New judgments require a valid score. Historical tuples that lack a
+score use a weight of 0.5. `Unknown` tuples add no class weight.
 
 The leading class must exceed the runner-up's summed weight by **more
 than 0.05 × the number of decisive tuples**. If the lead falls short,
 including an exact tie, or if no tuple is decisive, the result is
-`Inconclusive`. Model scores can therefore affect the overall winner even
-where numeric alignment controls individual tuple labels.
+`Inconclusive`. The recorded class votes and their model weights determine the winner.
 
 The final `confidence` is a heuristic. With a winning class, it
 multiplies `0.5 + 0.5 × relative weight margin` by a factor that rises
@@ -342,8 +323,7 @@ directory for a known configuration filename, starting with
 [Live-model tutorial](tutorial.md#use-a-live-model) · [Configuration loader](../molactagent/config.py)
 
 The molecular CLI uses the configured temperature and output budget,
-which default to 0 and 16,384 tokens. The feature-table engine's
-classification tuple call requests 2,000 output tokens. The shared
+which default to 0 and 16,384 tokens. Numeric classification tuples honor the configured client budget. The shared
 client defaults to a 120-second timeout per HTTP attempt and up to ten
 additional attempts for transient failures. A transport retry and a
 request to correct the response are separate operations. Check the
@@ -370,8 +350,8 @@ or request errors. CLI recordings also store file fingerprints and column
 mappings. Replay with `--replay` and the original input files. It rebuilds
 and checks the requests and recomputes the decisions offline.
 
-Match the recorded RDKit version. v0.5.1 can replay compatible v0.5.0
-schema 2 recordings and render them with the updated report. File,
+Match the recorded RDKit version. v0.6.0 selects the original panel instructions when replaying v0.5.0 or v0.5.1
+schema 2 recordings and renders them with the updated report. File,
 settings and request checks still apply. Keep the historical inputs
 byte-for-byte, including their original headers. Editing the CSVs to
 add provenance columns changes their file fingerprints. For older schema 1

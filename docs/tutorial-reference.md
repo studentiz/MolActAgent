@@ -35,11 +35,11 @@ JSONC supports line and block comments and requires valid JSON after comments ar
 | Settings file field | CLI option | Behavior |
 | --- | --- | --- |
 | `temperature` | `--temperature` | Sampling setting. The default is 0. |
-| `max_tokens` | `--max-tokens` | Output budget. The client default for numeric runs is 2,000 and the molecular CLI defaults to 16,384 when the config omits the field. The generated starter sets 2,000 explicitly. |
+| `max_tokens` | `--max-tokens` | Output budget. The client default for numeric runs is 2,000 and the molecular CLI defaults to 16,384 when the config omits the field. The generated starter sets 16,384 explicitly. |
 | `timeout` | `--timeout` | Timeout per HTTP attempt in seconds. The default is 120. |
 | `max_retries` | `--max-retries` | Additional HTTP attempts for transient errors. The default is 10. Set it to 0 for a single transport attempt. The molecular engine can still request one format correction after a malformed or truncated reply. |
 
-The molecular CLI passes its resolved temperature and token limit to comparison calls. The numeric classification engine sets 2,000 tokens per tuple and 3,500 for the optional narrative. It passes its own temperature, which defaults to 0 and can be set in Python through `llm_temperature` on `MolActAgent` or `MolActAgentClassifier`. The standard numeric pipeline first probes the service with a short request.
+The molecular CLI passes its resolved temperature and token limit to comparison calls. Numeric classification tuples honor the client output budget. The optional narrative uses 3,500 tokens. It passes its own temperature, which defaults to 0 and can be set in Python through `llm_temperature` on `MolActAgent` or `MolActAgentClassifier`. The standard numeric pipeline first probes the service with a short request.
 
 ## Command-line reference
 
@@ -71,6 +71,8 @@ Place global options before the subcommand. `--quiet` (`-q`) suppresses informat
 | `--plain-json` | Omit the API's JSON-mode parameter while still asking for a JSON reply. |
 | `--output-dir PATH` (`-o`) | Write `predictions.json` and `report.html`. Without this option, the JSON goes to standard output. |
 | `--record PATH`, `--replay PATH` | Save responses and effective settings from a live run, or replay an existing recording without connecting to the provider. Choose one. |
+| `--resume` | Resume a live batch with the same command, model service, files and settings. The output directory contains a hidden `.molactagent/` checkpoint folder. A record-only run keeps a sibling `.<record-name>.checkpoints/` directory. Completed decisions and their recorded replies are reused. |
+
 
 Reference CSVs can also include `measurement` (original free-text value with units) and `source_url` (HTTP or HTTPS). These are display fields for people inspecting reference records in the HTML. The model receives assay text and its selected reference evidence, including values supplied through `--pchembl-column`.
 

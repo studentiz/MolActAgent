@@ -1,0 +1,154 @@
+{
+  "assay": {
+    "target": "human PPAR-alpha",
+    "host": "COS-1 cells",
+    "readout": "cell reporter assay",
+    "endpoint": "EC50",
+    "cutoffNanoMolar": 1000,
+    "rule": "Active <= 1 uM; inactive > 1 uM",
+    "predictionRecordSha256": "d9b1bdc93353b815e02a1ea1f83fab8ae8ad5299c7eea21568b0f2b5a132f7be",
+    "referenceFileSha256": "78f88c6938397dfae3871f2267d5c805b0e67d95ea464f189d15b1c2f8ebd61d",
+    "queryFileSha256": "3e1e7e5b2372e21d62952aee6d1509de9f610bad459437ea50f0b434fc9c5e4c",
+    "outcomeFileSha256": "0106986e65431aee3d7e566debf91823c8a71c2ce066acff6c6f2471ebaee632"
+  },
+  "references": [
+    {
+      "id": "R1",
+      "name": "CHEMBL94496",
+      "smiles": "CCCc1cc(Oc2ccc(C(C)C)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "label": "inactive",
+      "measurement": ">3000 nM",
+      "change": "para-isopropyl",
+      "sourceUrl": "https://www.ebi.ac.uk/chembl/explore/activity/108761",
+      "highlightSmarts": null
+    },
+    {
+      "id": "R2",
+      "name": "CHEMBL420441",
+      "smiles": "CCCc1cc(Oc2ccc(Cl)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "label": "active",
+      "measurement": "180 nM",
+      "change": "para-Cl",
+      "sourceUrl": "https://www.ebi.ac.uk/chembl/explore/activity/108771",
+      "highlightSmarts": "[Cl]"
+    },
+    {
+      "id": "R3",
+      "name": "CHEMBL121",
+      "smiles": "CN(CCOc1ccc(CC2SC(=O)NC2=O)cc1)c1ccccn1",
+      "label": "inactive",
+      "measurement": ">3000 nM",
+      "change": "distinct scaffold",
+      "sourceUrl": "https://www.ebi.ac.uk/chembl/explore/activity/108783",
+      "highlightSmarts": null
+    },
+    {
+      "id": "R4",
+      "name": "CHEMBL328615",
+      "smiles": "CCCc1cc(Oc2ccc(Cl)c(C)c2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "label": "active",
+      "measurement": "156 nM",
+      "change": "para-Cl + meta-Me",
+      "sourceUrl": "https://www.ebi.ac.uk/chembl/explore/activity/116833",
+      "highlightSmarts": "[Cl]"
+    },
+    {
+      "id": "R5",
+      "name": "CHEMBL94397",
+      "smiles": "CCCc1cc(Oc2ccc(O)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "label": "inactive",
+      "measurement": ">3000 nM",
+      "change": "para-OH",
+      "sourceUrl": "https://www.ebi.ac.uk/chembl/explore/activity/121673",
+      "highlightSmarts": "[OH]"
+    },
+    {
+      "id": "R6",
+      "name": "CHEMBL97529",
+      "smiles": "CCCc1cc(Oc2ccc(C3CCCC3)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "label": "inactive",
+      "measurement": ">3000 nM",
+      "change": "para-cyclopentyl",
+      "sourceUrl": "https://www.ebi.ac.uk/chembl/explore/activity/122905",
+      "highlightSmarts": null
+    },
+    {
+      "id": "R7",
+      "name": "CHEMBL96143",
+      "smiles": "CCCc1cc(Oc2ccc(F)c(C)c2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "label": "active",
+      "measurement": "85 nM",
+      "change": "para-F + meta-Me",
+      "sourceUrl": "https://www.ebi.ac.uk/chembl/explore/activity/125484",
+      "highlightSmarts": "[F]"
+    }
+  ],
+  "queries": [
+    {
+      "id": "Q1",
+      "smiles": "CCCc1cc(Oc2ccc(-c3ccccc3)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "label": "inactive",
+      "change": "para-phenyl",
+      "highlightSmarts": null,
+      "selected": false
+    },
+    {
+      "id": "Q2",
+      "smiles": "CCCc1cc(Oc2ccc(F)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "label": "active",
+      "change": "para-F",
+      "highlightSmarts": "[F]",
+      "selected": true
+    },
+    {
+      "id": "Q3",
+      "smiles": "CCCc1cc(Oc2ccc(OC)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "label": "inactive",
+      "change": "para-OMe",
+      "highlightSmarts": null,
+      "selected": false
+    },
+    {
+      "id": "Q4",
+      "smiles": "CCCc1cc(Oc2ccc(Cl)c(Cl)c2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "label": "active",
+      "change": "para-Cl + meta-Cl",
+      "highlightSmarts": "[Cl]",
+      "selected": true
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "Q1",
+      "accession": "CHEMBL96758",
+      "activityId": 122911,
+      "measurement": ">3000 nM",
+      "label": "inactive",
+      "sourceUrl": "https://www.ebi.ac.uk/chembl/explore/activity/122911"
+    },
+    {
+      "id": "Q2",
+      "accession": "CHEMBL96451",
+      "activityId": 129314,
+      "measurement": "66 nM",
+      "label": "active",
+      "sourceUrl": "https://www.ebi.ac.uk/chembl/explore/activity/129314"
+    },
+    {
+      "id": "Q3",
+      "accession": "CHEMBL92130",
+      "activityId": 133208,
+      "measurement": ">3000 nM",
+      "label": "inactive",
+      "sourceUrl": "https://www.ebi.ac.uk/chembl/explore/activity/133208"
+    },
+    {
+      "id": "Q4",
+      "accession": "CHEMBL318684",
+      "activityId": 136815,
+      "measurement": "82 nM",
+      "label": "active",
+      "sourceUrl": "https://www.ebi.ac.uk/chembl/explore/activity/136815"
+    }
+  ]
+}

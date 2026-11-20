@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0 — 2026-11-20
+
+- Added a retrospective COS-1 cell-assay example with seven measured references and four saved candidate decisions. The project site and scientific animation follow the same compounds through to the chemist's shortlist.
+- Molecular reference panels count a repeated isomeric structure once. Its records retain their individual measurements and sources. The prompt asks the model to establish where structures can be compared across series.
+- Added a batch comparison to the standalone HTML report. A failed request, an explicit abstention and opposing valid judgments have separate outcomes.
+- Live molecular batches save completed molecules and, when requested, their model replies. Use the original invocation with `--resume` to recover the batch after an interruption.
+- Feature-table tuple judgments retain the accepted model label, cited numerical values, class tally and decision source. Invalid citations and missing or out-of-range model scores trigger response validation. An invalid response contributes no class vote. Users revisiting numeric work can inspect the original record or run the original software tag to reconstruct its historical decision rule.
+- The starter configuration uses 16,384 output tokens. Numeric classification honors the configured client budget. Historical v0.5.0 and v0.5.1 molecular recordings use their original comparison instructions on replay.
+
 ## 0.5.1 — 2026-11-20
 
 - The project site and README introduce the experimental decision that MolActAgent supports. The tutorial walks through a live assessment of your own molecules. A command reference covers numeric tables, multi-class workflows, Python use, automation and troubleshooting.

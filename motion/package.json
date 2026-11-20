@@ -1,0 +1,26 @@
+{
+  "name": "molactagent-assay-film",
+  "version": "0.6.0",
+  "private": true,
+  "description": "Bounded Remotion science film and stand-alone assay figure for MolActAgent",
+  "scripts": {
+    "structures": "python3 scripts/generate_molecules.py",
+    "verify": "python3 scripts/verify_evidence.py",
+    "typecheck": "tsc --noEmit",
+    "studio": "remotion studio src/index.ts",
+    "render:film": "remotion render src/index.ts AssayFilm ../docs/assets/assay-film.mp4 --codec=h264 --crf=17 --pixel-format=yuv420p",
+    "render:poster": "remotion still src/index.ts AssayPoster ../docs/assets/assay-poster.png && remotion still src/index.ts AssayPosterMobile ../docs/assets/assay-poster-mobile.png",
+    "render:frames": "mkdir -p .preview/release && remotion still src/index.ts AssayFilm .preview/release/film-030.png --frame=30 && remotion still src/index.ts AssayFilm .preview/release/film-210.png --frame=210 && remotion still src/index.ts AssayFilm .preview/release/film-330.png --frame=330 && remotion still src/index.ts AssayFilm .preview/release/film-470.png --frame=470 && remotion still src/index.ts AssayFilm .preview/release/film-575.png --frame=575 && remotion still src/index.ts AssayFilm .preview/release/film-700.png --frame=700 && remotion still src/index.ts AssayFilm .preview/release/film-839.png --frame=839"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.545",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.545"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "typescript": "5.9.3"
+  }
+}

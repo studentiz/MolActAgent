@@ -19,6 +19,12 @@ questions.
 
 ## Reports from SMILES
 
+### Compare the candidates in a batch
+
+The batch opens with the candidates grouped by predicted class. The table below keeps the original input order. Each row gives a class, the distinct reference count, cited analogs, a supporting observation and a limitation. The table counts usable class judgments, abstentions and failures. Each candidate’s detailed record also gives the separate active and inactive vote counts. Repeated judgments can use exactly the same measured compounds.
+
+In the cell example, follow Q2 to the measured R2 and R5 entries, check the terminal substitution and inspect the original EC₅₀ values. Q4 has its own references and reasoning. Q1 and Q3 remain visible alongside them. The published outcomes are held in a separate example file. [Open the batch](https://studentiz.github.io/MolActAgent/cell-assay.html) · [Measured outcomes](../examples/cell-assay/outcomes.csv)
+
 ### Inspect the molecular evidence
 
 Read the assay definition and the candidate's verdict at the top of the
@@ -75,8 +81,8 @@ structures, measurements and model text, so review it before sharing.
 Replay a molecular recording with `--replay`, the matching RDKit version
 and the original reference and query files. With `--output-dir`, the CLI
 writes both `report.html` and `predictions.json`. An inconclusive
-prediction exits with status 4 and still writes both outputs. v0.5.1
-also accepts compatible v0.5.0 schema 2 recordings. File and request
+prediction exits with status 4 and still writes both outputs. v0.6.0
+also accepts compatible v0.5.0 and v0.5.1 schema 2 recordings. File and request
 checks still apply, so preserve the original files and headers.
 [Offline replay tutorial](tutorial.md#replay-a-complete-prediction) · [How replay checks a recording](design.md#replay-molecular-decisions)
 
@@ -125,9 +131,7 @@ python examples/evidence_report/render.py
    selected tuple, its interpretation and its discriminative feature
    values. Check which reference value is closest to the query for
    each feature. Ties appear as neutral. Inspect the saved tuple
-   label, numeric baseline and any fallback reason. The engine can
-   record an explanation favoring one class while the label follows
-   the numeric baseline.
+   label, model decision source and measured alignment. New numeric runs retain the validated model class. In historical records, the original numeric rule could override a proposed class.
 4. **Feature contributions and evidence aggregation** show the saved
    feature attributions, their rationales and comparison numbers,
    weighted class support and the retrieved references. Select a

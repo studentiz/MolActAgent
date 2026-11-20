@@ -1,6 +1,6 @@
 # Feature-table engine design and reference
 
-This reference follows the v0.5.1 implementation from prepared numeric
+This reference follows the v0.6.0 implementation from prepared numeric
 tables to structured class judgments and experimental regression estimates.
 For the assay workflow and the differences between the two prediction engines,
 see [Design overview](design.md#feature-table-engine).
@@ -252,27 +252,16 @@ drivers, supporting and opposing features, counter-evidence and
 uncertainty. The parser tries the response as JSON after trimming a
 leading fence when present. It can also try a brace-delimited object
 within the reply. The validator requires a recognized label and at
-least two distinct valid driver entries that cite discriminative
-features and candidate classes. It coerces and bounds scores and
-driver strengths to 0–1, defaulting to 0.5 when a numeric field cannot
-be read. The checks verify the response contract and the supplied
-feature names. The saved explanations remain model interpretations.
+least two distinct drivers when two or more features differ. A comparison with just one distinguishing feature can cite that feature. Driver values must match the displayed candidate and reference table. A class vote must have a supporting driver. The model can assign a different class from the alignment leader.
 
 | Response path | Effect on the saved tuple |
 | --- | --- |
-| Candidate label agrees with a clear baseline | Keep the label and the response score. |
-| Candidate label conflicts with a clear baseline | Always save the baseline label. If driver strengths favoring the proposed label exceed those favoring the baseline by more than 1.0, the disagreeing response can pass validation on that point. Other disagreements prompt correction. |
-| Valid `Unknown` response | Keep `Unknown`, including when the tally has a clear leader. |
-| Valid candidate class with an `Unknown` baseline | Keep the model's class. |
-| Validation attempts exhausted | Save the numeric baseline, alignment-derived fallback score and failure reason. The fallback has no model drivers. |
-| Tuple evaluation raises an exception | Record `Unknown` and the failure reason. This tuple casts no class vote. |
+| Valid class | Save the class as both `label` and `model_label`, the model score, the cited drivers and the numerical comparison. |
+| Valid abstention | Save `Unknown` and `model_abstention`. |
+| Corrections exhausted | Save `Unknown`, the validation reason and `invalid_response`. |
+| Request failure | Save `Unknown` and the request error. |
 
-By default, validation gets the initial response and up to three
-correction attempts. The correction prompt includes the previous answer
-and detected issues. `_finalize_tuple` enforces the class policy after
-validation. The model's saved narrative and driver directions can
-disagree with the resolved label. The result records both the numeric
-baseline and the final tuple label for inspection.
+The initial reply can receive up to three correction requests by default. Corrections concern the evidence, such as a missing feature or incorrectly quoted value. Inspect `decision_source` to identify the origin of the tuple. Older numeric records may lack this field. Their archive and software version establish how they were produced.
 
 Each tuple runs against the same fitted reference state. Per-query
 concurrency is bounded by `min(max_workers, number of tuples)`. The
@@ -290,10 +279,8 @@ Tuple `class_scores` are the alignment counts divided by the total
 non-neutral alignments, or uniform when no features align. These
 per-feature proportions are separate from the weights used to aggregate
 the tuple labels. For a successful response, the aggregator uses the
-tuple's model score, with an effective default of 0.5 if the value is
-missing or zero. If the tuple used the numerical validation fallback,
-its recorded score is `0.4 + 0.5 × (best class proportion − runner-up
-proportion)`. `Unknown` tuples contribute to coverage and add no class
+tuple's model score, including zero. A historical tuple with no score
+uses 0.5. `Unknown` tuples contribute to coverage and add no class
 weight.
 
 The winning class must lead the runner-up by strictly more than
@@ -479,8 +466,7 @@ variables and profile selection in the [configuration reference](tutorial-refere
 The shared `LLMClient` defaults to 120 seconds per HTTP attempt, up to 10
 additional attempts for transient errors, a base retry delay of 2 seconds,
 temperature `0.0` and a default output budget of 2,000 tokens for calls
-that do not specify one. The feature-table engine supplies **2,000 tokens**
-for each classification tuple attempt, including the inner CCR calls.
+that do not specify one. The feature-table engine uses the configured client output budget for classification tuple attempts, including the inner CCR calls.
 The optional narrative uses **3,500 tokens**. These calls also pass
 `llm_temperature` explicitly. Client defaults such as `max_tokens` and
 `temperature` apply when a caller leaves the corresponding request

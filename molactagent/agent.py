@@ -1025,7 +1025,8 @@ class MolActAgent:
         n_unk = 0
         for tr in tuple_results:
             lbl = tr.get("label", "Unknown")
-            conf = float(tr.get("confidence", 0.5) or 0.5)
+            score = tr.get("confidence")
+            conf = 0.5 if score is None else float(score)
             if lbl in class_votes:
                 class_votes[lbl] += 1
                 class_weights[lbl] += conf

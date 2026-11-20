@@ -1,0 +1,487 @@
+{
+  "schema": 2,
+  "model": "group/deepseek-free",
+  "versions": {
+    "molactagent": "0.6.0",
+    "rdkit": "2025.09.6",
+    "python": "3.12.12",
+    "pandas": "2.3.3"
+  },
+  "settings": {
+    "endpoint": "Activation of human PPAR-alpha in a COS-1 cell reporter assay. Active means a measured EC50 of 1 micromolar or lower. Inactive means the reported EC50 is above 1 micromolar. Predict the candidate's activity class in this assay.",
+    "series": "",
+    "pchembl_threshold": null,
+    "labels_from_pchembl": false,
+    "task_name": "Molecular activity",
+    "profile": "panel",
+    "neighbors": 8,
+    "repeats": 5,
+    "temperature": 0.0,
+    "max_tokens": 16384,
+    "response_format": true,
+    "workers": 4
+  },
+  "inputs": {
+    "references": "228201f2858ff7d5feecc69d5a1a5e84b44ad52c08b296af55f2a994131a0fbc",
+    "queries": "c87e180bfd309fda058dd81f7596e4d9291eb6ced47bfc48b822c15936cc0d21"
+  },
+  "calls": {
+    "query:0:panel:r1:a0": {
+      "request_sha256": "491973b66d38147b375bfc35c17177043a7367cf323c8d96002f90b28b8a8da9",
+      "metadata": {
+        "call_id": 2,
+        "tag": "query:0:panel:r1:a0",
+        "elapsed_s": 10.32,
+        "prompt_tokens": 9022,
+        "completion_tokens": 260,
+        "prompt_chars": 10799,
+        "response_chars": 995,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"inactive\",\n  \"confidence\": 0.79,\n  \"class_contrast\": \"Within the shared thiazolidinedione–aryl ether series, actives have a compact para halogen on the terminal phenoxy ring, whereas inactives have a para hydroxyl or a bulkier hydrocarbon substituent.\",\n  \"test_position\": \"The test’s para phenyl group falls on the bulky, nonhalogenated side and gives it nearly the same calculated lipophilicity as the inactive para-cyclopentyl analog.\",\n  \"reference_ids\": [1, 3, 6, 4, 0, 5],\n  \"counter_evidence\": \"No measured reference shares the test’s exact Murcko scaffold, so the effect of the added aromatic ring remains unresolved.\",\n  \"counter_reference_ids\": [],\n  \"rationale\": \"Replacing para chlorine in ref 1 with hydroxyl in ref 4 or isopropyl in ref 0 flips the measured class. The closest property match, para-cyclopentyl ref 5, is also inactive and shares the test’s polar surface area. Ref 2 has a different core and provides little evidence for this terminal substitution.\"\n}"
+    },
+    "query:0:panel:r0:a0": {
+      "request_sha256": "491973b66d38147b375bfc35c17177043a7367cf323c8d96002f90b28b8a8da9",
+      "metadata": {
+        "call_id": 1,
+        "tag": "query:0:panel:r0:a0",
+        "elapsed_s": 10.53,
+        "prompt_tokens": 9022,
+        "completion_tokens": 283,
+        "prompt_chars": 10799,
+        "response_chars": 1141,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"inactive\",\n  \"confidence\": 0.83,\n  \"class_contrast\": \"Within the shared thiazolidinedione series, compact para halogens on the terminal phenoxy ring favor activity, while para hydroxyl and bulkier nonhalogenated groups occur in inactive analogs.\",\n  \"test_position\": \"The test falls on the inactive side because its bulky para phenyl group is nonhalogenated and gives it nearly the same calculated lipophilicity as the inactive para-cyclopentyl analog.\",\n  \"reference_ids\": [1, 3, 6, 4, 0, 5],\n  \"counter_evidence\": \"The closest active analog, ref 1, shares the core and polar descriptors, but its para chlorine leaves the effect of the test's extra aromatic ring untested. No measured reference shares the test's exact Murcko scaffold.\",\n  \"counter_reference_ids\": [1],\n  \"rationale\": \"Replacing para chlorine in ref 1 with hydroxyl in ref 4 or isopropyl in ref 0 flips the measured class. Inactive ref 5 also matches the test closely in size and calculated lipophilicity, supporting the prediction despite the difference in aromaticity. Ref 2 lies outside the local series and carries little weight for this substitution.\"\n}"
+    },
+    "query:0:panel:r2:a0": {
+      "request_sha256": "491973b66d38147b375bfc35c17177043a7367cf323c8d96002f90b28b8a8da9",
+      "metadata": {
+        "call_id": 3,
+        "tag": "query:0:panel:r2:a0",
+        "elapsed_s": 11.2,
+        "prompt_tokens": 9022,
+        "completion_tokens": 276,
+        "prompt_chars": 10799,
+        "response_chars": 1030,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"inactive\",\n  \"confidence\": 0.79,\n  \"class_contrast\": \"Within the shared thiazolidinedione series, active analogs have a terminal para-halogen, whereas inactive analogs have a para-hydroxyl or a bulkier para-alkyl group.\",\n  \"test_position\": \"The test's bulky, nonhalogenated para-phenyl group places it on the inactive side of the local contrast and gives it a calculated logP nearly identical to that of the inactive cyclopentyl analog.\",\n  \"reference_ids\": [1, 4, 0, 5, 3, 6],\n  \"counter_evidence\": \"No measured para-phenyl analog shares the test's exact Murcko scaffold, so the effect of the added aromatic ring remains unresolved.\",\n  \"counter_reference_ids\": [],\n  \"rationale\": \"Replacing para-Cl in ref 1 with OH, isopropyl, or cyclopentyl in refs 4, 0, and 5 flips the measured class on the same core. Ref 5 also matches the test's polar surface area and nearly matches its calculated logP. Ref 2 shares the thiazolidinedione ring but has a different linker and aromatic framework, limiting its relevance.\"\n}"
+    },
+    "query:0:panel:r3:a0": {
+      "request_sha256": "491973b66d38147b375bfc35c17177043a7367cf323c8d96002f90b28b8a8da9",
+      "metadata": {
+        "call_id": 4,
+        "tag": "query:0:panel:r3:a0",
+        "elapsed_s": 12.63,
+        "prompt_tokens": 9022,
+        "completion_tokens": 298,
+        "prompt_chars": 10799,
+        "response_chars": 1092,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"inactive\",\n  \"confidence\": 0.79,\n  \"class_contrast\": \"Within the shared thiazolidinedione–aryl ether series, the active analogs carry a terminal para-halogen, whereas the inactive analogs carry para-hydroxyl, para-isopropyl, or para-cyclopentyl groups.\",\n  \"test_position\": \"The test compound replaces the para-halogen with a bulkier phenyl group, placing it on the inactive side of the local substituent contrast.\",\n  \"reference_ids\": [1, 0, 4, 5, 3, 6],\n  \"counter_evidence\": \"The test matches the active analogs in TPSA and hydrogen-bond donor and acceptor counts, and the panel lacks a measured para-phenyl analog or an exact Murcko scaffold match.\",\n  \"counter_reference_ids\": [1, 3, 6],\n  \"rationale\": \"Replacing para-chloro in ref 1 with either isopropyl (ref 0) or cyclopentyl (ref 5) flips the class at unchanged TPSA, so the bulky hydrophobic phenyl substitution favors inactivity. Ref 4 shows a separate class flip with para-hydroxyl. The added aromatic ring leaves the phenyl prediction an extrapolation within the series, and ref 2 belongs to a distinct series.\"\n}"
+    },
+    "query:0:panel:r4:a0": {
+      "request_sha256": "491973b66d38147b375bfc35c17177043a7367cf323c8d96002f90b28b8a8da9",
+      "metadata": {
+        "call_id": 5,
+        "tag": "query:0:panel:r4:a0",
+        "elapsed_s": 10.57,
+        "prompt_tokens": 9022,
+        "completion_tokens": 289,
+        "prompt_chars": 10799,
+        "response_chars": 1086,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"inactive\",\n  \"confidence\": 0.8,\n  \"class_contrast\": \"Within the shared thiazolidinedione–aryl ether series, the active analogs have a compact para halogen, while matched replacements with hydroxyl, isopropyl, or cyclopentyl are inactive.\",\n  \"test_position\": \"The test’s bulky, nonhalogenated para phenyl group falls on the inactive side and gives nearly the same calculated logP as the inactive cyclopentyl analog.\",\n  \"reference_ids\": [1, 4, 0, 5, 3, 6],\n  \"counter_evidence\": \"The para chloro analog is active and shares the test’s polar surface area, but the panel lacks a measured terminal phenyl analog or an exact Murcko scaffold match.\",\n  \"counter_reference_ids\": [1],\n  \"rationale\": \"Replacing para chlorine in ref 1 with hydroxyl, isopropyl, or cyclopentyl flips the measured class in refs 4, 0, and 5. Ref 5 is the closest comparison in size and lipophilicity, supporting an inactive prediction. The terminal phenyl adds aromaticity, so its effect remains unmeasured. Ref 2 shares the thiazolidinedione headgroup but belongs to a different scaffold series.\"\n}"
+    },
+    "query:1:panel:r0:a0": {
+      "request_sha256": "d8dd79dc955386dbb035a7285d3ddae9baae7303941634664912c2287c65e44d",
+      "metadata": {
+        "call_id": 6,
+        "tag": "query:1:panel:r0:a0",
+        "elapsed_s": 9.04,
+        "prompt_tokens": 10023,
+        "completion_tokens": 286,
+        "prompt_chars": 13502,
+        "response_chars": 1094,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"active\",\n  \"confidence\": 0.87,\n  \"class_contrast\": \"On the shared scaffold, a single para halogen on the terminal phenoxy ring distinguishes the active analogs from the inactive para-hydroxy and para-alkyl analogs.\",\n  \"test_position\": \"The test has a single para fluorine in the same position as the chlorine in ref 1 and the fluorine in ref 6, placing it on the active side.\",\n  \"reference_ids\": [1, 6, 3, 4, 0],\n  \"counter_evidence\": \"The closest analog, ref 4, is inactive and differs only by para-OH in place of para-F. Ref 6 carries an additional meta methyl, leaving its contribution to activity unresolved.\",\n  \"counter_reference_ids\": [4],\n  \"rationale\": \"The matched para-OH to para-Cl change from ref 4 to ref 1 flips the measured class. Ref 1 carries the most weight because it shares the scaffold, linker, and substitution position with the test. Refs 6 and 3 reinforce the exact-count pattern, and every inactive reference is halogen-free. Inactive refs 0 and 5 are more lipophilic than the test, and the distinct scaffold of inactive ref 2 limits its relevance.\"\n}"
+    },
+    "query:1:panel:r2:a0": {
+      "request_sha256": "d8dd79dc955386dbb035a7285d3ddae9baae7303941634664912c2287c65e44d",
+      "metadata": {
+        "call_id": 8,
+        "tag": "query:1:panel:r2:a0",
+        "elapsed_s": 9.44,
+        "prompt_tokens": 10023,
+        "completion_tokens": 283,
+        "prompt_chars": 13502,
+        "response_chars": 1086,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"active\",\n  \"confidence\": 0.86,\n  \"class_contrast\": \"Within the shared scaffold, active analogs carry a para halogen on the terminal phenoxy ring, while same-scaffold inactive analogs carry a para hydroxyl or isopropyl group.\",\n  \"test_position\": \"The test lies on the active side with a single para fluorine and the same polar surface area and hydrogen-bond donor count as the halogenated actives.\",\n  \"reference_ids\": [1, 6, 3, 4, 0],\n  \"counter_evidence\": \"The closest analog, ref 4, is inactive and carries a para hydroxyl, one fewer halogen, and an extra hydrogen-bond donor. The panel lacks a measured para-fluoro analog without the adjacent methyl.\",\n  \"counter_reference_ids\": [4],\n  \"rationale\": \"The para-OH to para-Cl swap flips the measured class between refs 4 and 1 on the same scaffold. Exact-count actives 1, 6, and 3 favor activity, with ref 1 matching the single para substitution and ref 6 confirming fluorine tolerance with an adjacent methyl. No inactive reference contains a halogen, and the different scaffolds of refs 5 and 2 limit their weight.\"\n}"
+    },
+    "query:1:panel:r3:a0": {
+      "request_sha256": "d8dd79dc955386dbb035a7285d3ddae9baae7303941634664912c2287c65e44d",
+      "metadata": {
+        "call_id": 9,
+        "tag": "query:1:panel:r3:a0",
+        "elapsed_s": 10.05,
+        "prompt_tokens": 10023,
+        "completion_tokens": 279,
+        "prompt_chars": 13502,
+        "response_chars": 1108,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"active\",\n  \"confidence\": 0.85,\n  \"class_contrast\": \"Within the shared scaffold, active analogs carry a para halogen on the terminal phenoxy ring, whereas inactive analogs carry para hydroxyl or bulky alkyl groups.\",\n  \"test_position\": \"The test lies on the active side of the contrast because its terminal phenoxy ring carries a single para fluorine.\",\n  \"reference_ids\": [1, 6, 3],\n  \"counter_evidence\": \"Ref 4 is the closest analog by similarity and is inactive, but its para hydroxyl adds a hydrogen-bond donor and raises polar surface area. The panel does not isolate removal of the meta methyl from the para-fluoro analog in ref 6.\",\n  \"counter_reference_ids\": [4],\n  \"rationale\": \"The same-scaffold para-OH to para-Cl swap from ref 4 to ref 1 flips the measured class. Refs 1, 6, and 3 all match the test’s one-halogen count, with no count-matched inactive reference. Ref 1 preserves the substitution pattern and ref 6 preserves para fluorine, so they outweigh the slightly higher similarity of ref 4. The distinct scaffold of ref 2 limits its relevance to this terminal substitution.\"\n}"
+    },
+    "query:1:panel:r1:a0": {
+      "request_sha256": "d8dd79dc955386dbb035a7285d3ddae9baae7303941634664912c2287c65e44d",
+      "metadata": {
+        "call_id": 7,
+        "tag": "query:1:panel:r1:a0",
+        "elapsed_s": 10.28,
+        "prompt_tokens": 10023,
+        "completion_tokens": 289,
+        "prompt_chars": 13502,
+        "response_chars": 1108,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"active\",\n  \"confidence\": 0.87,\n  \"class_contrast\": \"Within the shared series, active analogs carry a single para halogen on the terminal phenoxy ring, whereas inactive analogs carry nonhalogen substituents at that position.\",\n  \"test_position\": \"The test falls on the active side with one para fluorine and the same scaffold and linker as the active analogs.\",\n  \"reference_ids\": [1, 6, 3, 4, 0, 5],\n  \"counter_evidence\": \"Ref 4 is the closest analog by similarity and is inactive, but its para hydroxyl adds polarity and a hydrogen-bond donor; the effect of removing the adjacent methyl from active ref 6 remains unmeasured.\",\n  \"counter_reference_ids\": [4],\n  \"rationale\": \"The para-OH to para-Cl swap from ref 4 to ref 1 flips the measured class on the same scaffold. Ref 1 preserves the test’s substitution pattern, and ref 6 confirms activity with para-F plus an adjacent methyl. Refs 1, 6, and 3 are the only one-halogen references, and the inactive bulky analogs 0 and 5 show that higher lipophilicity alone does not explain activity. Ref 2’s different scaffold limits its relevance.\"\n}"
+    },
+    "query:1:panel:r4:a0": {
+      "request_sha256": "d8dd79dc955386dbb035a7285d3ddae9baae7303941634664912c2287c65e44d",
+      "metadata": {
+        "call_id": 10,
+        "tag": "query:1:panel:r4:a0",
+        "elapsed_s": 8.46,
+        "prompt_tokens": 10023,
+        "completion_tokens": 262,
+        "prompt_chars": 13502,
+        "response_chars": 1017,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"active\",\n  \"confidence\": 0.83,\n  \"class_contrast\": \"On the shared scaffold, the active references carry a para halogen on the terminal phenoxy ring, while the inactive analogs carry a para hydroxyl or bulkier alkyl group.\",\n  \"test_position\": \"The test falls on the active side with one fluorine at the same para position and the same linker as the active analogs.\",\n  \"reference_ids\": [1, 6, 3, 4, 0],\n  \"counter_evidence\": \"Ref 4 is the closest analog by fingerprint similarity and is inactive with para-OH. The effect of removing the meta methyl from active ref 6 remains unmeasured.\",\n  \"counter_reference_ids\": [4],\n  \"rationale\": \"The para-OH to para-Cl substitution from ref 4 to ref 1 flips the measured class on the same scaffold. Ref 1 and para-F ref 6 carry the most weight because each differs from the test by one local edit, with ref 3 reinforcing the single-halogen pattern. No inactive reference carries one halogen, and the different scaffolds of refs 5 and 2 limit their relevance.\"\n}"
+    },
+    "query:2:panel:r1:a0": {
+      "request_sha256": "a6767109e02b1b7cc1c3897f75d7690c3ef5270e49eeaeade14ee989a576d343",
+      "metadata": {
+        "call_id": 12,
+        "tag": "query:2:panel:r1:a0",
+        "elapsed_s": 8.72,
+        "prompt_tokens": 9447,
+        "completion_tokens": 268,
+        "prompt_chars": 11670,
+        "response_chars": 1057,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"inactive\",\n  \"confidence\": 0.79,\n  \"class_contrast\": \"Within the shared Murcko scaffold, active analogs carry a terminal para halogen, while inactive analogs carry para hydroxyl or isopropyl groups.\",\n  \"test_position\": \"The test’s para methoxy group lies on the nonhalogenated side and is the O-methyl derivative of the closest inactive phenol.\",\n  \"reference_ids\": [4, 1, 0, 3, 6],\n  \"counter_evidence\": \"O-methylation removes the phenolic hydrogen-bond donor and moves logP and TPSA toward those of the active para-chloro analog, leaving open whether methylation restores activity.\",\n  \"counter_reference_ids\": [1],\n  \"rationale\": \"Refs 4 and 1 differ only at the terminal para position, where replacing hydroxyl with chlorine flips the measured class to active. The test retains a terminal oxygen, favoring the inactive prediction. Ref 0 remains inactive at higher logP than the active analogs, weakening a lipophilicity-only explanation. Ref 5 adds a ring to the scaffold, and ref 2 has a distinct backbone, so both carry less weight.\"\n}"
+    },
+    "query:2:panel:r3:a0": {
+      "request_sha256": "a6767109e02b1b7cc1c3897f75d7690c3ef5270e49eeaeade14ee989a576d343",
+      "metadata": {
+        "call_id": 14,
+        "tag": "query:2:panel:r3:a0",
+        "elapsed_s": 8.78,
+        "prompt_tokens": 9447,
+        "completion_tokens": 258,
+        "prompt_chars": 11670,
+        "response_chars": 1047,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"inactive\",\n  \"confidence\": 0.8,\n  \"class_contrast\": \"Within the shared Murcko scaffold, active analogs carry a para halogen on the terminal phenoxy ring, whereas inactive analogs carry para hydroxy or isopropyl groups.\",\n  \"test_position\": \"The test’s para methoxy group places it on the inactive side of the terminal-substituent contrast, closest to the inactive para hydroxy analog.\",\n  \"reference_ids\": [4, 1, 0, 3, 6],\n  \"counter_evidence\": \"O-methylation removes the phenolic hydrogen-bond donor and lowers polar surface area toward the active para chloro analog, so the effect of this specific change on activity remains unresolved.\",\n  \"counter_reference_ids\": [1],\n  \"rationale\": \"Replacing para hydroxy in ref 4 with para chlorine in ref 1 flips the measured class on the same scaffold. The inactive para isopropyl analog shows that higher lipophilicity alone is insufficient, so the terminal-group comparison favors an inactive prediction for methoxy. Refs 2 and 5 have different Murcko scaffolds and carry less weight.\"\n}"
+    },
+    "query:2:panel:r0:a0": {
+      "request_sha256": "a6767109e02b1b7cc1c3897f75d7690c3ef5270e49eeaeade14ee989a576d343",
+      "metadata": {
+        "call_id": 11,
+        "tag": "query:2:panel:r0:a0",
+        "elapsed_s": 9.42,
+        "prompt_tokens": 9447,
+        "completion_tokens": 290,
+        "prompt_chars": 11670,
+        "response_chars": 1162,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"inactive\",\n  \"confidence\": 0.8,\n  \"class_contrast\": \"Within the shared thiazolidinedione series, active analogs carry a para halogen on the terminal phenoxy ring, whereas inactive analogs carry para hydroxy or bulky alkyl groups.\",\n  \"test_position\": \"The test falls on the inactive side of the local contrast because its para methoxy group retains the aryl oxygen of the closest inactive para hydroxy analog and lacks the para halogen found in the active analogs.\",\n  \"reference_ids\": [4, 1, 0, 3, 6, 5],\n  \"counter_evidence\": \"O-methylation removes the phenolic hydrogen-bond donor and shifts polarity and lipophilicity toward the active para chloro analog. The panel has no measured para methoxy comparator.\",\n  \"counter_reference_ids\": [1],\n  \"rationale\": \"The closest exact-scaffold pair flips from active to inactive when para chlorine (ref 1) is replaced by hydroxy (ref 4). The inactive para isopropyl analog (ref 0) shows that high lipophilicity alone is insufficient. Ref 5 retains the series core but adds a ring to the Murcko scaffold, while ref 2 has a distinct framework and provides little evidence for the terminal substitution.\"\n}"
+    },
+    "query:2:panel:r2:a0": {
+      "request_sha256": "a6767109e02b1b7cc1c3897f75d7690c3ef5270e49eeaeade14ee989a576d343",
+      "metadata": {
+        "call_id": 13,
+        "tag": "query:2:panel:r2:a0",
+        "elapsed_s": 10.34,
+        "prompt_tokens": 9447,
+        "completion_tokens": 286,
+        "prompt_chars": 11670,
+        "response_chars": 1165,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"inactive\",\n  \"confidence\": 0.78,\n  \"class_contrast\": \"On the shared scaffold, active analogs carry a para halogen on the terminal phenoxy ring, while inactive analogs carry para hydroxyl or isopropyl groups.\",\n  \"test_position\": \"The test's para methoxy group places it on the nonhalogenated side, with calculated lipophilicity and polar surface area intermediate between the inactive phenol and active chloride.\",\n  \"reference_ids\": [4, 1, 0, 3, 6],\n  \"counter_evidence\": \"O-methylation removes the phenol's hydrogen-bond donor and shifts polarity toward the active chloride, so the effect of that change remains unresolved by the measured panel.\",\n  \"counter_reference_ids\": [4, 1],\n  \"rationale\": \"The closest same-scaffold matched pair flips from active to inactive when para chlorine in ref 1 is replaced by hydroxyl in ref 4. The test is the methyl ether of ref 4, so it retains the terminal oxygen while losing its donor. Ref 0 remains inactive at higher lipophilicity than the active analogs, favoring terminal substituent identity as the discriminator. Ref 2 shares only the thiazolidinedione headgroup and provides little local evidence.\"\n}"
+    },
+    "query:2:panel:r4:a0": {
+      "request_sha256": "a6767109e02b1b7cc1c3897f75d7690c3ef5270e49eeaeade14ee989a576d343",
+      "metadata": {
+        "call_id": 15,
+        "tag": "query:2:panel:r4:a0",
+        "elapsed_s": 7.96,
+        "prompt_tokens": 9447,
+        "completion_tokens": 300,
+        "prompt_chars": 11670,
+        "response_chars": 1145,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"inactive\",\n  \"confidence\": 0.78,\n  \"class_contrast\": \"Within the shared thiazolidinedione series, active analogs carry a para halogen on the terminal phenoxy ring, whereas inactive analogs carry a para hydroxyl or a bulky alkyl group.\",\n  \"test_position\": \"The test falls on the inactive side of the local contrast because its para methoxy group retains the terminal aryl oxygen of the closest inactive phenol and lacks the para halogen seen in the active analogs.\",\n  \"reference_ids\": [4, 1, 0, 3, 6, 5],\n  \"counter_evidence\": \"O-methylation removes the phenolic hydrogen-bond donor and shifts polarity and lipophilicity toward the active para-chloro analog, so the hydroxyl-to-methoxy change could restore activity.\",\n  \"counter_reference_ids\": [4, 1],\n  \"rationale\": \"On the exact shared scaffold, replacing para OH (ref 4) with Cl (ref 1) flips the measured class. The para-isopropyl analog (ref 0) stays inactive at higher lipophilicity, weakening a simple lipophilicity explanation. The cyclopentyl analog (ref 5) retains the series core but adds a scaffold ring, and ref 2 has a distinct scaffold with limited relevance.\"\n}"
+    },
+    "query:3:panel:r3:a0": {
+      "request_sha256": "054febb016fe521295013dd6cf4ce45eb11f55a08015bfb2dc9f260903d3b2d9",
+      "metadata": {
+        "call_id": 19,
+        "tag": "query:3:panel:r3:a0",
+        "elapsed_s": 11.73,
+        "prompt_tokens": 9760,
+        "completion_tokens": 348,
+        "prompt_chars": 12912,
+        "response_chars": 1065,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"active\",\n  \"confidence\": 0.72,\n  \"class_contrast\": \"On the shared thiazolidinedione scaffold, a para halogen on the terminal phenoxy ring distinguishes the active analogs from the inactive para-hydroxy and para-isopropyl analogs.\",\n  \"test_position\": \"The test retains the activity-associated para chlorine and adds a meta chlorine at the position occupied by methyl in the closest active analog.\",\n  \"reference_ids\": [3, 1, 4, 0, 6],\n  \"counter_evidence\": \"Neither class contains a measured two-halogen analog, so the effect of the added meta chlorine is unresolved.\",\n  \"counter_reference_ids\": [],\n  \"rationale\": \"The matched substitutions from para-OH (ref 4) or para-isopropyl (ref 0) to para-Cl (ref 1) cross the activity threshold. Ref 3 is the closest same-scaffold analog and differs only by meta-methyl versus meta-chlorine. With no exact-count comparator, the matched evidence at the conserved para position drives the prediction. Ref 5 adds a cyclopentyl ring and ref 2 has a different linker and ring system, limiting their relevance.\"\n}"
+    },
+    "query:3:panel:r1:a0": {
+      "request_sha256": "054febb016fe521295013dd6cf4ce45eb11f55a08015bfb2dc9f260903d3b2d9",
+      "metadata": {
+        "call_id": 17,
+        "tag": "query:3:panel:r1:a0",
+        "elapsed_s": 12.95,
+        "prompt_tokens": 9760,
+        "completion_tokens": 361,
+        "prompt_chars": 12912,
+        "response_chars": 1089,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"active\",\n  \"confidence\": 0.76,\n  \"class_contrast\": \"On the shared scaffold, a para chlorine or fluorine on the terminal phenoxy ring tracks with activity, while para hydroxyl and isopropyl substitutions track with inactivity.\",\n  \"test_position\": \"The test falls on the active side of the local contrast because it retains the para chlorine and replaces the closest active analog's adjacent methyl with chlorine.\",\n  \"reference_ids\": [3, 1, 4, 0, 6],\n  \"counter_evidence\": \"Neither class contains an exact two-halogen reference, leaving the effect of the added meta chlorine unmeasured. The lipophilic cyclopentyl analog is inactive and has an extra ring.\",\n  \"counter_reference_ids\": [5],\n  \"rationale\": \"Replacing the para chlorine in active ref 1 with hydroxyl (ref 4) or isopropyl (ref 0) flips the class. Ref 3 is the closest same-scaffold analog with one fewer halogen and carries the same para chlorine, supporting an active prediction. The unmeasured meta chlorine limits confidence. Ref 2 has a different scaffold and carries little weight for this substitution.\"\n}"
+    },
+    "query:3:panel:r0:a0": {
+      "request_sha256": "054febb016fe521295013dd6cf4ce45eb11f55a08015bfb2dc9f260903d3b2d9",
+      "metadata": {
+        "call_id": 16,
+        "tag": "query:3:panel:r0:a0",
+        "elapsed_s": 14.32,
+        "prompt_tokens": 9760,
+        "completion_tokens": 352,
+        "prompt_chars": 12912,
+        "response_chars": 1095,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"active\",\n  \"confidence\": 0.78,\n  \"class_contrast\": \"On the shared scaffold, a para halogen on the terminal phenoxy ring favors activity over para hydroxyl or bulky alkyl substitution.\",\n  \"test_position\": \"The test lies on the active side of the local contrast because it retains the para chlorine of refs 1 and 3 and replaces the meta methyl of ref 3 with chlorine.\",\n  \"reference_ids\": [3, 1, 4, 6],\n  \"counter_evidence\": \"Neither measured class contains a dihalogenated analog, so the effect of the added meta chlorine is unresolved. The lipophilic inactive refs 0 and 5 show that high lipophilicity alone does not predict activity.\",\n  \"counter_reference_ids\": [0, 5],\n  \"rationale\": \"The same-scaffold para Cl-to-OH change flips activity from active (ref 1) to inactive (ref 4). Ref 3 is the closest one-halogen-delta analog and favors activity because the test preserves its para chlorine and the rest of the scaffold. With no exact-count analog in either panel, the prediction rests on that positional match. The distinct scaffold of inactive ref 2 limits its relevance.\"\n}"
+    },
+    "query:3:panel:r2:a0": {
+      "request_sha256": "054febb016fe521295013dd6cf4ce45eb11f55a08015bfb2dc9f260903d3b2d9",
+      "metadata": {
+        "call_id": 18,
+        "tag": "query:3:panel:r2:a0",
+        "elapsed_s": 22.09,
+        "prompt_tokens": 9760,
+        "completion_tokens": 334,
+        "prompt_chars": 12912,
+        "response_chars": 1001,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"active\",\n  \"confidence\": 0.75,\n  \"class_contrast\": \"On the shared scaffold, a para halogen on the terminal phenoxy ring tracks with activity, while para hydroxyl and para isopropyl track with inactivity.\",\n  \"test_position\": \"The test retains the active para-chloro motif and adds a meta chlorine where the closest active analog has a methyl group.\",\n  \"reference_ids\": [3, 1, 4, 0, 6],\n  \"counter_evidence\": \"Neither panel contains an exact two-halogen match, leaving the meta chlorine untested, and the lipophilic para-cyclopentyl analog is inactive.\",\n  \"counter_reference_ids\": [5],\n  \"rationale\": \"Ref 1 is active, while replacing its para chlorine with hydroxyl (ref 4) or isopropyl (ref 0) flips the class. With no exact two-halogen match, ref 3 is the closest same-scaffold analog and supports the prediction because the test preserves its para chlorine. The untested meta methyl-to-chlorine change limits confidence, and the different scaffold of ref 2 limits its relevance.\"\n}"
+    },
+    "query:3:panel:r4:a0": {
+      "request_sha256": "054febb016fe521295013dd6cf4ce45eb11f55a08015bfb2dc9f260903d3b2d9",
+      "metadata": {
+        "call_id": 20,
+        "tag": "query:3:panel:r4:a0",
+        "elapsed_s": 11.01,
+        "prompt_tokens": 9760,
+        "completion_tokens": 409,
+        "prompt_chars": 12912,
+        "response_chars": 1178,
+        "truncated": false,
+        "finish_reason": "stop",
+        "response_model": "group/deepseek-free",
+        "system_fingerprint": null,
+        "http_attempts": 1,
+        "retry_failures": [],
+        "error": null,
+        "status": "accepted"
+      },
+      "error": null,
+      "response": "{\n  \"choice\": \"active\",\n  \"confidence\": 0.76,\n  \"class_contrast\": \"On the shared scaffold, the measured actives carry a para halogen on the terminal phenoxy ring, while para hydroxyl and isopropyl analogs are inactive.\",\n  \"test_position\": \"The test lies on the active side of the local contrast because it retains para chlorine and replaces the meta methyl of the closest active analog, ref 3, with chlorine.\",\n  \"reference_ids\": [3, 1, 4, 0, 6],\n  \"counter_evidence\": \"Neither panel contains a two-halogen reference, so the effect of the added meta chlorine remains unmeasured. The test is more lipophilic than every measured active, and the related inactive cyclopentyl analog (ref 5) shows that high lipophilicity alone does not predict activity.\",\n  \"counter_reference_ids\": [5],\n  \"rationale\": \"On the shared scaffold, replacing para chlorine in active ref 1 with hydroxyl or isopropyl flips the class in refs 4 and 0. Active refs 3 and 6 retain a para halogen with a meta methyl. With no exact halogen-count match, ref 3 is the closest analog, and the prediction rests on retaining its para chlorine. Inactive ref 2 uses a different scaffold and carries little weight.\"\n}"
+    }
+  },
+  "command": {
+    "files": {
+      "reference": "78f88c6938397dfae3871f2267d5c805b0e67d95ea464f189d15b1c2f8ebd61d",
+      "test": "3e1e7e5b2372e21d62952aee6d1509de9f610bad459437ea50f0b434fc9c5e4c"
+    },
+    "columns": {
+      "smiles_column": "smiles",
+      "label_column": "label",
+      "id_column": "id",
+      "name_column": null,
+      "pchembl_column": null
+    },
+    "transport": {
+      "timeout_seconds": 120.0,
+      "max_retries": 2
+    }
+  }
+}

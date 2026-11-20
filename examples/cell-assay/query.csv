@@ -1,0 +1,5 @@
+id,smiles
+Q1,CCCc1cc(Oc2ccc(-c3ccccc3)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1
+Q2,CCCc1cc(Oc2ccc(F)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1
+Q3,CCCc1cc(Oc2ccc(OC)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1
+Q4,CCCc1cc(Oc2ccc(Cl)c(Cl)c2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1

@@ -1,4 +1,8 @@
 examples/molecular/*.csv text eol=lf
 examples/cdk2/*.csv text eol=lf
+examples/cell-assay/*.csv text eol=lf
+examples/cell-assay/*.json text eol=lf
+examples/cell-assay/endpoint.txt text eol=lf
 docs/molecular-example.html text eol=lf
 docs/cdk2-report.html text eol=lf
+docs/cell-assay.html text eol=lf

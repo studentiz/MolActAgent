@@ -1,0 +1,5 @@
+id,accession,activity_id,measurement,label,source_url
+Q1,CHEMBL96758,122911,>3000 nM,inactive,https://www.ebi.ac.uk/chembl/explore/activity/122911
+Q2,CHEMBL96451,129314,66 nM,active,https://www.ebi.ac.uk/chembl/explore/activity/129314
+Q3,CHEMBL92130,133208,>3000 nM,inactive,https://www.ebi.ac.uk/chembl/explore/activity/133208
+Q4,CHEMBL318684,136815,82 nM,active,https://www.ebi.ac.uk/chembl/explore/activity/136815

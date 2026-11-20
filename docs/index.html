@@ -3,61 +3,63 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="MolActAgent helps chemists decide which compounds to test when measured activity is scarce. Trace a prediction to your own reference compounds and see where a measurement is still needed.">
-  <title>MolActAgent · Which compound would you test next?</title>
+  <meta name="description" content="An open-source AI agent for chemists choosing the next compounds to test. Use a few measured activities from one assay to assess new candidates and inspect the chemical evidence.">
+  <title>MolActAgent · From measured activity to the next experiment</title>
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
-<a class="skip" href="#main">Skip to content</a>
-<header class="wrap mast">
-  <a class="brand" href="./" aria-label="MolActAgent home"><img src="assets/logo-mono.svg" width="34" height="34" alt="">MolActAgent</a>
-  <nav aria-label="Main navigation"><a href="#decisions">For chemists</a><a href="#workflow">The idea</a><a href="https://github.com/studentiz/MolActAgent">GitHub</a></nav>
+<a class="skip" href="#main">Skip to project</a>
+<header class="mast wrap">
+  <a class="brand" href="./"><img src="assets/logo-mono.svg" alt="" width="38" height="38">MolActAgent</a>
+  <nav aria-label="Project"><a href="cell-assay.html">Example report</a><a href="https://github.com/studentiz/MolActAgent#readme">GitHub</a></nav>
 </header>
 <main id="main">
-<section class="wrap hero" aria-labelledby="hero-title">
-  <h1 id="hero-title">Which compound would you test <em>next?</em></h1>
-  <div class="opening">
-    <p>You have a few measured compounds, several candidates and a limited number of assays. <strong>MolActAgent</strong> is an open-source AI agent that compares each candidate with compounds that were active and inactive in your assay. See which candidates have support for testing and where an experiment could resolve a doubt.</p>
-    <div class="actions"><a class="button" href="#decisions">See what you can learn</a><a class="text-link" href="https://github.com/studentiz/MolActAgent#readme">Get MolActAgent</a></div>
-  </div>
-</section>
-
-<section class="decisions" id="decisions"><div class="wrap question-layout">
-  <div class="section-intro">
-    <h2>What can I decide from a handful of results?</h2>
-    <p>For each candidate, see what the evidence supports in <em>your</em> assay. Start with the question you face at the bench.</p>
-  </div>
-  <fieldset class="questions"><legend class="sr">Explore three experimental decisions</legend>
-    <input class="sr" type="radio" name="question" id="ask-test" checked>
-    <input class="sr" type="radio" name="question" id="ask-why">
-    <input class="sr" type="radio" name="question" id="ask-gap">
-    <div class="tabs"><label id="choose-test" for="ask-test">Choose what to test</label><label id="choose-why" for="ask-why">Check the reasoning</label><label id="choose-gap" for="ask-gap">Find the gap</label></div>
-    <section class="answer" id="answer-test"><h3>Which candidate has a case for taking forward?</h3>
-      <p>Compare the assessments for the structures on your bench. A candidate predicted active comes with the measured compounds behind that call. You can weigh the strength of the comparison alongside how much sample you have left.</p>
-    </section>
-    <section class="answer" id="answer-why"><h3>Why would I trust this comparison?</h3>
-      <p>Look at what happened to similar compounds in the same assay, including those that were inactive. Follow the reasoning to a particular reference, inspect its structure and check its measurement against your own records.</p>
-    </section>
-    <section class="answer" id="answer-gap"><h3>What would another measurement tell me?</h3>
-      <p>A candidate may resemble an active reference but carry a change none of your measured compounds shares. The report shows the competing explanations or the reason for an inconclusive result. That gap can help you choose a comparison to test.</p>
-    </section>
-  </fieldset>
-</div></section>
-
-<section id="workflow" class="wrap workflow">
-  <div class="method-intro"><h2>Keep the chemistry behind the call.</h2>
-    <p>MolActAgent brings together the candidate, similar active and inactive references, and the meaning of activity in your experiment. A language model weighs their structural and property differences. You can follow the resulting call back to the compounds, including evidence that points the other way.</p>
-    <a class="text-link" href="https://github.com/studentiz/MolActAgent/blob/v0.5.1/docs/design.md#molecular-binary-classification">Read the method in detail</a>
-  </div>
-  <figure class="method-figure"><a href="assets/assay-decision.png" aria-label="Open the full-size illustrated chemical comparison"><img loading="lazy" src="assets/assay-decision.png" alt="From a small set of active and inactive references to a decision about a candidate. An enlarged structural comparison shows how to inspect supporting evidence and its limits."></a><figcaption>Illustrative cell-growth assay with hypothetical labels. <a href="assets/assay-decision.png">View full size</a></figcaption></figure>
-</section>
-
-<section id="quickstart" class="use"><div id="docs" class="wrap use-inner">
-  <div><h2>Bring your assay.</h2><p>You need the structures of your candidates, active and inactive examples from the same experiment and a description of how you assign the labels. New predictions use a compatible LLM API.</p></div>
-  <div class="use-links"><a class="button" href="https://github.com/studentiz/MolActAgent/blob/v0.5.1/docs/tutorial.md">Use your measurements</a><a class="text-link" href="cdk2-report.html">Inspect a complete example report</a><a class="source" href="https://github.com/studentiz/MolActAgent/tree/v0.5.1/examples/cdk2">Data and sources for the example</a></div>
-</div></section>
+  <header class="hero wrap">
+    <div class="identity">Open-source AI agent for bioactivity assessment</div>
+    <h1>Choose the next compounds <span>to test.</span></h1>
+    <p>You have activity measurements for a few compounds and room for only a few more in the next experiment. MolActAgent predicts which candidates will be active and shows the measured compounds behind each call.</p>
+  </header>
+  <figure class="film wrap" aria-labelledby="film-title">
+    <div class="figure-heading"><h2 id="film-title">From the assay to the shortlist</h2><span>COS-1 cell reporter assay</span></div>
+    <picture id="plate">
+      <source media="(max-width: 42rem)" srcset="assets/assay-poster-mobile.png" width="780" height="2560">
+      <img src="assets/assay-poster.png" width="1600" height="1100" alt="Seven measured cell-assay references and four candidates. MolActAgent compares active and inactive analogs, predicts Q2 and Q4 active, and gives the chemist the references behind the shortlist.">
+    </picture>
+    <video hidden id="film" muted playsinline controls preload="none" width="1920" height="1080" poster="assets/assay-poster.png" aria-label="Silent scientific animation from measured cell activity to the next assay list"></video>
+    <figcaption><span>The cell assay measured how much compound it took to activate a receptor. Seven measured compounds served as references. Four other outcomes were held back.</span><a href="assets/assay-film.mp4">Open the film</a></figcaption>
+  </figure>
+  <section class="case wrap" aria-labelledby="case-title">
+    <div class="case-intro"><p class="identity">The experimental decision</p><h2 id="case-title">Two compounds for the next assay.</h2>
+      <p>In this retrospective batch, MolActAgent predicted Q2 and Q4 active. A chemist can trace each call to structures already tested under the same conditions.</p>
+      <a class="action" href="cell-assay.html">Read the batch report</a></div>
+    <div class="evidence">
+      <h3>Why take Q2 forward?</h3>
+      <p>The candidate carries fluorine at a position where a measured active reference carries chlorine. A measured inactive analog has a hydroxyl group at that same position.</p>
+      <table><caption>Measured references for Q2</caption><thead><tr><th>Reference</th><th>Group</th><th>Measured EC₅₀</th></tr></thead>
+      <tbody><tr class="active"><th><a href="cell-assay.html#compound-2-ref-1">R2</a></th><td>–Cl</td><td>180 nM · active</td></tr>
+      <tr class="inactive"><th><a href="cell-assay.html#compound-2-ref-4">R5</a></th><td>–OH</td><td>&gt;3,000 nM · inactive</td></tr></tbody></table>
+      <p class="source">The example defines active as EC₅₀ at or below 1,000 nM. The four candidate measurements were compared with the predictions afterward. <a href="https://github.com/studentiz/MolActAgent/tree/v0.6.0/examples/cell-assay">Assay data and sources</a></p>
+    </div>
+  </section>
+  <section class="start wrap" aria-label="Get started"><div><h2>Bring your assay.</h2><p>Start with your reference measurements, candidate structures and a compatible language-model API.</p></div>
+    <div class="links"><a class="action" href="https://github.com/studentiz/MolActAgent#installation">Get MolActAgent</a><a href="https://github.com/studentiz/MolActAgent/blob/v0.6.0/docs/design.md">Explore the design</a></div></section>
 </main>
-<footer class="wrap foot"><a href="./" class="brand">MolActAgent</a><a href="https://github.com/studentiz/MolActAgent/blob/v0.5.1/LICENSE">MIT software license</a><a href="https://github.com/studentiz/MolActAgent/releases/tag/v0.5.1">Release v0.5.1</a></footer>
-</body>
-</html>
+<footer class="foot wrap"><a class="brand" href="./"><img src="assets/logo-mono.svg" width="24" height="24" alt="">MolActAgent</a><a href="https://github.com/studentiz/MolActAgent/releases/tag/v0.6.0">Release 0.6.0</a><a href="https://github.com/studentiz/MolActAgent/blob/v0.6.0/LICENSE">MIT software license</a></footer>
+<script>
+  const prefersStill = matchMedia('(prefers-reduced-motion: reduce), (max-width: 42rem)');
+  const movie = document.getElementById('film');
+  const plate = document.getElementById('plate');
+  function showPlate() { movie.hidden = true; plate.hidden = false; }
+  function chooseMedium() {
+    if (prefersStill.matches) { movie.pause(); showPlate(); return; }
+    if (!movie.getAttribute('src')) movie.src = 'assets/assay-film.mp4';
+    movie.hidden = false;
+    plate.hidden = true;
+    movie.play().catch(showPlate);
+  }
+  movie.addEventListener('error', showPlate);
+  prefersStill.addEventListener('change', chooseMedium);
+  chooseMedium();
+</script>
+</body></html>

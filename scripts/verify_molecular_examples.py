@@ -25,7 +25,7 @@ def check(name, report, expected_exit, nimages):
         run = subprocess.run(command, cwd=ROOT, check=False)
         assert run.returncode == expected_exit, (name, run.returncode)
         predictions = json.loads((output / "predictions.json").read_text(encoding="utf-8"))["predictions"]
-        if name == "cdk2":
+        if name != "molecular":
             live = json.loads((inputs / "predictions.json").read_text(encoding="utf-8"))["predictions"]
             assert predictions == live
         else:
@@ -49,3 +49,4 @@ def check(name, report, expected_exit, nimages):
 if __name__ == "__main__":
     check("molecular", "molecular-example.html", 0, 9)
     check("cdk2", "cdk2-report.html", 4, 7)
+    check("cell-assay", "cell-assay.html", 0, 40)

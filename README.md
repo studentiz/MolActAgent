@@ -1,19 +1,37 @@
+<p align="center"><img src="docs/assets/logo.svg" alt="MolActAgent project mark" width="76" height="76"></p>
+
 # MolActAgent
 
-When you have several compounds to test and only a few experiments to spare, MolActAgent helps you decide what to measure next. It is an open-source AI agent for assessing compound bioactivity using the structures and results you already have for an assay. For each candidate, it shows which measured compounds support the assessment, where comparisons disagree, and what still needs measuring.
+**An open-source AI agent for deciding which compounds to test next.** You have activity measurements for a few compounds and more candidates than you can assay. MolActAgent finds structurally similar compounds on both sides of your assay’s activity cutoff. A language model weighs their structural and physicochemical differences. For each candidate, you can see the prediction, inspect the experimental references, and judge which comparisons support taking it forward.
 
-Live predictions require a language model available through an OpenAI-compatible Chat Completions API. You can use a hosted or locally served model.
+[![Release 0.6.0](https://img.shields.io/badge/release-0.6.0-20553d)](https://github.com/studentiz/MolActAgent/releases/tag/v0.6.0)
+[![Software license MIT](https://img.shields.io/badge/license-MIT-37483f)](LICENSE)
+[![Tests](https://github.com/studentiz/MolActAgent/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/studentiz/MolActAgent/actions/workflows/tests.yml)
 
-[Project website](https://studentiz.github.io/MolActAgent/) · [Tutorial](docs/tutorial.md) · [Changelog](CHANGELOG.md)
+[Project and film](https://studentiz.github.io/MolActAgent/) · [Open a complete assay report](https://studentiz.github.io/MolActAgent/cell-assay.html) · [Tutorial](docs/tutorial.md) · [Design](docs/design.md)
 
-![A candidate is compared with measured compounds, with a close structural comparison showing what the evidence supports and what still needs testing](docs/assets/assay-decision.png)
+## What's new in v0.6.0
+
+- Inspect a four-candidate cell-assay batch. Compare the predictions side by side, open the original measured references and follow the reasons for taking Q2 and Q4 forward.
+- Molecular retrieval counts distinct structures. Matching replicate records stay attached to their representative. Reports distinguish chemical disagreement, model abstention and failed requests.
+- Resume an interrupted live molecular batch from its completed compounds. New predictions use an OpenAI-compatible Chat Completions API. The starter configuration now provides a 16,384-token output budget.
+- Numeric-table classifications retain the validated language model judgment and its reasons. Each local record includes the numerical alignment for comparison. Re-evaluating historical numeric inputs can produce a different class.
+
+[Complete changelog and previous releases](CHANGELOG.md)
+
+<picture>
+  <source media="(max-width: 672px)" srcset="docs/assets/assay-poster-mobile.png">
+  <img src="docs/assets/assay-poster.png" alt="From seven compounds measured in one cell assay to the next assay list. Active R2 and inactive R5 provide a local comparison for candidate Q2. The chemist takes Q2 and Q4 forward in this retrospective example.">
+</picture>
+
+The figure follows a retrospective cell reporter assay. The agent saw seven measured reference classes and four candidate structures. The example includes the four held-back measurements, the exact inputs and the saved model responses. [Case data and sources](examples/cell-assay)
 
 ## Installation
 
 Use Git and Python 3.12 for the tagged example environment. The package supports Python 3.10–3.12.
 
 ```bash
-git clone --branch v0.5.1 https://github.com/studentiz/MolActAgent.git
+git clone --branch v0.6.0 https://github.com/studentiz/MolActAgent.git
 cd MolActAgent
 python3.12 -m venv .venv
 source .venv/bin/activate
@@ -57,19 +75,20 @@ You can supply the connection fields through `MOLACTAGENT_API_KEY`, `MOLACTAGENT
 
 ### Run a live prediction
 
+Try the published cell assay with the API settings you just created. Run from the repository root.
+
 ```bash
 molactagent molecular \
-  --reference reference.csv \
-  --test query.csv \
-  --id-column id \
-  --endpoint @assay.txt \
+  --reference examples/cell-assay/reference.csv \
+  --test examples/cell-assay/query.csv \
+  --id-column id --endpoint @examples/cell-assay/endpoint.txt \
   --llm-config llm_config.jsonc \
-  --max-tokens 16384 \
-  --record assay-responses.json \
-  --output-dir assay-output
+  --record assay-responses.json --output-dir assay-output
 ```
 
-The token budget overrides the starter file's value. Use `--workers 1` if your service needs one request at a time. Use `--plain-json` if it rejects the API's JSON-mode option. Choose fresh output and recording paths for another run.
+To use your own assay, replace the two CSV paths with `reference.csv` and `query.csv` and the endpoint with `@assay.txt`. Keep the assay description, structures and both experimental classes from the same endpoint. A live service receives the assay description and selected molecular evidence.
+
+If interrupted, repeat the same command with `--resume`. Completed compounds are recovered from `assay-output/.molactagent/`. Keep this folder with your results while resuming. Choose fresh output and recording paths to start an independent run. [Input and service options](docs/tutorial-reference.md#molecular-cli)
 
 ### Read the chemistry behind the decision
 
@@ -91,7 +110,7 @@ from molactagent.molecular import MolecularClassifier
 
 reference = pd.read_csv("reference.csv", dtype=str, keep_default_na=False)
 query = pd.read_csv("query.csv", dtype=str, keep_default_na=False)
-config = ma.load_llm_config(max_tokens=16384)
+config = ma.load_llm_config("llm_config.jsonc", max_tokens=16384)
 classifier = MolecularClassifier(
     ma.build_llm_client(config),
     endpoint=Path("assay.txt").read_text(encoding="utf-8").strip(),
@@ -129,15 +148,15 @@ Open `iris-output/summary.csv` for labels and `interpretability.html` for the vo
 
 ## Architecture
 
-The molecular engine retrieves nearby active and inactive compounds using fingerprint similarity. It checks whether model judgments cite usable evidence from the compounds shown and combines the usable votes. The numeric engine selects candidate classes for each query by looking at nearby rows. Each model comparison includes one row per candidate class. Numerical checks and weighted votes determine the result. [Design notes](docs/design.md)
+The molecular engine uses fingerprint similarity to retrieve neighbors from both measured classes. The language model compares these references with the candidate in the context of the assay. The agent checks the response and its reference identifiers, then combines the usable judgments. The numeric engine selects candidate classes using nearby rows. Each comparison includes one row per candidate class. The language model interprets the measurements, and the engine checks the cited values before counting its class vote. [Design notes](docs/design.md)
 
 <a name="reproduce-the-report-offline"></a>
 
-## Optional worked example
+## When the evidence is inconclusive
 
 Follow a public CDK2 assay example with the included input tables and the same live command pattern. The recorded result illustrates how an inconclusive decision can point to a useful next measurement. You can open the report or replay the saved responses with the pinned environment. [Worked example](docs/tutorial.md#optional-worked-example) · [CDK2 report](https://studentiz.github.io/MolActAgent/cdk2-report.html)
 
-The historical teaching example uses synthetic labels to illustrate a structure comparison. v0.5.1 can replay its v0.5.0 schema 2 recording with matching inputs and RDKit. [Offline commands](docs/tutorial.md#replay-a-complete-prediction) · [Historical teaching report](https://studentiz.github.io/MolActAgent/molecular-example.html)
+The historical teaching example uses synthetic labels to illustrate a structure comparison. v0.6.0 can replay its v0.5.0 schema 2 recording with matching inputs and RDKit. [Offline commands](docs/tutorial.md#replay-a-complete-prediction) · [Historical teaching report](https://studentiz.github.io/MolActAgent/molecular-example.html)
 
 ## Interactive chemical evidence reports
 
@@ -164,13 +183,4 @@ python -m pytest -q -m "not real_llm"
 
 ## License
 
-The software is available under the MIT license. The CDK2 example attributes its source data and the terms for reuse. [Software license](LICENSE) · [Example data](examples/cdk2/README.md) · [Citation information](CITATION.cff)
-
-## What's new in v0.5.1
-
-- Review a candidate alongside the closest cited examples from each class. Reports show the recorded case for a class, reasons to doubt it, original reference measurements and links when supplied.
-- Inspect a structural change directly. When two displayed molecules differ at a single unambiguous terminal atom, the same attachment site is marked on both structures.
-- Start with your own assay in the live prediction tutorial. The command and Python references cover numeric tables, multiple classes, batch output and troubleshooting.
-- Inspect a complete public run with measured references, original responses and an inconclusive outcome. v0.5.1 also reads the v0.5.0 molecular recording using the matching inputs and RDKit.
-
-v0.5.0 added citation validation, explicit abstention and checks on the number of usable judgments. v0.4.1 introduced structure-based HTML reports. v0.4.0 introduced molecular prediction directly from SMILES. [Full version history](CHANGELOG.md)
+The software is available under the MIT license. The cell-assay and CDK2 examples attribute their ChEMBL records and state the applicable data terms. [Cell-assay attribution](examples/cell-assay) [Software license](LICENSE) · [Example data](examples/cdk2/README.md) · [Citation information](CITATION.cff)

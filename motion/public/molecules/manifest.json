@@ -1,0 +1,199 @@
+{
+  "drawWidth": 1400,
+  "drawHeight": 600,
+  "rdkitVersion": "2025.09.2",
+  "compounds": {
+    "R1": {
+      "canonicalSmiles": "CCCc1cc(Oc2ccc(C(C)C)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "targetAtomIndices": [],
+      "targetAtomSymbols": [],
+      "targetDrawCoordinates": {},
+      "focusViewBox": [
+        0.0,
+        0.0,
+        1400.0,
+        600.0
+      ]
+    },
+    "R2": {
+      "canonicalSmiles": "CCCc1cc(Oc2ccc(Cl)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "targetAtomIndices": [
+        11
+      ],
+      "targetAtomSymbols": [
+        "Cl"
+      ],
+      "targetDrawCoordinates": {
+        "11": [
+          386.736,
+          31.314
+        ]
+      },
+      "focusViewBox": [
+        236.736,
+        0.0,
+        300.0,
+        280.0
+      ]
+    },
+    "R3": {
+      "canonicalSmiles": "CN(CCOc1ccc(CC2SC(=O)NC2=O)cc1)c1ccccn1",
+      "targetAtomIndices": [],
+      "targetAtomSymbols": [],
+      "targetDrawCoordinates": {},
+      "focusViewBox": [
+        0.0,
+        0.0,
+        1400.0,
+        600.0
+      ]
+    },
+    "R4": {
+      "canonicalSmiles": "CCCc1cc(Oc2ccc(Cl)c(C)c2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "targetAtomIndices": [
+        11
+      ],
+      "targetAtomSymbols": [
+        "Cl"
+      ],
+      "targetDrawCoordinates": {
+        "11": [
+          413.981,
+          31.314
+        ]
+      },
+      "focusViewBox": [
+        263.981,
+        0.0,
+        300.0,
+        280.0
+      ]
+    },
+    "R5": {
+      "canonicalSmiles": "CCCc1cc(Oc2ccc(O)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "targetAtomIndices": [
+        11
+      ],
+      "targetAtomSymbols": [
+        "O"
+      ],
+      "targetDrawCoordinates": {
+        "11": [
+          386.722,
+          31.286
+        ]
+      },
+      "focusViewBox": [
+        236.722,
+        0.0,
+        300.0,
+        280.0
+      ]
+    },
+    "R6": {
+      "canonicalSmiles": "CCCc1cc(Oc2ccc(C3CCCC3)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "targetAtomIndices": [],
+      "targetAtomSymbols": [],
+      "targetDrawCoordinates": {},
+      "focusViewBox": [
+        0.0,
+        0.0,
+        1400.0,
+        600.0
+      ]
+    },
+    "R7": {
+      "canonicalSmiles": "CCCc1cc(Oc2ccc(F)c(C)c2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "targetAtomIndices": [
+        11
+      ],
+      "targetAtomSymbols": [
+        "F"
+      ],
+      "targetDrawCoordinates": {
+        "11": [
+          414.038,
+          31.441
+        ]
+      },
+      "focusViewBox": [
+        264.038,
+        0.0,
+        300.0,
+        280.0
+      ]
+    },
+    "Q1": {
+      "canonicalSmiles": "CCCc1cc(Oc2ccc(-c3ccccc3)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "targetAtomIndices": [],
+      "targetAtomSymbols": [],
+      "targetDrawCoordinates": {},
+      "focusViewBox": [
+        0.0,
+        0.0,
+        1400.0,
+        600.0
+      ]
+    },
+    "Q2": {
+      "canonicalSmiles": "CCCc1cc(Oc2ccc(F)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "targetAtomIndices": [
+        11
+      ],
+      "targetAtomSymbols": [
+        "F"
+      ],
+      "targetDrawCoordinates": {
+        "11": [
+          386.799,
+          31.441
+        ]
+      },
+      "focusViewBox": [
+        236.799,
+        0.0,
+        300.0,
+        280.0
+      ]
+    },
+    "Q3": {
+      "canonicalSmiles": "CCCc1cc(Oc2ccc(OC)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "targetAtomIndices": [],
+      "targetAtomSymbols": [],
+      "targetDrawCoordinates": {},
+      "focusViewBox": [
+        0.0,
+        0.0,
+        1400.0,
+        600.0
+      ]
+    },
+    "Q4": {
+      "canonicalSmiles": "CCCc1cc(Oc2ccc(Cl)c(Cl)c2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1",
+      "targetAtomIndices": [
+        11,
+        13
+      ],
+      "targetAtomSymbols": [
+        "Cl",
+        "Cl"
+      ],
+      "targetDrawCoordinates": {
+        "11": [
+          428.047,
+          31.314
+        ],
+        "13": [
+          313.921,
+          94.235
+        ]
+      },
+      "focusViewBox": [
+        208.921,
+        0.0,
+        324.126,
+        280.0
+      ]
+    }
+  }
+}

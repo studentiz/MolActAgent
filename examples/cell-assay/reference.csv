@@ -1,0 +1,8 @@
+id,smiles,label,name,measurement,source_url
+R1,CCCc1cc(Oc2ccc(C(C)C)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1,inactive,CHEMBL94496,>3000 nM,https://www.ebi.ac.uk/chembl/explore/activity/108761
+R2,CCCc1cc(Oc2ccc(Cl)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1,active,CHEMBL420441,180 nM,https://www.ebi.ac.uk/chembl/explore/activity/108771
+R3,CN(CCOc1ccc(CC2SC(=O)NC2=O)cc1)c1ccccn1,inactive,CHEMBL121,>3000 nM,https://www.ebi.ac.uk/chembl/explore/activity/108783
+R4,CCCc1cc(Oc2ccc(Cl)c(C)c2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1,active,CHEMBL328615,156 nM,https://www.ebi.ac.uk/chembl/explore/activity/116833
+R5,CCCc1cc(Oc2ccc(O)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1,inactive,CHEMBL94397,>3000 nM,https://www.ebi.ac.uk/chembl/explore/activity/121673
+R6,CCCc1cc(Oc2ccc(C3CCCC3)cc2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1,inactive,CHEMBL97529,>3000 nM,https://www.ebi.ac.uk/chembl/explore/activity/122905
+R7,CCCc1cc(Oc2ccc(F)c(C)c2)ccc1OCCCOc1cccc(C2SC(=O)NC2=O)c1,active,CHEMBL96143,85 nM,https://www.ebi.ac.uk/chembl/explore/activity/125484

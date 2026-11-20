@@ -1,7 +1,8 @@
 # MolActAgent tutorial
 
 - [Start with your own assay](#use-your-own-data)
-- [Try the optional worked example](#optional-worked-example)
+- [Run the published cell assay](#run-the-published-cell-assay)
+- [Understand an abstention in the CDK2 example](#optional-worked-example)
 - [Classify numeric tables with the three-class Iris example](#iris-tutorial-for-numeric-tables)
 - [Look up commands, configuration, and Python interfaces](tutorial-reference.md)
 
@@ -34,7 +35,7 @@ Use isomeric SMILES when you know the stereochemistry. Add a `name` column if it
 Install Git and Python 3.12. Open a terminal in the folder where you want to keep the project, then copy these commands. The tag supplies the example files and the version pins for the chemistry environment.
 
 ```bash
-git clone --branch v0.5.1 https://github.com/studentiz/MolActAgent.git
+git clone --branch v0.6.0 https://github.com/studentiz/MolActAgent.git
 cd MolActAgent
 python3.12 -m venv .venv
 source .venv/bin/activate
@@ -58,19 +59,24 @@ molactagent init-config --path llm_config.jsonc
 
 Open `llm_config.jsonc` in a text editor and fill in the `api_key`, API root `base_url`, and `model_name` from your service. Keep your API key private. [Credentials, profiles, and local services](tutorial-reference.md#model-and-api-configuration)
 
-With your three input files in the project folder, run the command below. The files in the optional worked example can take the place of your own.
+### Run the published cell assay
+
+The seven measured references and four candidate structures are ready to use. In this cell reporter assay, EC₅₀ is the concentration needed for half the maximal response. A lower EC₅₀ indicates higher potency. The example labels a compound active at 1,000 nM or below. After configuring your live API, run the assessment.
 
 ```bash
 molactagent molecular \
-  --reference reference.csv \
-  --test query.csv \
-  --id-column id \
-  --endpoint @assay.txt \
+  --reference examples/cell-assay/reference.csv \
+  --test examples/cell-assay/query.csv \
+  --id-column id --endpoint @examples/cell-assay/endpoint.txt \
   --llm-config llm_config.jsonc \
-  --max-tokens 16384 \
-  --record assay-responses.json \
-  --output-dir assay-output
+  --record assay-responses.json --output-dir assay-output
 ```
+
+Read the four decisions in `assay-output/report.html`. In the published run Q2 and Q4 were predicted active. Open Q2 and follow R2 and R5 to see the measured values and terminal substitutions underlying its call. The independent outcomes file is for checking the predictions afterward. [Published report](https://studentiz.github.io/MolActAgent/cell-assay.html) · [Complete case and individual outcomes](../examples/cell-assay)
+
+### Run your own candidate batch
+
+Set `--reference reference.csv --test query.csv --endpoint @assay.txt` with the files prepared above. Choose a new output directory and recording path for this run. If the service or computer stops midway, reissue that run's command with `--resume`. Keep the two CSVs, original settings, output directory and recording path. Each `compound-*.json` under `.molactagent` holds a completed decision. A compound interrupted before its checkpoint can be requested again. A fresh run goes into a new destination.
 
 ### Read a molecular prediction
 
@@ -80,9 +86,11 @@ molactagent molecular \
 
 The CLI writes `predictions.json` with the structured decision, comparisons and call records. The response recording saves the model replies and settings for replay. Keep it with the input tables. [Report guide](reports.md#reports-from-smiles)
 
-### Optional worked example
+<a id="optional-worked-example"></a>
 
-Use the included tables if you want to try the command on a public assay first. They contain four references from human CDK2 inhibition assay `CHEMBL897015` and one query, `Q1`, an alias for `CHEMBL392776`. The assay file defines active as IC₅₀ at or below 100 nM (pChEMBL ≥ 7) and inactive as IC₅₀ at or above 10,000 nM (pChEMBL ≤ 5). These are separate cutoffs. The query CSV supplies its ID and SMILES. [ChEMBL assay](https://www.ebi.ac.uk/chembl/explore/assay/CHEMBL897015) · [Query compound](https://www.ebi.ac.uk/chembl/explore/compound/CHEMBL392776) · [Example files](../examples/cdk2)
+### Understand an abstention in the CDK2 example
+
+This second assay illustrates a candidate for which the agent returned an inconclusive call. It has four references from human CDK2 inhibition assay `CHEMBL897015` and one query, `Q1`, an alias for `CHEMBL392776`. The assay file defines active as IC₅₀ at or below 100 nM (pChEMBL ≥ 7) and inactive as IC₅₀ at or above 10,000 nM (pChEMBL ≤ 5). The query CSV supplies its ID and SMILES. [ChEMBL assay](https://www.ebi.ac.uk/chembl/explore/assay/CHEMBL897015) · [Query compound](https://www.ebi.ac.uk/chembl/explore/compound/CHEMBL392776) · [Example files](../examples/cdk2)
 
 ```bash
 molactagent molecular \
@@ -103,19 +111,19 @@ The close active reference `CHEMBL232557` measured 87 nM, near the 100 nM cutoff
 
 ### Replay a complete prediction
 
-Use the saved responses to rebuild the release report without an API key. The outputs go to `cdk2-replay/`.
+Use the saved responses to reconstruct the four cell-assay decisions. Open `cell-assay-replay/report.html` and follow Q2 to R2 and R5 to read the same comparison shown on the project site.
 
 ```bash
 molactagent molecular \
-  --reference examples/cdk2/reference.csv \
-  --test examples/cdk2/query.csv \
-  --replay examples/cdk2/responses.json \
-  --output-dir cdk2-replay
+  --reference examples/cell-assay/reference.csv \
+  --test examples/cell-assay/query.csv \
+  --replay examples/cell-assay/responses.json \
+  --output-dir cell-assay-replay
 ```
 
 To replay your own work, reuse the same CSVs and pass the response file you saved with `--record`. The recording supplies the assay description, column names, and settings. The CLI checks the input files, RDKit version, and rebuilt model requests. Choose a fresh output path for another copy of the report.
 
-The historical phenol example uses synthetic labels to illustrate a structure comparison. v0.5.1 accepts its v0.5.0 schema 2 recording in the pinned environment.
+The historical phenol example uses synthetic labels to illustrate a structure comparison. v0.6.0 accepts its v0.5.0 schema 2 recording in the pinned environment.
 
 ```bash
 molactagent molecular \

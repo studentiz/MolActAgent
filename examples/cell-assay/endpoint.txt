@@ -1,0 +1,1 @@
+Activation of human PPAR-alpha in a COS-1 cell reporter assay. Active means a measured EC50 of 1 micromolar or lower. Inactive means the reported EC50 is above 1 micromolar. Predict the candidate's activity class in this assay.

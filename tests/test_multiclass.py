@@ -383,7 +383,7 @@ def patch_pipeline_to_fake(monkeypatch, fake_llm):
     yield fake_llm
 
 
-@pytest.mark.parametrize("issue", [None, "wrong_measurement", "nonfinite_score", "invalid_strength"])
+@pytest.mark.parametrize("issue", [None, "zero_score", "wrong_measurement", "nonfinite_score", "invalid_strength"])
 def test_valid_model_dissent_and_invalid_citations_at_prediction_entry(issue, fake_llm):
     """A correct dissent is a class vote. An invented table value is a validation failure."""
     from tests.conftest import _parse_candidate_classes, _parse_feature_rows
@@ -394,7 +394,7 @@ def test_valid_model_dissent_and_invalid_citations_at_prediction_entry(issue, fa
         features = _parse_feature_rows(prompt, len(classes))
         target = classes.index("B")
         return json.dumps({
-            "label": "B", "confidence": "nan" if issue == "nonfinite_score" else 0.91,
+            "label": "B", "confidence": {"nonfinite_score": "nan", "zero_score": 0.0}.get(issue, 0.91),
             "summary": "The judgment favors B.",
             "key_drivers": [
                 {"feature": row["name"], "favored_class": "B", "strength": 2 if issue == "invalid_strength" else 0.8,
@@ -410,7 +410,11 @@ def test_valid_model_dissent_and_invalid_citations_at_prediction_entry(issue, fa
     comparison, = result["tuple_results"]
     assert comparison["baseline_class"] == "A"
     assert comparison["attempts"][0]["model_label"] == "B"
-    if issue:
+    if issue == "zero_score":
+        assert result["final_label"] == "Inconclusive"
+        assert comparison["label"] == "B" and comparison["confidence"] == 0
+        assert comparison["attempts"][0]["accepted"]
+    elif issue:
         assert result["final_label"] == "Inconclusive"
         assert comparison["decision_source"] == "invalid_response"
         assert not comparison["attempts"][0]["accepted"]
