@@ -27,6 +27,8 @@ class MoleculeRecord:
     descriptors: dict[str, float]
     morgan: Any
     maccs_bits: set[int]
+    constitution: str
+    stereo_complete: bool
     pchembl: float | None = None
 
 
@@ -37,6 +39,10 @@ def make_record(smiles, row, identifier, label="", pchembl=None):
     if molecule is None or not molecule.GetNumAtoms():
         raise ValueError(f"Invalid SMILES at {identifier!r}.")
     scaffold = MurckoScaffold.GetScaffoldForMol(molecule)
+    # RDKit's non-isomeric SMILES also drops isotope labels.
+    without_stereo = Chem.Mol(molecule)
+    Chem.RemoveStereochemistry(without_stereo)
+    stereo = Chem.FindPotentialStereo(molecule)
     return MoleculeRecord(
         row=row,
         canonical=Chem.MolToSmiles(molecule),
@@ -46,7 +52,20 @@ def make_record(smiles, row, identifier, label="", pchembl=None):
         descriptors=compute(molecule),
         morgan=_MORGAN.GetFingerprint(molecule),
         maccs_bits=set(MACCSkeys.GenMACCSKeys(molecule).GetOnBits()),
+        constitution=Chem.MolToSmiles(without_stereo),
+        stereo_complete=bool(stereo) and all(
+            info.specified == Chem.StereoSpecified.Specified for info in stereo
+        ),
         pchembl=pchembl,
+    )
+
+
+def specified_stereoisomers(left, right):
+    """Whether two different canonical structures differ in assigned stereo."""
+    return (
+        left.stereo_complete and right.stereo_complete
+        and left.constitution == right.constitution
+        and left.canonical != right.canonical
     )
 
 

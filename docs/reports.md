@@ -1,32 +1,36 @@
 # Reading and exporting an evidence report
 
-## Reports From SMILES
+## Reports from SMILES
 
-The molecular CLI writes `report.html` and `predictions.json`. Open the
-self-contained HTML file in a browser to review each compound.
+Open `report.html` in a browser. The report is a standalone review of one or
+more predictions. Keep `predictions.json` with it for programmatic access
+to the reference IDs, judgments, outcome and API metadata.
 
-1. Read the assay and label definition alongside the predicted label. The
-   heading reports agreement among the model judgments used for that decision
-   and flags inconclusive results.
-2. Compare the test structure with the displayed active and inactive
-   references. For a panel decision, the report highlights the nearest
-   reference in each class. A focused decision shows references from the
-   recorded comparison that supplied the call. Reference labels and any
-   input pChEMBL values come from the supplied table.
-3. Read the chemical rationale and counter-evidence on the same page. The
-   report quotes a recorded supporting judgment and links to its evidence record.
-   Dissenting judgments appear with their own source. Inconclusive decisions
-   show the conflicting interpretations or explain why usable votes were absent.
-4. Expand the property comparison, the full reference panel or the recorded
-   judgments to inspect the details. The property values are calculated
-   from SMILES. The model evidence score is uncalibrated.
+1. **Read the assay definition and predicted class.** Look at the count of
+   judgments supporting each class, abstaining, or failing. `Inconclusive`
+   can mean missing references, too few usable judgments, or a tie. The
+   summary tells you which reason applied.
+2. **Compare the structures.** In the teaching example, follow the highlighted
+   bond from the hydroxyl to the ring in 4-fluorophenol and p-cresol. Compare
+   the side-chain attachment in benzyl alcohol. The displayed reference
+   labels come from the input table.
+3. **Review the rationale and the evidence gap.** The recorded model
+   interpretation cites specific reference rows. Select a citation to see
+   the full structure, input label, fingerprint similarity and any measured
+   pChEMBL. For the teaching assay, the lack of a comparable fluorinated
+   reference leaves the effect of para fluorination unresolved.
+4. **Check disagreement and data provenance.** The report surfaces an opposing
+   judgment when present. Open the details to see properties calculated
+   from SMILES, all references shown to the LLM, individual interpretations,
+   and the API and response log. Read model scores as uncalibrated scores.
+   The measured potency comes only from the reference input.
 
-Add a `name` column to either input table to display chemical names alongside
-IDs. Use `--name-column` to select a different shared column. The JSON contains
-the decision, references, judgments and call metadata, including retries
-and truncation flags when available.
+The molecular CLI uses an optional `name` column for presentation. Use the
+persistent `--id-column` value to join a prediction to a laboratory record.
+The report may contain supplied structures, measurements and model text.
+Review those contents before sharing it.
 
-Try the complete teaching example with recorded model responses. [Tutorial](tutorial.md#replay-a-complete-prediction) · [Example report](https://studentiz.github.io/MolActAgent/molecular-example.html)
+[Read the teaching report](https://studentiz.github.io/MolActAgent/molecular-example.html) · [Generate the same report offline](tutorial.md#replay-a-complete-prediction)
 
 ## Reports From Numeric Tables
 
@@ -152,7 +156,7 @@ it is shared for community exploration and collaboration.
 
 The CLI and prediction pipelines do not automatically build this optional
 name/value mapping. Their existing `--per-sample` behavior remains as
-described in the [tutorial](tutorial.md#9-adding-per-sample-reports).
+described in the [tutorial](tutorial.md#adding-per-sample-reports).
 That path can request an additional LLM-written narrative; rendering a
 saved record with `render_html_report` requires no additional model call.
 

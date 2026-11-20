@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "molactagent"
-version = "0.4.1"
+version = "0.5.0"
 description = "Evidence-grounded molecular activity classification for small datasets, with SMILES featurisation, traceable explanations, HTML reports, and a friendly CLI."
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
@@ -32,7 +32,7 @@ dependencies = [
 yaml = ["pyyaml>=6.0"]
 excel = ["openpyxl>=3.1"]
 parquet = ["pyarrow>=14.0"]
-chem = ["rdkit>=2023.3"]
+chem = ["rdkit>=2023.9,<2026.9"]
 xgboost = ["xgboost>=1.7"]
 scipy = ["scipy>=1.10"]
 test = ["pytest>=7.0", "pyyaml>=6.0"]
@@ -40,7 +40,7 @@ all = [
     "pyyaml>=6.0",
     "openpyxl>=3.1",
     "pyarrow>=14.0",
-    "rdkit>=2023.3",
+    "rdkit>=2023.9,<2026.9",
     "xgboost>=1.7",
     "scipy>=1.10",
 ]

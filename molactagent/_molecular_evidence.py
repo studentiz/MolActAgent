@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import re
 from collections import Counter, deque
 from dataclasses import dataclass
 from difflib import SequenceMatcher
+from math import isclose
 from typing import Any
 
 import numpy as np
@@ -12,9 +14,15 @@ from rdkit import Chem
 from rdkit.Chem import AllChem, MACCSkeys, rdMolDescriptors
 from rdkit.Chem.Scaffolds import MurckoScaffold
 
-from ._molecules import CLASSES, MoleculeRecord, format_value as _fmt, tanimoto
-from ._molecular_recording import ReplayError
-from ._molecules import parse_model_json as safe_parse_json
+from ._molecular_recording import ModelRequestError
+from ._molecules import CLASSES, MoleculeRecord, format_value as _fmt
+from ._molecules import parse_model_json, specified_stereoisomers, tanimoto
+
+_OPTIONAL_EVIDENCE_TEXT = (
+    "class_contrast", "test_position", "halogen_change_interpretation",
+    "scaffold_type", "terminal_class_match", "smallest_structural_difference",
+    "why_this_pair_is_relevant",
+)
 
 FUNCTIONAL_PATTERNS = {
     "hydroxyl": "[OX2H]",
@@ -71,6 +79,14 @@ class ReferenceJudge:
         self.max_tokens = max_tokens
         self.use_response_format = response_format
         self.sidechain_min_fragments = 4
+
+    def _cutoff_note(self):
+        threshold = self.context["threshold"]
+        if threshold is None:
+            return ""
+        if self.context["labels_from_pchembl"]:
+            return f"Assay label criterion: active at measured pChEMBL ≥ {threshold:g}."
+        return f"Provided pChEMBL cutoff: {threshold:g}."
 
     @staticmethod
     def select_pairs(
@@ -210,21 +226,6 @@ class ReferenceJudge:
                 )
             )
             or "none"
-        )
-
-    @staticmethod
-    def _has_opposite_exact_reference(
-        query: MoleculeRecord, records: list[MoleculeRecord], train_idx: list[int]
-    ) -> bool:
-        query_key = Chem.MolToSmiles(query.mol, isomericSmiles=False)
-        query_isomer = Chem.MolToSmiles(query.mol, isomericSmiles=True)
-        return any(
-            (
-                Chem.MolToSmiles(records[idx].mol, isomericSmiles=False) == query_key
-                and Chem.MolToSmiles(records[idx].mol, isomericSmiles=True)
-                != query_isomer
-                for idx in train_idx
-            )
         )
 
     @staticmethod
@@ -407,33 +408,27 @@ class ReferenceJudge:
     ) -> str:
         groups: dict[str, list[int]] = {}
         for idx in train_idx:
-            key = Chem.MolToSmiles(records[idx].mol, isomericSmiles=False)
-            groups.setdefault(key, []).append(idx)
-        query_key = Chem.MolToSmiles(query.mol, isomericSmiles=False)
-        exact_lines = []
-        related_lines = []
+            ref = records[idx]
+            if ref.stereo_complete:
+                groups.setdefault(ref.constitution, []).append(idx)
+        local = []
+        other = []
         for key, members in groups.items():
             active = [idx for idx in members if records[idx].label == "active"]
             inactive = [idx for idx in members if records[idx].label == "inactive"]
-            if not active or not inactive:
-                continue
-            marker = (
-                "TEST_CONSTITUTION_MATCH"
-                if key == query_key
-                else "RELATED_CONSTITUTION"
-            )
-            target = exact_lines if key == query_key else related_lines
+            query_match = query.stereo_complete and key == query.constitution
+            marker = "TEST_CONSTITUTION_MATCH" if query_match else "RELATED_CONSTITUTION"
+            target = local if query_match else other
             for a in active[:2]:
                 for i in inactive[:2]:
-                    target.append(
-                        f"  [{marker}] active {Chem.MolToSmiles(records[a].mol, isomericSmiles=True)} pChEMBL={_fmt(records[a].pchembl)} stereo[{ReferenceJudge._stereo_signature(records[a])}] | inactive {Chem.MolToSmiles(records[i].mol, isomericSmiles=True)} pChEMBL={_fmt(records[i].pchembl)} stereo[{ReferenceJudge._stereo_signature(records[i])}]"
-                    )
-                    if len(target) >= limit:
-                        break
-                if len(target) >= limit:
-                    break
-        lines = exact_lines + related_lines
-        return "\n".join(lines) if lines else "  no matched stereochemical pairs"
+                    if len(target) < limit and specified_stereoisomers(records[a], records[i]):
+                        target.append(
+                            f"  [{marker}] ref={a}; active {records[a].canonical} "
+                            f"pChEMBL={_fmt(records[a].pchembl)} stereo[{ReferenceJudge._stereo_signature(records[a])}] | "
+                            f"ref={i}; inactive {records[i].canonical} pChEMBL={_fmt(records[i].pchembl)} "
+                            f"stereo[{ReferenceJudge._stereo_signature(records[i])}]"
+                        )
+        return "\n".join(local + other) or "  no matched stereochemical pairs"
 
     @staticmethod
     def _same_scaffold_neighbors(
@@ -470,13 +465,12 @@ class ReferenceJudge:
         holding atom composition fixed.  The table is descriptive evidence for
         the LLM, not a label rule.
         """
-        formula = rdMolDescriptors.CalcMolFormula(query.mol)
+        formula = rdMolDescriptors.CalcMolFormula(query.mol, separateIsotopes=True)
         candidates = [
             idx
             for idx in train_idx
-            if rdMolDescriptors.CalcMolFormula(records[idx].mol) == formula
-            and Chem.MolToSmiles(records[idx].mol, isomericSmiles=True)
-            != Chem.MolToSmiles(query.mol, isomericSmiles=True)
+            if rdMolDescriptors.CalcMolFormula(records[idx].mol, separateIsotopes=True) == formula
+            and records[idx].constitution != query.constitution
         ]
         candidates.sort(
             key=lambda idx: (-tanimoto(query.morgan, records[idx].morgan), idx)
@@ -669,6 +663,7 @@ class ReferenceJudge:
         user = f"""TASK
 Dataset: {dataset}
 Endpoint: {context["endpoint"]}
+{self._cutoff_note()}
 Chemical series: {context["series"]}
 
 TEST COMPOUND
@@ -690,21 +685,10 @@ The test has fewer halogens than the closest same-scaffold reference
 (ref={closest}; measured_class={records[closest].label}). The reference's class
 is on the more-halogenated side. Do not simply copy that class. Decide whether
 the halogen deletion is likely to flip the class or retain it.
-Explicitly consider scaffold rigidity and shape: a simple flexible
-biaryl/benzophenone often depends more on halogen substitution for potency,
-so a one-halogen deletion is more likely to flip the closest reference's
-class: deletion from an active flexible benzophenone tends toward inactive,
-while deletion from an inactive flexible benzophenone tends toward active.
-A same-halogen reference is useful counter-evidence, but its absence is not by
-itself a reason to retain the halogenated reference class. In a flexible aryl
-ketone series, use the unsubstituted-H analog as the direct product of the
-deletion and override the flip only for a measured local-pocket or substitution
-effect, not merely because no exact H analog was measured.
-A rigid fused/spiro polycyclic scaffold is more likely to retain the closest
-reference's class after one halogen deletion. Use the measured same-scaffold
-analogs, local substitution pattern, and the shape descriptors; override this
-prior only when the local pattern gives a clear reason. Return active,
-inactive, or Uncertain.
+Check whether the labeled references isolate a change at the relevant
+position and whether the same-halogen analogs or scaffold shape support a
+different interpretation. Explain conflicting evidence or a missing control.
+Return active, inactive, or Uncertain.
 
 OUTPUT (JSON only)
 {{
@@ -712,7 +696,9 @@ OUTPUT (JSON only)
   "confidence": 0.0 to 1.0,
   "scaffold_type": "one sentence describing flexibility/rigidity",
   "halogen_change_interpretation": "one sentence",
-  "decisive_reference": "reference index",
+  "reference_ids": [integer IDs of the supporting ref= rows],
+  "counter_evidence": "strongest opposing evidence or missing comparison",
+  "counter_reference_ids": [integer IDs of opposing ref= rows, or empty],
   "rationale": "2-4 concise sentences"
 }}
 """
@@ -737,16 +723,9 @@ OUTPUT (JSON only)
         stereochemistry analogous; it is not given a global R/S rule.
         """
         query = records[query_idx]
-        query_key = Chem.MolToSmiles(query.mol, isomericSmiles=False)
-        query_isomer = Chem.MolToSmiles(query.mol, isomericSmiles=True)
         exact_active = [
-            idx
-            for idx in train_idx
-            if records[idx].label == "active"
-            and Chem.MolToSmiles(records[idx].mol, isomericSmiles=False) == query_key
-            and (
-                Chem.MolToSmiles(records[idx].mol, isomericSmiles=True) != query_isomer
-            )
+            idx for idx in train_idx
+            if records[idx].label == "active" and specified_stereoisomers(records[idx], query)
         ]
         if not exact_active:
             return None
@@ -771,10 +750,11 @@ OUTPUT (JSON only)
         inactive_record = records[inactive_ref]
         terminal_similarity = self._terminal_similarity(query, inactive_record)
         context = self.context
-        system = "You are resolving a stereochemical activity gate. The test is the opposite configuration of an active reference, so its class must not be copied directly. Compare the test's terminal substituent class with the closest inactive reference. If that inactive reference is a close terminal-class analog, choose inactive; if its terminal class differs substantially, choose active. Do not apply a global R/S rule. Return only JSON."
+        system = "Assess activity evidence from a specified stereoisomer and an inactive analog. Explain whether each comparison supports a transferable activity pattern for this assay. Choose Uncertain when the evidence cannot distinguish the classes. Return only JSON."
         user = f"""TASK
 Dataset: {dataset}
 Endpoint: {context["endpoint"]}
+{self._cutoff_note()}
 Chemical series: {context["series"]}
 
 TEST COMPOUND
@@ -788,7 +768,7 @@ sidechain_fragments: {query_sidechains}
 Properties:
 {chr(10).join((f"  {name}={_fmt(query.descriptors[name])}" for name in query.descriptors))}
 
-EXACT OPPOSITE ACTIVE REFERENCE
+ACTIVE REFERENCE WITH DIFFERENT ASSIGNED STEREOCHEMISTRY
 ref={active_ref}; active; pChEMBL={_fmt(active.pchembl)};
 similarity={_fmt(tanimoto(query.morgan, active.morgan))};
 stereo={self._stereo_signature(active)};
@@ -806,22 +786,20 @@ sidechains[{self._sidechain_signature(inactive_record)}];
 SMILES={Chem.MolToSmiles(inactive_record.mol, isomericSmiles=True)}
 
 QUESTION
-The test is the opposite enantiomer of the exact active reference. Decide
-whether the closest inactive reference is a genuine terminal-class analog
-that justifies transferring the inactive class, or whether its terminal
-group differs enough that the exact active scaffold should remain active.
-Compare the full terminal substituent. Treat benzyl/aryl-methyl analogs with
-different aryl substituents (for example Me versus OMe) as the same terminal
-class. Treat a different N-alkyl chain length or a different aryl ring type
-(for example benzene versus thiophene) as a substantial difference.
-Do not use a global R/S rule.
+The active reference has the same connectivity and different assigned
+stereochemistry. Compare it with the inactive reference's terminal group and
+the test structure. State whether the available references isolate the
+stereochemical change and what evidence would strengthen the comparison.
+Return Uncertain when the local evidence cannot support a class.
 
 OUTPUT (JSON only)
 {{
   "choice": "active" or "inactive" or "Uncertain",
   "confidence": 0.0 to 1.0,
   "terminal_class_match": "one sentence",
-  "decisive_reference": "active or inactive reference index",
+  "reference_ids": [integer IDs of the supporting ref= rows],
+  "counter_evidence": "strongest opposing evidence or missing comparison",
+  "counter_reference_ids": [integer IDs of opposing ref= rows, or empty],
   "rationale": "2-4 concise sentences"
 }}
 """
@@ -885,17 +863,13 @@ OUTPUT (JSON only)
                     for name in ref.descriptors
                 )
             )
-            same_constitution = Chem.MolToSmiles(
-                ref.mol, isomericSmiles=False
-            ) == Chem.MolToSmiles(query.mol, isomericSmiles=False)
-            same_isomer = Chem.MolToSmiles(
-                ref.mol, isomericSmiles=True
-            ) == Chem.MolToSmiles(query.mol, isomericSmiles=True)
+            same_constitution = ref.constitution == query.constitution
+            same_isomer = ref.canonical == query.canonical
             heavy_atom_delta = abs(
                 ref.descriptors["HeavyAtomCount"] - query.descriptors["HeavyAtomCount"]
             )
             auxiliary_line = ""
-            return f"""REFERENCE {letter}
+            return f"""REFERENCE {letter} (ref={ref.row}; supplied ID is shown in the report)
 supplied_label: {ref.label}
 measured_pchembl: {_fmt(ref.pchembl)}
 {auxiliary_line}SMILES: {Chem.MolToSmiles(ref.mol, isomericSmiles=True)}
@@ -935,6 +909,7 @@ MACCS patterns differing between A and B:
         user = f"""TASK
 Dataset: {dataset}
 Endpoint: {context["endpoint"]}
+{self._cutoff_note()}
 Chemical series: {context["series"]}
 {prior_block}
 
@@ -971,10 +946,11 @@ OUTPUT (JSON only)
 {{
   "choice": "A" or "B" or "Uncertain",
   "confidence": 0.0 to 1.0,
-  "pchembl_estimate": estimated test pChEMBL or null,
   "smallest_structural_difference": "one sentence",
   "why_this_pair_is_relevant": "one sentence",
-  "counter_evidence": "strongest reason the other reference might be closer",
+  "reference_ids": [integer IDs of the supporting ref= rows],
+  "counter_evidence": "strongest reason the other reference might be closer or a missing comparison",
+  "counter_reference_ids": [integer IDs of opposing ref= rows, or empty],
   "rationale": "2-4 sentences"
 }}
 """
@@ -991,7 +967,7 @@ OUTPUT (JSON only)
         train_idx: list[int],
         active_panel: list[int],
         inactive_panel: list[int],
-    ) -> list[dict]:
+    ) -> tuple[list[dict], tuple[int, ...]]:
         query = records[query_idx]
         context = self.context
         counts = Counter((records[idx].label for idx in train_idx))
@@ -1075,7 +1051,7 @@ OUTPUT (JSON only)
                 else ""
             )
             linker_text = ""
-            return f"- {ref.label}: pChEMBL={_fmt(ref.pchembl)}; {auxiliary_text}similarity={_fmt(tanimoto(query.morgan, ref.morgan))}; constitution_match={Chem.MolToSmiles(ref.mol, isomericSmiles=False) == Chem.MolToSmiles(query.mol, isomericSmiles=False)}; isomeric_match={Chem.MolToSmiles(ref.mol, isomericSmiles=True) == Chem.MolToSmiles(query.mol, isomericSmiles=True)}; heavy_atom_delta={_fmt(abs(ref.descriptors['HeavyAtomCount'] - query.descriptors['HeavyAtomCount']))}; SMILES={Chem.MolToSmiles(ref.mol, isomericSmiles=True)}; elements[{self._element_signature(ref)}]; rings[{self._ring_signature(ref)}]; {functional_text}{sidechain_text}{linker_text}{bond_text}stereo[{self._stereo_signature(ref)}]; {topology_text}{props}"
+            return f"- ref={ref.row}; {ref.label}: pChEMBL={_fmt(ref.pchembl)}; {auxiliary_text}similarity={_fmt(tanimoto(query.morgan, ref.morgan))}; constitution_match={ref.constitution == query.constitution}; isomeric_match={Chem.MolToSmiles(ref.mol, isomericSmiles=True) == Chem.MolToSmiles(query.mol, isomericSmiles=True)}; heavy_atom_delta={_fmt(abs(ref.descriptors['HeavyAtomCount'] - query.descriptors['HeavyAtomCount']))}; SMILES={Chem.MolToSmiles(ref.mol, isomericSmiles=True)}; elements[{self._element_signature(ref)}]; rings[{self._ring_signature(ref)}]; {functional_text}{sidechain_text}{linker_text}{bond_text}stereo[{self._stereo_signature(ref)}]; {topology_text}{props}"
 
         exact_block = ""
         local_block = ""
@@ -1087,8 +1063,8 @@ panel does not contain a meaningful contrast for this test, return
 "Uncertain". If an exact TEST_CONSTITUTION_MATCH is present, treat it as
 strong local evidence and explain why it does or does not override the broader
 class contrast.
-When constitution_match=True but isomeric_match=False, the reference is an
-enantiomer/relative stereoisomer, not an exact match.
+Use specified stereochemistry as evidence when both configurations are
+known. Shared connectivity alone does not establish a stereochemical pair.
 RELATED_CONSTITUTION lines are weaker: use them only when the test's terminal
 substituent class is analogous, and do not transfer a stereochemical rule
 across a major terminal-group change such as thiophene versus methoxybenzyl.
@@ -1185,18 +1161,9 @@ test differs before placing it active.
             question_block += f"""
 When a SIDECHAIN NEAREST NEIGHBORS table is present, compare the test's exact
 Murcko sidechain fragments with those references. A close sidechain with a
-measured pChEMBL below {self.context["threshold"]} is stronger local evidence than a broader
-size/lipophilicity trend. Do not treat an extended substituent as active
+measured pChEMBL and comparable chemistry can support a stronger local
+comparison than a broader size or lipophilicity trend. Do not treat an extended substituent as active
 merely because it is larger; use the closest measured sidechain values.
-"""
-        if self._has_opposite_exact_reference(query, records, train_idx):
-            question_block += f"""
-STEREOCHEMICAL CAUTION: the closest exact-constitution reference is an
-opposite enantiomer, not an exact match. Do not transfer its activity
-directly. Estimate the potency gap from analogous matched stereoisomer pairs
-and apply that gap; if the active enantiomer is only slightly above the {self.context["threshold"]}
-threshold, the opposite enantiomer may fall below it. A different terminal
-substituent class can change the gap, so do not apply one R/S rule globally.
 """
         regression_block = ""
         key_pairs_block = ""
@@ -1242,6 +1209,14 @@ class.
             if self._halogen_count(query)
             else ""
         )
+        stereo_pairs = self._stereochemical_matched_pairs(query, records, train_idx)
+        extra_rows = re.findall(
+            r"\bref=(\d+)(?=;)",
+            "\n".join((same_scaffold_block, constitutional_isomer_block, halogen_pattern_block,
+                       sidechain_block, stereo_pairs)),
+        )
+        used_rows = tuple(dict.fromkeys((*active_panel, *inactive_panel, *map(int, extra_rows))))
+        cutoff_note = self._cutoff_note()
         query_auxiliary_line = ""
         query_topology_line = ""
         query_sidechain_line = (
@@ -1273,6 +1248,7 @@ calibration prior; the class contrast below is the primary evidence.
         user = f"""TASK
 Dataset: {dataset}
 Endpoint: {context["endpoint"]}
+{cutoff_note}
 Chemical series: {context["series"]}
 
 TEST COMPOUND
@@ -1336,193 +1312,125 @@ constitution. Only a line marked TEST_CONSTITUTION_MATCH is directly
 applicable. RELATED_CONSTITUTION lines are context only and must not change
 the class; when there is no TEST_CONSTITUTION_MATCH, use the non-stereochemical
 scaffold/series contrast instead of inferring a class from R/S alone.
-{self._stereochemical_matched_pairs(query, records, train_idx)}
+{stereo_pairs}
 
 {transfer_block}
 
 QUESTION
 {question_block}
 {topology_question}
-When measured pChEMBL values are available, estimate the test pChEMBL by local
-interpolation and use the {self.context["threshold"]} threshold as a calibration check; do not invent
-a value when the panel has no measurements. Keep the rationale under 120
-words.
+Use supplied measurements when they apply to the stated assay. Treat activity
+of the test compound as a prediction. Cite the integer IDs printed as ref=
+for each reference that directly supports the rationale. For Uncertain, state
+the conflicting evidence or missing comparison. Keep the rationale under 80 words.
 
 OUTPUT (JSON only)
 {{
   "choice": "active" or "inactive" or "Uncertain",
   "confidence": 0.0 to 1.0,
-  "pchembl_estimate": estimated test pChEMBL or null,
   "class_contrast": "one sentence naming the active-vs-inactive direction",
   "test_position": "one sentence locating the test on that direction",
-  "counter_evidence": "strongest reason the other class might fit",
+  "reference_ids": [integer IDs of the supporting ref= rows],
+  "counter_evidence": "strongest opposing evidence or a missing comparison",
+  "counter_reference_ids": [integer IDs of opposing ref= rows, or empty],
   "rationale": "2-4 concise sentences"
 }}
 """
-        return [
+        messages = [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ]
 
-    def judge_panel(
-        self, messages: list[dict], *, tag: str, force_decision: bool = False
-    ) -> FinalChoice:
-        raw = ""
-        last_error = None
-        current = messages
-        for attempt in range(2):
-            try:
-                kwargs = dict(
-                    messages=current,
-                    temperature=self.temperature,
-                    tag=f"{tag}_panel_a{attempt}",
-                    max_tokens=self.max_tokens,
-                )
-                if self.use_response_format:
-                    kwargs["response_format"] = {"type": "json_object"}
-                raw = self.llm.chat(**kwargs) or ""
-                call = dict(getattr(self.llm, "last_call", None) or {})
-                if call.get("truncated"):
-                    last_error = "response was truncated at max_tokens; return only the complete JSON object and omit repeated analysis"
-                    if attempt == 0:
-                        current = messages + [
-                            {
-                                "role": "user",
-                                "content": "Return one complete JSON object under 500 tokens. Do not repeat the prompt, do not enumerate all references, and keep the rationale under 80 words.",
-                            }
-                        ]
-                    continue
-                parsed = safe_parse_json(raw)
-                if parsed is None:
-                    last_error = "response was not valid JSON"
-                elif parsed.get("choice") not in (*CLASSES, "Uncertain"):
-                    last_error = f"invalid choice {parsed.get('choice')!r}"
-                elif force_decision and parsed.get("choice") == "Uncertain":
-                    last_error = "the answer was Uncertain, but this final panel decision must be active or inactive"
-                else:
-                    try:
-                        confidence = float(parsed.get("confidence", 0.0))
-                    except (TypeError, ValueError):
-                        confidence = 0.0
-                    confidence = max(0.0, min(1.0, confidence))
-                    parsed["confidence"] = confidence
-                    return FinalChoice(
-                        label=str(parsed["choice"]),
-                        confidence=confidence,
-                        parsed=parsed,
-                        raw_response=raw,
-                        call=call,
-                        parsed_ok=True,
-                    )
-            except ReplayError:
-                raise
-            except Exception as exc:
-                last_error = f"{type(exc).__name__}: {exc}"
-            if attempt == 0:
-                current = messages + [
-                    {"role": "assistant", "content": raw},
-                    {
-                        "role": "user",
-                        "content": f"The previous response was unusable: {last_error}. Return the complete JSON object with choice active "
-                        + (
-                            "or inactive; do not return Uncertain."
-                            if force_decision
-                            else ", inactive, or Uncertain."
-                        ),
-                    },
-                ]
-        return FinalChoice(
-            label="Inconclusive",
-            confidence=0.0,
-            parsed={},
-            raw_response=raw,
-            call=dict(getattr(self.llm, "last_call", None) or {}),
-            parsed_ok=False,
-            error=last_error,
-        )
+        return messages, used_rows
+
+    def judge_panel(self, messages, *, tag, reference_positions):
+        return self._judge(messages, tag, CLASSES, reference_positions)
 
     def judge(
-        self,
-        messages: list[dict],
-        *,
-        pair_id: int,
-        active_ref: int,
-        inactive_ref: int,
-        tag: str,
-        active_side: str = "A",
+        self, messages, *, pair_id, active_ref, inactive_ref, tag, active_side="A",
     ) -> PairChoice:
-        raw = ""
-        last_error = None
-        current = messages
-        for attempt in range(2):
-            try:
-                kwargs = dict(
-                    messages=current,
-                    temperature=self.temperature,
-                    tag=f"{tag}_a{attempt}",
-                    max_tokens=self.max_tokens,
-                )
-                if self.use_response_format:
-                    kwargs["response_format"] = {"type": "json_object"}
-                raw = self.llm.chat(**kwargs) or ""
-                call = dict(getattr(self.llm, "last_call", None) or {})
-                if call.get("truncated"):
-                    last_error = "response was truncated at max_tokens"
-                    raw = ""
-                    if attempt == 0:
-                        current = messages + [
-                            {"role": "user", "content": "Return one concise, complete JSON object."}
-                        ]
-                    continue
-                parsed = safe_parse_json(raw)
-                if parsed is None:
-                    last_error = "response was not valid JSON"
-                elif parsed.get("choice") not in ("A", "B", "Uncertain"):
-                    last_error = f"invalid choice {parsed.get('choice')!r}"
-                else:
-                    try:
-                        confidence = float(parsed.get("confidence", 0.0))
-                    except (TypeError, ValueError):
-                        confidence = 0.0
-                    confidence = max(0.0, min(1.0, confidence))
-                    parsed["confidence"] = confidence
-                    return PairChoice(
-                        pair_id=pair_id,
-                        active_ref=active_ref,
-                        inactive_ref=inactive_ref,
-                        choice=str(parsed["choice"]),
-                        confidence=confidence,
-                        parsed=parsed,
-                        raw_response=raw,
-                        call=call,
-                        parsed_ok=True,
-                        active_side=active_side,
-                    )
-            except ReplayError:
-                raise
-            except Exception as exc:
-                last_error = f"{type(exc).__name__}: {exc}"
-            if attempt == 0:
-                current = messages + [
-                    {"role": "assistant", "content": raw},
-                    {
-                        "role": "user",
-                        "content": f"The previous response was unusable: {last_error}. Return the complete JSON object with choice A, B, or Uncertain.",
-                    },
-                ]
+        reply = self._judge(messages, tag, ("A", "B"), (active_ref, inactive_ref))
         return PairChoice(
-            pair_id=pair_id,
-            active_ref=active_ref,
-            inactive_ref=inactive_ref,
-            choice="Uncertain",
-            confidence=0.0,
-            parsed={},
-            raw_response=raw,
-            call=dict(getattr(self.llm, "last_call", None) or {}),
-            parsed_ok=False,
-            error=last_error,
-            active_side=active_side,
+            pair_id, active_ref, inactive_ref, reply.label, reply.confidence,
+            reply.parsed, reply.raw_response, reply.call, reply.parsed_ok, reply.error, active_side,
         )
+
+    @staticmethod
+    def _parse_judgment(raw, labels, reference_positions):
+        parsed = parse_model_json(raw)
+        if parsed is None:
+            raise ValueError("Response was not a JSON object.")
+        if parsed.get("choice") not in (*labels, "Uncertain"):
+            raise ValueError("Response used an unexpected class label.")
+        score = parsed.get("confidence")
+        if type(score) not in (int, float) or not 0 <= score <= 1:
+            raise ValueError("Confidence must be a finite JSON number from 0 to 1.")
+        for field in ("rationale", "counter_evidence"):
+            if not isinstance(parsed.get(field), str) or not parsed[field].strip():
+                raise ValueError(f"A non-empty {field} is required.")
+        evidence = {"choice": parsed["choice"], "confidence": score,
+                    "rationale": parsed["rationale"].strip(),
+                    "counter_evidence": parsed["counter_evidence"].strip()}
+        for field in _OPTIONAL_EVIDENCE_TEXT:
+            value = parsed.get(field)
+            if isinstance(value, str) and value.strip():
+                evidence[field] = value.strip()
+        allowed = set(reference_positions)
+        for field in ("reference_ids", "counter_reference_ids"):
+            refs = parsed.get(field, [])
+            if not isinstance(refs, list) or any(type(ref) is not int or ref not in allowed for ref in refs):
+                raise ValueError(f"{field} must contain integer IDs from the comparison.")
+            evidence[field] = list(dict.fromkeys(refs))
+        if evidence["choice"] in labels and not evidence["reference_ids"]:
+            raise ValueError("A class judgment must cite at least one supporting reference.")
+        return evidence
+
+    def _judge(self, messages, tag, labels, reference_positions) -> FinalChoice:
+        current = messages
+        status = "invalid_response"
+        detail = ""
+        raw = ""
+        for attempt in range(2):
+            kwargs = {
+                "messages": current,
+                "temperature": self.temperature,
+                "tag": f"{tag}:a{attempt}",
+                "max_tokens": self.max_tokens,
+            }
+            if self.use_response_format:
+                kwargs["response_format"] = {"type": "json_object"}
+            try:
+                raw = self.llm.chat(**kwargs)
+            except ModelRequestError as exc:
+                detail = str(exc)
+                status = {
+                    "HTTP 401": "authentication_error",
+                    "HTTP 403": "authentication_error",
+                    "APITimeoutError": "timeout",
+                }.get(detail, "request_error")
+                self.llm.mark_response(status, detail)
+                break
+            call = self.llm.last_call
+            if call.get("truncated"):
+                status, detail = "truncated", "Response reached the output token limit."
+            elif call.get("finish_reason") not in (None, "stop"):
+                status, detail = "invalid_response", "The service did not finish the response normally."
+            else:
+                try:
+                    parsed = self._parse_judgment(raw, labels, reference_positions)
+                except ValueError as exc:
+                    status, detail = "invalid_response", str(exc)
+                else:
+                    label = parsed["choice"]
+                    self.llm.mark_response("uncertain" if label == "Uncertain" else "accepted")
+                    return FinalChoice(label, float(parsed["confidence"]), parsed, raw, call, True)
+            self.llm.mark_response(status, detail)
+            current = messages + [{
+                "role": "user",
+                "content": f"{detail} Return a concise complete JSON object with the requested keys. "
+                           "If the reference evidence is insufficient, choose Uncertain and explain why.",
+            }]
+        return FinalChoice("Inconclusive", 0.0, {}, raw, self.llm.last_call, False, detail)
 
     @staticmethod
     def aggregate(choices: list[PairChoice]) -> tuple[str, float, dict]:
@@ -1539,7 +1447,7 @@ OUTPUT (JSON only)
                 continue
             weights[label] += max(choice.confidence, 1e-06)
             counts[label] += 1
-        if not any(weights.values()) or weights["active"] == weights["inactive"]:
+        if not any(weights.values()) or isclose(weights["active"], weights["inactive"], abs_tol=1e-9):
             return ("Inconclusive", 0.0, {"weights": weights, "counts": counts})
         total = sum(weights.values())
         label = max(weights, key=weights.get)

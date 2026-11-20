@@ -123,6 +123,9 @@ _KEY_ALIASES = {
 }
 
 
+MOLECULAR_MAX_TOKENS = 16384
+
+
 @dataclass
 class LLMConfig:
     """Resolved LLM connection settings.
@@ -346,6 +349,7 @@ def load_llm_config(
     timeout: float | None = None,
     max_retries: int | None = None,
     project_root: str | pathlib.Path | None = None,
+    default_max_tokens: int | None = 2000,
 ) -> LLMConfig:
     """Resolve LLM connection settings from CLI args, env, or a file.
 
@@ -476,6 +480,7 @@ def load_llm_config(
         "model_name": str(merged["model_name"]),
         "profile": profile,
         "source": source_label,
+        "max_tokens": default_max_tokens,
     }
     if "temperature" in merged:
         try:

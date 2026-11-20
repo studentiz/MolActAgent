@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0 — 2026-11-20
+
+- Rebuilt GitHub Pages and the public guides around an illustrated example of the SMILES agent. The report now leads with the class, evidence coverage, structures, rationale and missing comparisons.
+- Added validated reference citations, explicit LLM abstention and a minimum of usable class judgments from more than half of the requested main-panel votes.
+- Preserved CSV identifiers and checked conflicting labels on identical canonical structures. Matched stereochemical comparisons require assigned configurations and preserve isotope identity. Users can declare and check a pChEMBL cutoff label rule.
+- Added preflight checks for output paths and cleanup of incomplete output files. Completed batches with inconclusive queries write all results and exit with code 4.
+- Added schema 2 recordings with file fingerprints and effective settings. Schema 1 recordings use the v0.4.1 release and the original run options.
+- Aligned the SMILES default output cap at 16,384 tokens and constrained RDKit to compatible versions. The request client records HTTP attempts, retries transient API failures, and always sends the initial request with `--max-retries 0`.
+
 ## 0.4.1 — 2026-11-20
 
 - Redesigned SMILES evidence reports for experimental review with 2D query and reference structures, calculated properties, and recorded chemical rationale, counter-evidence and disagreement.

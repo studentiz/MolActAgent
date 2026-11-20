@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 
 import pandas as pd
@@ -18,7 +18,8 @@ except ModuleNotFoundError as exc:
         raise ImportError("Install MolActAgent with the [chem] extra to classify SMILES.") from exc
     raise
 
-from ._molecular_recording import CallRecorder, ReplayClient
+from ._molecular_recording import CallRecorder, ReplayClient, digest, runtime_versions
+from .config import MOLECULAR_MAX_TOKENS
 
 
 @dataclass(frozen=True)
@@ -34,23 +35,36 @@ class MolecularResult:
     judgments: list[dict]
     calls: list[dict]
     reason: str | None = None
+    decision: dict = field(default_factory=dict)
+    evidence_references: list[dict] = field(default_factory=list)
 
 
 def _panel_decision(choices: list[FinalChoice]):
-    valid = [choice for choice in choices if choice.parsed_ok and choice.label in CLASSES]
-    counts = Counter(choice.label for choice in valid)
+    counts = Counter(choice.label for choice in choices if choice.parsed_ok)
+    opposing = {label: counts[label] for label in CLASSES}
+    usable = sum(opposing.values())
+    required = len(choices) // 2 + 1
     weights = {
-        label: sum(max(choice.confidence, 1e-6) for choice in valid if choice.label == label)
+        label: sum(choice.confidence for choice in choices if choice.parsed_ok and choice.label == label)
         for label in CLASSES
     }
-    if weights["active"] == weights["inactive"]:
-        return "Inconclusive", 0.0
-    if counts["active"] == counts["inactive"]:
-        label = max(weights, key=weights.get)
-        return label, weights[label] / sum(weights.values())
-    label = max(CLASSES, key=lambda candidate: counts[candidate])
-    confidence = sum(choice.confidence for choice in valid if choice.label == label)
-    return label, confidence / counts[label]
+    decision = {
+        "planned": len(choices),
+        "counts": {**opposing, "uncertain": counts["Uncertain"],
+                   "failed": len(choices) - usable - counts["Uncertain"]},
+        "decisive": usable,
+        "required": required,
+        "weight_totals": weights,
+    }
+    if usable < required:
+        return "Inconclusive", 0.0, {**decision, "method": "insufficient_votes"}
+    if opposing["active"] == opposing["inactive"]:
+        if math.isclose(weights["active"], weights["inactive"], abs_tol=1e-9):
+            return "Inconclusive", 0.0, {**decision, "method": "tie"}
+        label = max(CLASSES, key=weights.get)
+        return label, weights[label] / sum(weights.values()), {**decision, "method": "score_tiebreak"}
+    label = max(CLASSES, key=opposing.get)
+    return label, weights[label] / opposing[label], {**decision, "method": "majority"}
 
 
 def _reference_rows(records, query_index, indices, reference_ids):
@@ -86,9 +100,10 @@ class MolecularClassifier:
         neighbors: int = 8,
         repeats: int = 5,
         temperature: float = 0.0,
-        max_tokens: int = 16384,
+        max_tokens: int = MOLECULAR_MAX_TOKENS,
         response_format: bool = True,
-        pchembl_threshold: float = 7.0,
+        pchembl_threshold: float | None = None,
+        labels_from_pchembl: bool = False,
         workers: int = 4,
     ):
         if profile not in ("panel", "focused"):
@@ -101,8 +116,10 @@ class MolecularClassifier:
                 raise ValueError(f"{name} must be a positive integer.")
         if not math.isfinite(temperature) or not 0 <= temperature <= 2:
             raise ValueError("Temperature must be between 0 and 2.")
-        if not math.isfinite(pchembl_threshold):
+        if pchembl_threshold is not None and not math.isfinite(pchembl_threshold):
             raise ValueError("pChEMBL threshold must be finite.")
+        if labels_from_pchembl and pchembl_threshold is None:
+            raise ValueError("Supply a pChEMBL cutoff when the labels are defined by that cutoff.")
         self.client = llm_client
         self.task_name = task_name
         self.profile = profile
@@ -116,10 +133,28 @@ class MolecularClassifier:
             "endpoint": endpoint,
             "series": series,
             "threshold": pchembl_threshold,
+            "labels_from_pchembl": labels_from_pchembl,
         }
         self._records = None
         self._reference_ids = []
         self.recording = None
+
+    @property
+    def settings(self):
+        return {
+            "endpoint": self._context["endpoint"],
+            "series": self._context["series"],
+            "pchembl_threshold": self._context["threshold"],
+            "labels_from_pchembl": self._context["labels_from_pchembl"],
+            "task_name": self.task_name,
+            "profile": self.profile,
+            "neighbors": self.neighbors,
+            "repeats": self.repeats,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "response_format": self.response_format,
+            "workers": self.workers,
+        }
 
     @staticmethod
     def _identifiers(frame, id_column, prefix):
@@ -128,8 +163,8 @@ class MolecularClassifier:
         if id_column not in frame.columns:
             raise ValueError(f"Missing column {id_column!r}.")
         raw = frame[id_column]
-        identifiers = raw.astype(str).str.strip().tolist()
-        if raw.isna().any() or "" in identifiers or len(set(identifiers)) != len(raw):
+        identifiers = raw.astype(str).tolist()
+        if raw.isna().any() or any(not value.strip() for value in identifiers) or len(set(identifiers)) != len(raw):
             raise ValueError(f"Column {id_column!r} must contain unique, non-empty IDs.")
         return identifiers
 
@@ -142,30 +177,53 @@ class MolecularClassifier:
         id_column: str | None = None,
         pchembl_column: str | None = None,
     ) -> MolecularClassifier:
+        cutoff_labels = self._context["labels_from_pchembl"]
+        cutoff = self._context["threshold"]
+        if cutoff_labels and not pchembl_column:
+            raise ValueError("Supply a pChEMBL column when the labels are defined by its cutoff.")
         required = [smiles_column, label_column] + ([pchembl_column] if pchembl_column else [])
         for name in required:
             if name not in reference.columns:
                 raise ValueError(f"Missing reference column {name!r}.")
         labels = reference[label_column].astype(str).str.strip().str.lower().tolist()
+        ids = self._identifiers(reference, id_column, "R")
+        for identifier, label in zip(ids, labels):
+            if label not in CLASSES:
+                raise ValueError(f"Reference {identifier!r} needs an active or inactive label.")
         if set(labels) != set(CLASSES):
             raise ValueError("Reference labels must include both active and inactive.")
-        ids = self._identifiers(reference, id_column, "R")
         values = reference[pchembl_column] if pchembl_column else [None] * len(ids)
         records = []
+        by_structure = {}
         for row, (smiles, identifier, label, measured) in enumerate(
             zip(reference[smiles_column], ids, labels, values)
         ):
             potency = None
-            if not pd.isna(measured):
+            if not pd.isna(measured) and not (isinstance(measured, str) and not measured.strip()):
                 try:
                     potency = float(measured)
                 except (TypeError, ValueError) as exc:
                     raise ValueError(f"Invalid pChEMBL value at {identifier!r}.") from exc
                 if not math.isfinite(potency):
                     raise ValueError(f"Invalid pChEMBL value at {identifier!r}.")
-            records.append(make_record(smiles, row, identifier, label, potency))
+            if cutoff_labels:
+                if potency is None:
+                    raise ValueError(f"Missing pChEMBL value at {identifier!r} for the declared cutoff.")
+                expected = "active" if potency >= cutoff else "inactive"
+                if label != expected:
+                    raise ValueError(f"Label at {identifier!r} conflicts with active at pChEMBL ≥ {cutoff:g}.")
+            record = make_record(smiles, row, identifier, label, potency)
+            previous_id, previous_label = by_structure.setdefault(record.canonical, (identifier, label))
+            if previous_label != label:
+                raise ValueError(
+                    f"References {previous_id!r} and {identifier!r} have conflicting labels for {record.canonical}."
+                )
+            records.append(record)
         self._records = records
         self._reference_ids = ids
+        self._reference_digest = digest([
+            (identifier, row.canonical, row.label, row.pchembl) for identifier, row in zip(ids, records)
+        ])
         return self
 
     def predict(
@@ -187,6 +245,12 @@ class MolecularClassifier:
             for row, (smiles, identifier) in enumerate(zip(test[smiles_column], ids))
         ]
         self.recording = None
+        inputs = {
+            "references": self._reference_digest,
+            "queries": digest([(identifier, row.canonical) for identifier, row in zip(ids, queries)]),
+        }
+        if isinstance(self.client, ReplayClient):
+            self.client.begin(self.settings, inputs)
         recorder = CallRecorder(self.client, keep_responses=record)
         judge = self._make_judge(recorder)
         results = []
@@ -203,13 +267,11 @@ class MolecularClassifier:
             self.client.verify_complete()
         if record:
             self.recording = {
-                "schema": 1,
+                "schema": 2,
                 "model": getattr(self.client, "model_name", "unknown"),
-                "settings": {
-                    "temperature": self.temperature,
-                    "max_tokens": self.max_tokens,
-                    "response_format": self.response_format,
-                },
+                "versions": runtime_versions(),
+                "settings": self.settings,
+                "inputs": inputs,
                 "calls": recorder.calls,
             }
         return results
@@ -226,47 +288,60 @@ class MolecularClassifier:
         if {records[index].label for index in indices} != set(CLASSES):
             return MolecularResult(
                 identifier, query.canonical, "Inconclusive", 0.0, "none", [], [], [],
-                "Both reference classes are required after excluding the query molecule.",
+                "Both reference classes are required after excluding identical query structures.",
+                {"method": "missing_reference_class"},
             )
 
         unique_references = len({records[index].canonical for index in indices})
         size = 4 if self.neighbors == 8 and unique_references <= 6 else self.neighbors
         active, inactive = judge.select_panel(records, query_index, indices, n_per_class=size)
-        messages = judge.build_panel_prompt(
+        messages, reference_positions = judge.build_panel_prompt(
             self.task_name, records, query_index, indices, active, inactive,
         )
         futures = [
             pool.submit(
-                judge.judge_panel, messages, tag=f"{tag}:panel:r{repeat}", force_decision=True,
+                judge.judge_panel, messages, tag=f"{tag}:panel:r{repeat}",
+                reference_positions=reference_positions,
             )
             for repeat in range(self.repeats)
         ]
         panel_choices = [future.result() for future in futures]
-        label, confidence = _panel_decision(panel_choices)
+        label, confidence, decision = _panel_decision(panel_choices)
         selected = "panel"
         judgments = [
             self._judgment("panel", repeat, vote) for repeat, vote in enumerate(panel_choices)
         ]
-        if self.profile == "focused":
+        decision["focused"] = []
+        if self.profile == "focused" and decision["decisive"] >= decision["required"]:
             focused = self._focused_views(records, query_index, indices, reference_ids, tag, judge, pool)
             for view, choice, evidence in focused:
                 judgments.extend(evidence)
-                if choice is None or not choice.parsed_ok or choice.label not in CLASSES:
-                    continue
-                if view == "halogen_deletion":
-                    minimum = 0.6 if choice.label == label else 0.5
-                    if choice.confidence < minimum:
-                        continue
-                label, confidence, selected = choice.label, choice.confidence, view
+                eligible = choice is not None and choice.parsed_ok and choice.label in CLASSES
+                applied = {"view": view, "applied": False}
+                if not eligible:
+                    applied["reason"] = "no_decisive_focused_judgment"
+                elif view == "halogen_deletion" and choice.confidence < (0.6 if choice.label == label else 0.5):
+                    applied["reason"] = "below_score_threshold"
+                else:
+                    label, confidence, selected = choice.label, choice.confidence, view
+                    applied["applied"] = True
+                decision["focused"].append(applied)
 
         panel = _reference_rows(records, query_index, (*active, *inactive), reference_ids)
+        references = _reference_rows(records, query_index, reference_positions, reference_ids)
         calls = [
             value["metadata"] for key, value in sorted(judge.llm.calls.items())
             if key.startswith(f"{tag}:")
         ]
-        reason = "The model judgments did not produce a decisive vote." if label not in CLASSES else None
+        reason = None
+        if label not in CLASSES:
+            if decision["method"] == "tie":
+                reason = "The decisive judgments had equal class counts and model score totals."
+            else:
+                reason = "Too few model judgments supplied a class with usable evidence."
         return MolecularResult(
-            identifier, query.canonical, label, confidence, selected, panel, judgments, calls, reason,
+            identifier, query.canonical, label, confidence, selected,
+            panel, judgments, calls, reason, decision, references,
         )
 
     @staticmethod
@@ -279,12 +354,14 @@ class MolecularClassifier:
             "evidence": {
                 key: decision.parsed[key]
                 for key in ("class_contrast", "test_position", "counter_evidence", "rationale",
-                            "pchembl_estimate", "scaffold_type", "halogen_change_interpretation",
-                            "terminal_class_match", "decisive_reference")
+                            "scaffold_type", "halogen_change_interpretation", "terminal_class_match",
+                            "smallest_structural_difference", "why_this_pair_is_relevant",
+                            "reference_ids", "counter_reference_ids")
                 if key in decision.parsed
             },
             "parsed": decision.parsed_ok,
             "error": decision.error,
+            "call_tag": decision.call.get("tag"),
         }
         if references is not None:
             judgment["references"] = references
@@ -295,7 +372,7 @@ class MolecularClassifier:
         deletion = judge.build_halogen_deletion_prompt(self.task_name, records, query_index, indices)
         if deletion:
             messages, related = deletion
-            choice = judge.judge_panel(messages, tag=f"{tag}:halogen_deletion")
+            choice = judge.judge_panel(messages, tag=f"{tag}:halogen_deletion", reference_positions=related)
             references = _reference_rows(records, query_index, related, reference_ids)
             evidence = self._judgment("halogen_deletion", 0, choice, references=references)
             views.append(("halogen_deletion", choice, [evidence]))
@@ -317,15 +394,19 @@ class MolecularClassifier:
                 inactive_ref=inactive, tag=f"{tag}:pair{pair_index}", active_side=active_side,
             ))
         messages, related = stereo
-        choice = judge.judge_panel(messages, tag=f"{tag}:stereo_gate_pair")
+        choice = judge.judge_panel(messages, tag=f"{tag}:stereo_gate_pair", reference_positions=related)
         choices = [future.result() for future in pair_futures]
         evidence = [
             {
                 "view": "stereo_pair", "repeat": pair_index,
                 "label": ("active" if vote.choice == vote.active_side else "inactive")
-                if vote.choice in ("A", "B") else "Inconclusive",
-                "confidence": vote.confidence, "evidence": vote.parsed,
+                if vote.choice in ("A", "B") else vote.choice,
+                "confidence": vote.confidence,
+                "evidence": {key: value for key, value in vote.parsed.items()
+                             if key in ("rationale", "reference_ids", "counter_reference_ids", "counter_evidence",
+                                        "smallest_structural_difference", "why_this_pair_is_relevant")},
                 "parsed": vote.parsed_ok, "error": vote.error,
+                "call_tag": vote.call.get("tag"),
                 "references": _reference_rows(
                     records, query_index, (vote.active_ref, vote.inactive_ref), reference_ids,
                 ),
@@ -337,7 +418,8 @@ class MolecularClassifier:
         if choice.parsed_ok and choice.label in CLASSES and choice.confidence >= 0.6:
             views.append(("stereo_gate_pair", choice, evidence))
         else:
-            label, confidence, _ = judge.aggregate(choices)
-            decision = FinalChoice(label, confidence, {}, "", {}, label in CLASSES)
+            label, confidence, summary = judge.aggregate(choices)
+            eligible = sum(summary["counts"].values()) >= len(choices) // 2 + 1
+            decision = FinalChoice(label, confidence, {}, "", {}, eligible and label in CLASSES)
             views.append(("stereo_pair", decision, evidence))
         return views

@@ -1,38 +1,52 @@
-# MolActAgent: Design and Implementation
+# MolActAgent: Design and implementation
 
-## Molecular Binary Classification
+## Molecular binary classification
 
-`molactagent molecular` and `molactagent.molecular.MolecularClassifier`
-share a SMILES-specific decision path. Use labelled references from a single
-binary assay. A prediction carries the references, individual judgments,
-selected view, and call metadata.
+MolActAgent is an AI agent for a local chemical question. Given an assay,
+labeled examples and an untested structure, it assembles a comparison
+for the language model, checks the returned evidence, then decides whether
+enough supported judgments exist to predict a class. The same
+`MolecularClassifier` powers the Python and `molactagent molecular` entry points.
 
-1. **Retrieve references.** RDKit builds radius-2 Morgan fingerprints and
-   ranks each class by Tanimoto similarity. Exact isomeric canonical SMILES
-   matches to the query are excluded. The default retrieves up to eight per
-   class, with a cap of four for very small reference sets.
-2. **Compare structure and properties.** The prompt includes the two
-   panels, the query, and structural context such as scaffold, substituents,
-   functional groups, stereochemistry and RDKit descriptors. Measured
-   reference pChEMBL can be included with an explicit cutoff.
-3. **Collect judgments.** Each panel call produces a label, confidence and
-   evidence statements including counter-evidence. Truncated or malformed
-   responses can be retried and only valid judgments enter a vote.
-4. **Aggregate evidence.** The main panel aggregates the labels. It usually
-   follows the majority. Confidence totals can resolve a count tie, and
-   equal totals or no valid vote yield an inconclusive result. The optional
-   focused profile uses extra LLM judgments on qualifying local halogen or
-   stereochemical comparisons. Its rules select among judgments made by
-   the model.
+### A worked decision
 
-Offline replay takes the same computational path through prompt construction,
-parsing and aggregation. The replay client matches requests by digest and
-returns recorded responses. Live predictions depend on the service response,
-including any provider-side routing. [Run the example](tutorial.md#predict-from-smiles)
+In the teaching assay, the active label means a hydroxyl directly bonded to
+an aromatic carbon. For 4-fluorophenol, the agent retrieves p-cresol and
+benzyl alcohol among the references. The query and p-cresol share the
+ring-to-hydroxyl bond. Benzyl alcohol also has a hydroxyl, with a carbon
+between it and the ring. The saved LLM judgments use that contrast to
+support the active label. Their counter-evidence identifies the missing
+comparison for para fluorination. The labels are synthetic. [Example report](https://studentiz.github.io/MolActAgent/molecular-example.html)
 
-Each focused judgment carries the reference rows used in its comparison.
-The HTML report reads these rows and the stored judgment evidence to show how
-the recorded conclusion relates to the inputs. [Read the report guide](reports.md#reports-from-smiles)
+### How the agent builds and checks evidence
+
+| Stage | Implementation |
+| --- | --- |
+| Prepare inputs | Canonicalize each structure with RDKit. Preserve the supplied identifier. Reject conflicting activity labels on identical canonical structures. Validate a pChEMBL-derived label only when the user declares that rule. |
+| Retrieve comparisons | Rank references in each input class by Tanimoto similarity between radius-2 Morgan fingerprints. Exclude exact isomeric canonical matches to the query. The default retrieves up to eight per class, with a cap of four when at most six unique reference structures remain. |
+| Represent the evidence | Send the query and selected references with structures, calculated properties, features such as scaffolds or substituents, the assay definition, and supplied measurements where available. Additional local comparisons can include same-scaffold analogs, positional isomers and stereoisomers with assigned configurations. |
+| Collect judgments | Ask the LLM for a class or `Uncertain`, a score, a rationale, counter-evidence and reference citations. A class judgment needs a finite score in the range 0–1, a written rationale and counter-evidence, and at least one citation from that comparison. The check verifies that the cited compound was provided. Chemical interpretation remains available for expert review. |
+| Make a decision | Require active or inactive judgments from more than half of the planned main-panel votes. With the default five, at least three must supply a class with usable evidence. Choose the majority among those votes. For equal counts, compare the total model scores and abstain if the totals tie. `Uncertain` responses preserve their explanation and contribute no class vote. |
+| Export the evidence | Record the final label, vote counts, decision method, exact reference set and individual judgments. Track truncations, invalid responses and request failures. The HTML report reads these results and does not request a new explanation. |
+
+The optional `focused` profile can run after the main panel has sufficient
+usable judgments. It requests a local halogen comparison when the closest
+same-scaffold reference has more halogens than the query. It can request
+a stereochemical comparison when both structures have known configurations
+and the same connectivity, including isotope identity. Focused decisions
+use eligible LLM judgments and the result identifies the comparison that
+supplied the label. [Classifier](../molactagent/molecular.py) · [Evidence prompts](../molactagent/_molecular_evidence.py)
+
+### Reproduce and investigate a run
+
+A schema 2 recording stores software versions, effective prediction settings,
+input fingerprints and responses. CLI recordings also store file fingerprints
+and column mappings. Replay rebuilds the request, matches its digest and
+applies the same validation and aggregation. The same release and RDKit
+version are required. Live responses can vary with the service or backend.
+A timeout retry appears in the API log rather than as an extra vote. Each
+model score describes the submitted judgment and has no probability
+calibration. [Replay tutorial](tutorial.md#replay-a-complete-prediction) · [Report guide](reports.md#reports-from-smiles)
 
 ## Feature-table Engine
 

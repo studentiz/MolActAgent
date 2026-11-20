@@ -40,7 +40,7 @@ report the data split, settings and failed or refused predictions.
 
 ## Explore and contribute
 
-The [tutorial](tutorial.md#11-predicting-continuous-values-regression)
+The [tutorial](tutorial.md#experimental-regression-example)
 retains runnable examples. The [design notes](design.md#19-the-ccr-regression-backend)
 describe the current implementation. These sections document the
 experimental code; they do not present a regression contribution from

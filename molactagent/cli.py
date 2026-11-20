@@ -41,6 +41,7 @@ from typing import Sequence
 
 from . import setup_logging
 from .config import (
+    MOLECULAR_MAX_TOKENS,
     DEFAULT_CONFIG_FILENAMES,
     LLMConfig,
     LLMConfigError,
@@ -140,7 +141,7 @@ def _add_common_data_args(p: argparse.ArgumentParser) -> None:
     )
 
 
-def _add_llm_args(p: argparse.ArgumentParser) -> None:
+def _add_llm_args(p: argparse.ArgumentParser, *, max_tokens_default: int = 2000) -> None:
     g = p.add_argument_group("LLM API")
     g.add_argument(
         "--llm-config", default=None,
@@ -168,7 +169,7 @@ def _add_llm_args(p: argparse.ArgumentParser) -> None:
     )
     g.add_argument(
         "--max-tokens", type=int, default=None,
-        help="max_tokens cap for each LLM call. Default: 2000.",
+        help=f"Maximum output tokens per model call. Default: {max_tokens_default}.",
     )
     g.add_argument(
         "--timeout", type=float, default=None,
@@ -176,7 +177,7 @@ def _add_llm_args(p: argparse.ArgumentParser) -> None:
     )
     g.add_argument(
         "--max-retries", type=int, default=None,
-        help="Number of retry attempts for transient LLM errors. Default: 10.",
+        help="Additional HTTP attempts for transient API errors. Default: 10.",
     )
 
 
@@ -211,7 +212,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     sub = parser.add_subparsers(dest="command", required=True)
-    _add_llm_args(add_molecular_parser(sub))
+    _add_llm_args(add_molecular_parser(sub), max_tokens_default=MOLECULAR_MAX_TOKENS)
 
     # ── validate ───────────────────────────────────────────────────
     p_val = sub.add_parser(

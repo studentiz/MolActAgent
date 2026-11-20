@@ -1,0 +1,2 @@
+examples/molecular/*.csv text eol=lf
+docs/molecular-example.html text eol=lf

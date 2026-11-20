@@ -1,7 +1,9 @@
+import logging
+import math
 import threading
 import time
-import logging
-from openai import OpenAI
+
+from openai import APIConnectionError, OpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +22,13 @@ class LLMClient:
         timeout: float = 120.0,
         max_tokens: int | None = 2000,
     ):
+        if type(max_retries) is not int or max_retries < 0:
+            raise ValueError("max_retries must be a non-negative integer.")
+        if not math.isfinite(timeout) or timeout <= 0:
+            raise ValueError("timeout must be a positive number of seconds.")
+        # Keep HTTP attempts in one loop so that the limit and log agree.
         self.client = OpenAI(
-            api_key=api_key, base_url=base_url, timeout=timeout
+            api_key=api_key, base_url=base_url, timeout=timeout, max_retries=0
         )
         self.model_name = model_name
         self.max_retries = max_retries
@@ -77,7 +84,8 @@ class LLMClient:
             create_kwargs["response_format"] = response_format
 
         retry_failures = []
-        for attempt in range(self.max_retries):
+        attempts = self.max_retries + 1
+        for attempt in range(attempts):
             t0 = time.time()
             try:
                 response = self.client.chat.completions.create(**create_kwargs)
@@ -102,6 +110,7 @@ class LLMClient:
                     "finish_reason": finish,
                     "response_model": getattr(response, "model", None),
                     "system_fingerprint": getattr(response, "system_fingerprint", None),
+                    "http_attempts": attempt + 1,
                     "retry_failures": retry_failures,
                 }
                 with self._lock:
@@ -127,26 +136,31 @@ class LLMClient:
                 return content
 
             except Exception as e:
+                status = getattr(e, "status_code", None)
                 retry_failures.append({
                     "type": type(e).__name__,
-                    "status": getattr(e, "status_code", None),
+                    "status": status,
                 })
                 self._thread_local.last_call = {
                     "call_id": call_id,
                     "tag": tag,
+                    "http_attempts": attempt + 1,
                     "retry_failures": retry_failures,
                 }
                 elapsed = time.time() - t0
-                is_throttle = self._is_rate_limit_error(e)
+                is_throttle = status == 429
                 if is_throttle:
                     with self._lock:
                         self._throttle_count += 1
                 logger.warning(
-                    f"[LLM #{call_id}] FAIL   attempt={attempt+1}/{self.max_retries}  "
+                    f"[LLM #{call_id}] FAIL   attempt={attempt+1}/{attempts}  "
                     f"{elapsed:.1f}s  {'THROTTLED ' if is_throttle else ''}"
-                    f"error={e!r}  tag={tag!r}"
+                    f"error={status or type(e).__name__}  tag={tag!r}"
                 )
-                if attempt < self.max_retries - 1:
+                transient = isinstance(e, APIConnectionError) or (
+                    isinstance(status, int) and (status in (408, 409, 429) or status >= 500)
+                )
+                if transient and attempt + 1 < attempts:
                     delay = self.retry_delay * (attempt + 1)
                     if is_throttle:
                         delay *= 2
@@ -154,15 +168,6 @@ class LLMClient:
                     time.sleep(delay)
                 else:
                     raise
-
-    @staticmethod
-    def _is_rate_limit_error(e: Exception) -> bool:
-        err_str = str(e).lower()
-        if "429" in err_str or "rate" in err_str:
-            return True
-        if hasattr(e, "status_code"):
-            return e.status_code in (429, 500, 502, 503, 529)
-        return False
 
     def ping(self, *, timeout: float = 30.0) -> dict:
         """Perform a tiny round-trip call to verify the connection.

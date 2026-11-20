@@ -241,7 +241,7 @@ def apply_id_column(df: pd.DataFrame, id_column: str | None) -> pd.DataFrame:
     return out.drop(columns=[id_column])
 
 
-def load_table(path: str | pathlib.Path) -> pd.DataFrame:
+def load_table(path: str | pathlib.Path, *, preserve_text: bool = False) -> pd.DataFrame:
     """Load a tabular dataset from common formats.
 
     Supported extensions: ``.csv``, ``.tsv``, ``.txt`` (auto-detected
@@ -260,20 +260,20 @@ def load_table(path: str | pathlib.Path) -> pd.DataFrame:
         )
 
     try:
+        text_options = {"dtype": str, "keep_default_na": False} if preserve_text else {}
         if suf == ".csv":
-            df = pd.read_csv(p)
+            df = pd.read_csv(p, **text_options)
         elif suf == ".tsv":
-            df = pd.read_csv(p, sep="\t")
+            df = pd.read_csv(p, sep="\t", **text_options)
         elif suf == ".txt":
-            df = pd.read_csv(p, sep=None, engine="python")
+            df = pd.read_csv(p, sep=None, engine="python", **text_options)
         elif suf in {".xlsx", ".xls"}:
-            df = pd.read_excel(p)
+            df = pd.read_excel(p, **text_options)
         elif suf in {".parquet", ".pq"}:
             df = pd.read_parquet(p)
-        elif suf == ".json":
-            df = pd.read_json(p)
-        elif suf == ".jsonl":
-            df = pd.read_json(p, lines=True)
+        elif suf in (".json", ".jsonl"):
+            json_options = {"dtype": False, "convert_dates": False} if preserve_text else {}
+            df = pd.read_json(p, lines=suf == ".jsonl", **json_options)
         else:  # pragma: no cover - guarded by suffix check above
             raise ValueError(f"Unsupported suffix {suf!r}")
     except pd.errors.EmptyDataError as e:

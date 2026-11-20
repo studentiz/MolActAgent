@@ -153,3 +153,28 @@ class TestPingBypassesRetries:
         )
         c.ping()
         assert c.client.chat.completions.create.call_count == 1
+
+
+def test_chat_sends_the_initial_request_with_zero_retries():
+    client = _make_client()
+    client.max_retries = 0
+    client.client.chat.completions.create.return_value = SimpleNamespace(
+        usage=None, choices=[SimpleNamespace(finish_reason="stop", message=SimpleNamespace(content="done"))],
+    )
+    assert client.chat([]) == "done"
+    assert client.client.chat.completions.create.call_count == 1
+    assert client.last_call["http_attempts"] == 1
+
+
+@pytest.mark.parametrize(("status", "expected"), [(401, 1), (503, 3)])
+def test_chat_only_retries_transient_api_errors(status, expected):
+    client = _make_client()
+    client.max_retries = 2
+    client.retry_delay = 0
+    error = RuntimeError("Fixture")
+    error.status_code = status
+    client.client.chat.completions.create.side_effect = error
+    with pytest.raises(RuntimeError, match="Fixture"):
+        client.chat([])
+    assert client.client.chat.completions.create.call_count == expected
+    assert client.last_call["http_attempts"] == expected
