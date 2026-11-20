@@ -181,6 +181,8 @@ def _add_llm_args(p: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    from ._molecular_cli import add_molecular_parser
+
     parser = argparse.ArgumentParser(
         prog="molactagent",
         description=(
@@ -209,6 +211,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     sub = parser.add_subparsers(dest="command", required=True)
+    _add_llm_args(add_molecular_parser(sub))
 
     # ── validate ───────────────────────────────────────────────────
     p_val = sub.add_parser(
@@ -981,6 +984,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _cmd_run(args, parser)
         if args.command == "init-config":
             return _cmd_init_config(args, parser)
+        if args.command == "molecular":
+            from ._molecular_cli import run_molecular
+            try:
+                return run_molecular(args)
+            except (OSError, ValueError, ImportError) as exc:
+                print(f"Molecular classification: {exc}", file=sys.stderr)
+                return 2
         parser.error(f"Unknown command {args.command!r}")
         return 3
     except KeyboardInterrupt:

@@ -4,15 +4,24 @@ Small-data molecular activity prediction with explicit reference comparisons.
 
 [![Tests](https://github.com/studentiz/MolActAgent/actions/workflows/tests.yml/badge.svg)](https://github.com/studentiz/MolActAgent/actions/workflows/tests.yml) [![Python](https://img.shields.io/badge/python-3.10--3.12-3776AB.svg)](https://www.python.org/) [![License](https://img.shields.io/github/license/studentiz/MolActAgent.svg)](LICENSE)
 
-MolActAgent is a Python package for molecular activity classification when the labelled dataset is small. It combines deterministic feature-space comparisons with an OpenAI-compatible language model. For each test sample, the package selects nearby reference rows, asks the model to compare them, and returns the prediction together with the rows and feature-level details used in the decision.
+MolActAgent is a Python package for molecular activity classification from small labelled datasets. The SMILES classifier retrieves nearby active and inactive molecules, asks an OpenAI-compatible model to compare their structures and properties, and aggregates the model judgments into a prediction with an evidence report. The package also supports classification from numeric feature tables.
 
 > MolActAgent is research software. A model-generated explanation is not an independent scientific citation, and the confidence score is not a calibrated probability. Validate results against suitable baselines and domain knowledge before using them in a real study.
+
+## What's New in 0.4.0
+
+- Added the SMILES binary classifier in the `molactagent molecular` command and the `MolecularClassifier` Python interface.
+- Added reference-panel reports with individual model judgments, counter-evidence, and explicit inconclusive outcomes.
+- Added a complete teaching example with recorded model responses for offline replay and instructions for live prediction.
+- Redesigned the documentation site around the molecular workflow and the runnable example.
+- Existing `molactagent run`, `MolActAgentClassifier`, and their tabular inputs remain supported. [Full changelog](CHANGELOG.md)
 
 ## Start here
 
 | If you want to... | Read |
 | --- | --- |
-| Run the first example from installation to prediction | [Tutorial](docs/tutorial.md) |
+| Run a SMILES prediction with or without API credentials | [Molecular quick start](docs/tutorial.md#predict-from-smiles) |
+| Use the numeric feature-table classifier | [Iris tutorial](docs/tutorial.md#iris-tutorial-for-numeric-tables) |
 | Understand the classification engine, result schema, and design decisions | [Design notes](docs/design.md) |
 | Explore a full evidence report without an API key | [HTML report guide](docs/reports.md) · [Offline example](examples/evidence_report) |
 
@@ -30,6 +39,12 @@ The tutorial is the practical entry point. The design notes are the technical re
 The core input is a numeric table. Chemistry helpers can convert SMILES to RDKit descriptors, MACCS keys, Morgan fingerprints, and scaffolds before prediction.
 
 ## Architecture
+
+The SMILES classifier retrieves near neighbors from each class using Morgan
+fingerprint similarity. It contrasts their structures and properties, collects
+LLM judgments, and aggregates valid labels. [Molecular design](docs/design.md#molecular-binary-classification)
+
+### Feature-table engine
 
 The public interfaces are thin layers around one shared prediction engine. Python owns input validation, preprocessing, reference selection, response checks, and aggregation. The language model is used inside the structured comparison stage.
 
@@ -142,7 +157,26 @@ python -c "import molactagent as ma; print(ma.__version__)"
 
 The bundled datasets live in the source checkout, so use an editable install when following the examples below.
 
-## Quick start: classification
+## Quick Start With SMILES
+
+From the repository root after installing the chemistry extra, run the
+bundled teaching example. It uses recorded responses and requires no API key.
+
+```bash
+molactagent molecular \
+  --reference examples/molecular/reference.csv \
+  --test examples/molecular/query.csv \
+  --id-column id \
+  --endpoint @examples/molecular/endpoint.txt \
+  --replay examples/molecular/responses.json \
+  --output-dir molecular-output
+```
+
+Open `molecular-output/report.html` to inspect the references and individual
+judgments. The tutorial covers pinned dependencies, using your own model and
+SMILES tables, and reading the results. [Tutorial](docs/tutorial.md#predict-from-smiles) · [Example report](https://studentiz.github.io/MolActAgent/molecular-example.html)
+
+## Quick Start With Numeric Tables
 
 Set the credentials for an OpenAI-compatible endpoint. Keep the key in your shell environment or a local config file; do not commit it.
 

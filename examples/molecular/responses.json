@@ -1,0 +1,111 @@
+{
+  "calls": {
+    "query:0:panel:r0_panel_a0": {
+      "error": null,
+      "metadata": {
+        "call_id": 1,
+        "completion_tokens": 222,
+        "elapsed_s": 10.28,
+        "error": null,
+        "finish_reason": "stop",
+        "prompt_chars": 11333,
+        "prompt_tokens": 8825,
+        "response_chars": 949,
+        "response_model": "group/deepseek-free",
+        "retry_failures": [],
+        "system_fingerprint": null,
+        "tag": "query:0:panel:r0_panel_a0",
+        "truncated": false
+      },
+      "request_sha256": "5fcbc8412a9456082248853ddec087933359af60539c9794f02817e8791b909f",
+      "response": "{\n  \"choice\": \"active\",\n  \"confidence\": 1.0,\n  \"pchembl_estimate\": null,\n  \"class_contrast\": \"Active references have an OH group bonded directly to an aromatic carbon, while inactive references lack that phenolic OH.\",\n  \"test_position\": \"The test is 4-fluorophenol and lies on the active side because its OH is directly bonded to the aromatic ring.\",\n  \"counter_evidence\": \"Neither class contains an exact one-halogen reference, so the panel offers no direct comparison at the test's halogen count.\",\n  \"rationale\": \"The closest same-scaffold reference, active p-cresol, has one fewer halogen and preserves the phenolic OH, and the para-H analog phenol is also active. Methylating phenol gives inactive anisole, so loss of the phenolic hydrogen-bond donor explains that local label change. Benzyl alcohol is an inactive donor, confirming that donor status alone is insufficient and that direct aromatic attachment determines the synthetic label.\"\n}"
+    },
+    "query:0:panel:r1_panel_a0": {
+      "error": null,
+      "metadata": {
+        "call_id": 2,
+        "completion_tokens": 243,
+        "elapsed_s": 15.26,
+        "error": null,
+        "finish_reason": "stop",
+        "prompt_chars": 11333,
+        "prompt_tokens": 8825,
+        "response_chars": 1030,
+        "response_model": "group/deepseek-free",
+        "retry_failures": [],
+        "system_fingerprint": null,
+        "tag": "query:0:panel:r1_panel_a0",
+        "truncated": false
+      },
+      "request_sha256": "5fcbc8412a9456082248853ddec087933359af60539c9794f02817e8791b909f",
+      "response": "{\n  \"choice\": \"active\",\n  \"confidence\": 1.0,\n  \"pchembl_estimate\": null,\n  \"class_contrast\": \"Every active reference has a hydroxyl bonded directly to an aromatic carbon, and every inactive reference lacks that motif.\",\n  \"test_position\": \"The test is 4-fluorophenol and satisfies the active rule through its phenolic hydroxyl.\",\n  \"counter_evidence\": \"Neither class contains a one-halogen reference, so the panel provides no direct comparison for para fluorination.\",\n  \"rationale\": \"The closest same-scaffold analog is active p-cresol, which has methyl in place of fluorine and retains the phenolic hydroxyl. It is also the closest one-halogen-delta reference, but the explicit hydroxyl rule determines the label. Phenol, the para-H analog, is active, while methoxybenzene is inactive when O-methylation removes the hydroxyl donor. Inactive benzyl alcohol still donates a hydrogen bond, showing that donor status explains the phenol-to-methoxy switch locally and that direct aromatic attachment is essential across the panel.\"\n}"
+    },
+    "query:0:panel:r2_panel_a0": {
+      "error": null,
+      "metadata": {
+        "call_id": 3,
+        "completion_tokens": 245,
+        "elapsed_s": 15.25,
+        "error": null,
+        "finish_reason": "stop",
+        "prompt_chars": 11333,
+        "prompt_tokens": 8825,
+        "response_chars": 1014,
+        "response_model": "group/deepseek-free",
+        "retry_failures": [],
+        "system_fingerprint": null,
+        "tag": "query:0:panel:r2_panel_a0",
+        "truncated": false
+      },
+      "request_sha256": "5fcbc8412a9456082248853ddec087933359af60539c9794f02817e8791b909f",
+      "response": "{\n  \"choice\": \"active\",\n  \"confidence\": 1.0,\n  \"pchembl_estimate\": null,\n  \"class_contrast\": \"Active references have a hydroxyl directly bonded to an aromatic carbon, while inactive references lack a phenolic hydroxyl.\",\n  \"test_position\": \"4-Fluorophenol lies on the active side because its hydroxyl is directly bonded to the aromatic ring.\",\n  \"counter_evidence\": \"Benzyl alcohol is inactive despite having one hydrogen-bond donor, but its hydroxyl is attached to a methylene carbon.\",\n  \"rationale\": \"Active phenol is the para-H analog, and p-cresol, the closest same-scaffold reference with one fewer halogen, retains the phenolic hydroxyl with a para methyl group. Both panels lack a one-halogen reference, so the classification rests on the phenolic hydroxyl. Toluene is inactive and gains the active label when a para hydroxyl is added to give p-cresol. Methylating phenol gives inactive anisole and removes the phenolic donor, while inactive benzyl alcohol shows that donor status alone is insufficient.\"\n}"
+    },
+    "query:0:panel:r3_panel_a0": {
+      "error": null,
+      "metadata": {
+        "call_id": 4,
+        "completion_tokens": 226,
+        "elapsed_s": 13.48,
+        "error": null,
+        "finish_reason": "stop",
+        "prompt_chars": 11333,
+        "prompt_tokens": 8825,
+        "response_chars": 946,
+        "response_model": "group/deepseek-free",
+        "retry_failures": [],
+        "system_fingerprint": null,
+        "tag": "query:0:panel:r3_panel_a0",
+        "truncated": false
+      },
+      "request_sha256": "5fcbc8412a9456082248853ddec087933359af60539c9794f02817e8791b909f",
+      "response": "{\n  \"choice\": \"active\",\n  \"confidence\": 1.0,\n  \"pchembl_estimate\": null,\n  \"class_contrast\": \"All active references have a hydroxyl bonded directly to an aromatic carbon, and all inactive references lack that group.\",\n  \"test_position\": \"The test is 4-fluorophenol, so its ring-bound hydroxyl places it on the active side of the synthetic rule.\",\n  \"counter_evidence\": \"Neither class contains a one-halogen reference, so the para-fluoro pattern has no exact-count precedent in the panel.\",\n  \"rationale\": \"The closest same-scaffold reference is active p-cresol, which has a para methyl in place of fluorine, and phenol, the direct H analog, is also active. O-methylation of phenol gives inactive anisole and removes the hydrogen-bond donor, while inactive benzyl alcohol retains a donor on a side-chain carbon. The direct aromatic attachment therefore determines the synthetic label, with the fluorine comparison supplying only analog context.\"\n}"
+    },
+    "query:0:panel:r4_panel_a0": {
+      "error": null,
+      "metadata": {
+        "call_id": 5,
+        "completion_tokens": 238,
+        "elapsed_s": 9.25,
+        "error": null,
+        "finish_reason": "stop",
+        "prompt_chars": 11333,
+        "prompt_tokens": 8825,
+        "response_chars": 1028,
+        "response_model": "group/deepseek-free",
+        "retry_failures": [],
+        "system_fingerprint": null,
+        "tag": "query:0:panel:r4_panel_a0",
+        "truncated": false
+      },
+      "request_sha256": "5fcbc8412a9456082248853ddec087933359af60539c9794f02817e8791b909f",
+      "response": "{\n  \"choice\": \"active\",\n  \"confidence\": 1.0,\n  \"pchembl_estimate\": null,\n  \"class_contrast\": \"The active references have a free hydroxyl directly bonded to an aromatic carbon, while the inactive references lack this phenolic group.\",\n  \"test_position\": \"The test is 4-fluorophenol and retains the phenolic hydroxyl that defines the active class.\",\n  \"counter_evidence\": \"Neither class contains a reference with one halogen, so the panel provides no direct comparison for para fluorination.\",\n  \"rationale\": \"The closest same-scaffold reference and closest one-halogen-delta reference is active p-cresol, which shares the para-substituted phenol motif, and phenol itself is the active H analog. O-methylation of phenol gives inactive anisole and removes the hydroxyl donor, explaining that local class change under the structural rule. Inactive benzyl alcohol retains a donor on the side chain, confirming that direct aromatic attachment is required. These are synthetic labels, and the panel supplies no pChEMBL measurements.\"\n}"
+    }
+  },
+  "model": "group/deepseek-free",
+  "schema": 1,
+  "settings": {
+    "max_tokens": 16384,
+    "response_format": true,
+    "temperature": 0.0
+  }
+}

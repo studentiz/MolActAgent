@@ -1,0 +1,114 @@
+:root {
+  color-scheme: light;
+  --canvas: #fcfdfb;
+  --ink: #16312a;
+  --muted: #526861;
+  --rule: #bccbc4;
+  --figure-rule: #7d9589;
+  --leaf: #eaf4e6;
+  --leaf-text: #244b2e;
+  --sand: #f8eee5;
+  --sand-text: #69402a;
+  --sky: #e8f1f8;
+  --sky-text: #2a4965;
+  --accent: #144b3c;
+  --measure: 1160px;
+  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: 2rem; }
+body { margin: 0; color: var(--ink); background: var(--canvas); font-size: 1rem; line-height: 1.6; }
+::selection { background: #c3dfd3; color: var(--ink); }
+a { color: var(--accent); text-underline-offset: 0.25em; }
+a:focus-visible, button:focus-visible, pre:focus-visible { outline: 3px solid #276b99; outline-offset: 4px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.08; }
+h1 { margin: 0; font-size: clamp(2.35rem, 4.8vw, 4.2rem); letter-spacing: -0.035em; font-weight: 700; }
+h2 { margin: 0; font-size: clamp(1.55rem, 2.8vw, 2.4rem); letter-spacing: -0.028em; }
+h3 { margin: 0; font-size: 1rem; letter-spacing: -0.014em; }
+p { max-width: 68ch; }
+.wrap { width: min(var(--measure), calc(100% - 5rem)); margin-inline: auto; }
+.skip { position: absolute; transform: translateY(-190%); padding: .55rem .85rem; background: white; }
+.skip:focus { transform: none; z-index: 1; }
+.site-header { background: #fff; border-bottom: 1px solid var(--rule); }
+.navigation, .footer-content { display: flex; align-items: center; gap: 1.5rem; padding-block: 1rem; }
+.brand { display: inline-flex; align-items: center; gap: .6rem; color: var(--ink); text-decoration: none; font-size: 1.2rem; font-weight: 700; }
+.nav-links { display: flex; flex-wrap: wrap; gap: .6rem 1.45rem; margin-left: auto; }
+.nav-links a { text-decoration: none; font-weight: 590; }
+.nav-links a:hover { text-decoration: underline; }
+.intro { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 2.5rem; padding-block: clamp(2.35rem, 6vw, 4.75rem) 1.9rem; }
+.intro p { margin: 1rem 0 0; font-size: clamp(1.05rem, 2vw, 1.25rem); color: var(--muted); max-width: 57ch; }
+.actions { display: flex; flex-wrap: wrap; gap: .65rem; padding-block: .35rem; }
+.button { display: inline-flex; align-items: center; min-height: 46px; padding: .55rem .9rem; border: 1px solid var(--accent); border-radius: 3px; text-decoration: none; font-weight: 650; }
+.button:hover { background: var(--leaf); }
+.primary { color: white; background: var(--accent); }
+.primary:hover { background: #22614e; }
+.method { margin-block: 0; padding: 1.35rem clamp(1rem, 2.5vw, 1.85rem) 1.6rem; border: 1px solid var(--figure-rule); background: #fff; }
+.method-heading { display: flex; gap: .65rem 1.7rem; align-items: baseline; justify-content: space-between; flex-wrap: wrap; padding-bottom: 1rem; border-bottom: 1px solid var(--rule); }
+.method-heading h2 { font-size: clamp(1.14rem, 2.4vw, 1.6rem); letter-spacing: -0.024em; }
+.figure-note { color: var(--muted); font-size: .86rem; }
+.molecule-map { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem; margin-top: 1rem; }
+.molecule-group { text-align: center; padding: .7rem .65rem 1rem; border: 1px solid; border-radius: 2px; }
+.molecule-group img { display: block; margin: 0 auto .05rem; max-width: 100%; height: auto; }
+.molecule-group strong, .molecule-group span, .molecule-group code { display: block; }
+.molecule-group span, .molecule-group code { margin-top: .1rem; font-size: .85rem; }
+.molecule-group.active { color: var(--leaf-text); border-color: #abc5ad; background: var(--leaf); }
+.molecule-group.query { color: var(--sky-text); border-color: #a7c4d9; background: var(--sky); }
+.molecule-group.inactive { color: var(--sand-text); border-color: #d4bca8; background: var(--sand); }
+.group-label { display: flex; justify-content: center; align-items: center; gap: .43rem; margin: 0 auto; font-size: .9rem; font-weight: 680; }
+.group-label i { display: inline-block; width: .47rem; height: .47rem; background: currentColor; border-radius: 50%; }
+.junction { position: relative; height: 2.1rem; width: 66.66%; margin: 0 auto; border-left: 1px solid var(--figure-rule); border-right: 1px solid var(--figure-rule); border-bottom: 1px solid var(--figure-rule); }
+.junction span { position: absolute; top: 0; left: calc(50% - .5px); height: 100%; border-left: 1px solid var(--figure-rule); }
+.junction::after { content: ""; position: absolute; left: calc(50% - .5px); top: 100%; height: .7rem; border-left: 1px solid var(--figure-rule); }
+.method-flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); list-style: none; padding: 0; margin: .7rem 0 0; border: 1px solid var(--rule); }
+.method-flow li { padding: .95rem; }
+.method-flow li + li { border-left: 1px solid var(--rule); }
+.method-flow p { margin: .42rem 0 0; color: var(--muted); font-size: .91rem; line-height: 1.45; }
+.method-flow a { display: inline-block; margin-top: .38rem; font-size: .88rem; font-weight: 650; }
+.result-label { color: var(--leaf-text); background: var(--leaf); border: 1px solid #abc5ad; padding: 0 .25em; border-radius: 2px; }
+.quickstart { display: grid; grid-template-columns: minmax(0, .78fr) minmax(0, 1.45fr); gap: clamp(1.5rem, 4vw, 4.5rem); padding-block: 3.8rem; }
+.quickstart-info p { margin-block: .9rem; color: var(--muted); }
+.text-link { display: inline-flex; align-items: center; min-height: 44px; font-weight: 650; }
+.command { min-width: 0; background: #f3f8f5; border: 1px solid var(--figure-rule); border-radius: 3px; }
+.command-header { display: flex; justify-content: space-between; align-items: center; gap: .8rem; padding: .35rem .95rem; border-bottom: 1px solid var(--rule); min-height: 48px; font-weight: 660; }
+.command button { min-height: 38px; padding: .25rem .65rem; border: 1px solid var(--figure-rule); color: var(--ink); background: #fff; border-radius: 3px; cursor: pointer; font: inherit; font-size: .9rem; }
+.command button:hover { background: var(--leaf); }
+pre { margin: 0; padding: .85rem .95rem; overflow-x: auto; font-size: .875rem; line-height: 1.56; }
+code { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; }
+.copy-status { margin: 0 .95rem .5rem; color: var(--accent); font-size: .86rem; }
+.copy-status:empty { display: none; }
+.resources { padding-bottom: 4rem; }
+.resources ul { list-style: none; padding: 0; margin: 1.3rem 0 0; border-top: 1px solid var(--rule); }
+.resources li { border-bottom: 1px solid var(--rule); }
+.resources a { display: grid; grid-template-columns: minmax(9rem, .36fr) 1fr; gap: .3rem 1.4rem; padding: .9rem .5rem; text-decoration: none; }
+.resources a:hover { background: var(--leaf); }
+.resources a strong { text-decoration: underline; text-underline-offset: .28em; }
+.resources span { color: var(--muted); }
+.site-footer { border-top: 1px solid var(--rule); }
+.footer-content { flex-wrap: wrap; font-size: .9rem; }
+.footer-content strong { margin-right: auto; }
+@media (max-width: 1020px) {
+  .intro { grid-template-columns: 1fr; gap: 1.2rem; }
+}
+@media (max-width: 800px) {
+  .wrap { width: calc(100% - 2.3rem); }
+  .quickstart { grid-template-columns: 1fr; padding-block: 2.8rem; }
+  .method-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .method-flow li:nth-child(3) { border-left: 0; }
+  .method-flow li:nth-child(n+3) { border-top: 1px solid var(--rule); }
+}
+@media (max-width: 530px) {
+  .navigation { align-items: flex-start; flex-direction: column; gap: .55rem; padding-block: .75rem; }
+  .nav-links { margin-left: 0; gap: .3rem 1.04rem; }
+  .nav-links a { display: flex; align-items: center; min-height: 38px; }
+  .molecule-map { grid-template-columns: 1fr; gap: .55rem; }
+  .molecule-group { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); gap: .15rem .55rem; justify-items: start; align-items: center; text-align: left; padding: .55rem .65rem; }
+  .molecule-group img { grid-row: 1 / span 3; grid-column: 1; }
+  .molecule-group .group-label { grid-column: 2; margin: 0; }
+  .molecule-group strong, .molecule-group code, .molecule-group span { grid-column: 2; margin: 0; }
+  .molecule-group.query { order: -1; }
+  .junction { width: 1px; border: 0; height: 1.2rem; }
+  .junction::after { height: .7rem; }
+  .method-flow { grid-template-columns: 1fr; }
+  .method-flow li + li { border-left: 0; border-top: 1px solid var(--rule); }
+  .resources a { grid-template-columns: 1fr; }
+}

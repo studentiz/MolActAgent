@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased — 2026-10-17
+## 0.4.0 — 2026-11-20
+
+- Added an opt-in SMILES binary classifier for labelled active and inactive references. Python and CLI use the same molecular engine.
+- Added per-class reference retrieval, structural and property comparison, repeated model judgments, and evidence reports.
+- Added an offline replay of recorded responses for a synthetic-label teaching assay and instructions for live prediction.
+- Rebuilt GitHub Pages around the SMILES workflow and updated the tutorial and design notes.
+
+### Feature-table Documentation and Reports
 
 - Focused the README on classification and evidence reports. Marked the
   retained regression documentation, examples and API docstrings as an

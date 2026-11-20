@@ -78,7 +78,7 @@ from .llm import LLMClient
 from .report import render_html_report
 from .result import ClassificationResult, DriverEntry, RegressionResult, wrap_result
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __all__ = [
     # ── engine ───────────────────────────────────────
     "MolActAgent",

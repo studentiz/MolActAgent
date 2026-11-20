@@ -1,5 +1,40 @@
 # MolActAgent: Design and Implementation
 
+## Molecular Binary Classification
+
+`molactagent molecular` and `molactagent.molecular.MolecularClassifier`
+share a SMILES-specific decision path. Use labelled references from a single
+binary assay. A prediction carries the references, individual judgments,
+selected view, and call metadata.
+
+1. **Retrieve references.** RDKit builds radius-2 Morgan fingerprints and
+   ranks each class by Tanimoto similarity. Exact isomeric canonical SMILES
+   matches to the query are excluded. The default retrieves up to eight per
+   class, with a cap of four for very small reference sets.
+2. **Compare structure and properties.** The prompt includes the two
+   panels, the query, and structural context such as scaffold, substituents,
+   functional groups, stereochemistry and RDKit descriptors. Measured
+   reference pChEMBL can be included with an explicit cutoff.
+3. **Collect judgments.** Each panel call produces a label, confidence and
+   evidence statements including counter-evidence. Truncated or malformed
+   responses can be retried and only valid judgments enter a vote.
+4. **Aggregate evidence.** The main panel aggregates the labels. It usually
+   follows the majority. Confidence totals can resolve a count tie, and
+   equal totals or no valid vote yield an inconclusive result. The optional
+   focused profile uses extra LLM judgments on qualifying local halogen or
+   stereochemical comparisons. Its rules select among judgments made by
+   the model.
+
+Offline replay takes the same computational path through prompt construction,
+parsing and aggregation. The replay client matches requests by digest and
+returns recorded responses. Live predictions depend on the service response,
+including any provider-side routing. [Run the example](tutorial.md#predict-from-smiles)
+
+## Feature-table Engine
+
+The remainder of this document describes the feature-table engine used by
+`molactagent run` and its existing classification and regression interfaces.
+
 > **Experimental regression support.** The regression backend remains
 > under development and is not evaluated in the accompanying manuscript.
 > We share it to support community exploration and collaboration.

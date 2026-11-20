@@ -30,3 +30,33 @@ jobs:
 
       - name: Run tests
         run: python -m pytest -q
+
+  molecular-replay:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned example dependencies
+        run: python -m pip install -e ".[chem]" -c examples/molecular/constraints.txt
+      - name: Reproduce the recorded SMILES example
+        run: |
+          molactagent molecular \
+            --reference examples/molecular/reference.csv \
+            --test examples/molecular/query.csv \
+            --id-column id \
+            --endpoint @examples/molecular/endpoint.txt \
+            --replay examples/molecular/responses.json \
+            --output-dir molecular-output
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          output = Path("molecular-output")
+          result = json.loads((output / "predictions.json").read_text())["predictions"][0]
+          assert result["identifier"] == "Q1" and result["label"] == "active"
+          assert [row["reference"] for row in result["references"]] == ["A2", "A1", "A3", "I3", "I2", "I1"]
+          assert [vote["label"] for vote in result["judgments"]] == ["active"] * 5
+          assert (output / "report.html").read_bytes() == Path("docs/molecular-example.html").read_bytes()
+          PY

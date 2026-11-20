@@ -1,0 +1,4 @@
+Teaching example with synthetic labels. A reference is labelled active when
+its structure has a hydroxyl bonded directly to an aromatic carbon. The
+inactive references have no phenolic hydroxyl. The labels encode this
+structural rule and do not represent measured biological activity.

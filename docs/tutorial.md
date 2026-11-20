@@ -1,11 +1,117 @@
 # MolActAgent — A Friendly, Step-by-Step Tutorial
 
+## Predict From SMILES
+
+The teaching example uses six labelled reference molecules and one query,
+4-fluorophenol. Its synthetic labels describe whether a structure contains a
+phenolic hydroxyl. Run the example offline first and then try a live model.
+
+### Install the Example Environment
+
+Use Python 3.12 for the pinned example. Activate the environment before
+running the commands in the rest of this section.
+
+```bash
+git clone --branch v0.4.0 https://github.com/studentiz/MolActAgent.git
+cd MolActAgent
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[chem]" -c examples/molecular/constraints.txt
+```
+
+On Windows, create the environment with `py -3.12 -m venv .venv` and activate
+it with `.venv\Scripts\Activate.ps1` in PowerShell. The multiline prediction
+commands below use Bash-style continuations. Run them on one line in
+PowerShell, removing the trailing backslashes.
+
+### Replay a Complete Prediction
+
+```bash
+molactagent molecular \
+  --reference examples/molecular/reference.csv \
+  --test examples/molecular/query.csv \
+  --id-column id \
+  --endpoint @examples/molecular/endpoint.txt \
+  --replay examples/molecular/responses.json \
+  --output-dir molecular-output
+```
+
+The command prints `Q1    active`. The report includes three reference
+molecules per class and five saved model judgments. Open
+`molecular-output/report.html` in your browser and expand a judgment to read
+its comparison and counter-evidence. `predictions.json` contains the same
+decision plus the call metadata. [View the example report](https://studentiz.github.io/MolActAgent/molecular-example.html)
+
+Replaying checks the request fingerprint before returning each stored
+response. The replay performs retrieval, parses the model responses and
+aggregates the judgments. It requires no API configuration.
+
+### Use a Live Model
+
+Run `molactagent init-config --path llm_config.jsonc` and set the API key,
+base URL and model for an OpenAI-compatible Chat Completions service. Use
+`--plain-json` if your service supports JSON text and rejects the API JSON
+mode parameter.
+
+```bash
+molactagent molecular \
+  --reference examples/molecular/reference.csv \
+  --test examples/molecular/query.csv \
+  --id-column id \
+  --endpoint @examples/molecular/endpoint.txt \
+  --llm-config llm_config.jsonc \
+  --temperature 0 --max-tokens 16384 \
+  --output-dir molecular-live
+```
+
+The default panel makes five model judgments per query, plus any retries.
+The live service can return different judgments. Add `--record
+my-responses.json` to save a new recording for the same inputs and settings.
+Live calls send the query and retrieved reference evidence to the configured
+service. Keep response recordings with the underlying data when their content
+is private.
+
+### Bring Your Own SMILES
+
+Put `smiles,label` in your reference CSV and `smiles` in your query CSV.
+Supply both `active` and `inactive` labels from one assay definition. Use
+`--endpoint` to describe that assay and the labelling criterion. If both
+tables contain IDs, pass their column name as `--id-column`. Column names can
+also be set with `--smiles-column` and `--label-column`. If the reference
+file has measured pChEMBL, pass its column and the assay cutoff via
+`--pchembl-column` and `--pchembl-threshold`.
+
+Use `--molecular-profile focused` to enable targeted follow-up comparisons
+for certain close halogen or stereochemical analogs. If the engine returns
+`Inconclusive`, read the reference panel and call records. A valid
+classification needs both reference classes after excluding exact matches
+to the query and enough valid judgments for a decisive vote.
+
+Python uses the same engine. Read `reference` and `query` as pandas
+DataFrames, and pass the same configuration as the CLI:
+
+```python
+from molactagent import build_llm_client, load_llm_config
+from molactagent.molecular import MolecularClassifier
+
+config = load_llm_config("llm_config.jsonc")
+classifier = MolecularClassifier(
+    build_llm_client(config), endpoint="Describe your assay and thresholds here.",
+    temperature=config.temperature, max_tokens=config.max_tokens or 16384,
+)
+classifier.fit(reference, id_column="id")
+results = classifier.predict(query, id_column="id")
+print(results[0].label)
+```
+
+## Iris Tutorial for Numeric Tables
+
 > **Scope.** The accompanying manuscript evaluates classification.
 > Regression is an experimental extension that remains under development.
 > It is shared for community exploration and collaboration and needs
 > further validation. See [experimental regression support](experimental-regression.md).
 
-Welcome! This tutorial is written for **complete beginners** — even if
+Welcome! The numeric-table tutorial is written for **complete beginners** — even if
 you have never used Python, the command line, or an AI service, you
 should be able to follow along. We will go slowly and explain every
 step.

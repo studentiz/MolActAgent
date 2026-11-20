@@ -37,6 +37,7 @@ class LLMClient:
         self._total_time = 0.0
         self._call_log: list[dict] = []
         self._throttle_count = 0
+        self._thread_local = threading.local()
 
     _UNSET = object()
 
@@ -46,6 +47,7 @@ class LLMClient:
         temperature: float | None = None,
         tag: str = "",
         max_tokens: int | None | object = _UNSET,
+        response_format: dict | None = None,
     ) -> str:
         temp = temperature if temperature is not None else self.temperature
         if max_tokens is self._UNSET:
@@ -57,6 +59,7 @@ class LLMClient:
         with self._lock:
             self._call_count += 1
             call_id = self._call_count
+        self._thread_local.last_call = None
 
         logger.debug(
             f"[LLM #{call_id}] START  tag={tag!r}  "
@@ -70,7 +73,10 @@ class LLMClient:
         )
         if mt is not None:
             create_kwargs["max_tokens"] = mt
+        if response_format is not None:
+            create_kwargs["response_format"] = response_format
 
+        retry_failures = []
         for attempt in range(self.max_retries):
             t0 = time.time()
             try:
@@ -93,12 +99,17 @@ class LLMClient:
                     "prompt_chars": prompt_chars,
                     "response_chars": len(content) if content else 0,
                     "truncated": truncated,
+                    "finish_reason": finish,
+                    "response_model": getattr(response, "model", None),
+                    "system_fingerprint": getattr(response, "system_fingerprint", None),
+                    "retry_failures": retry_failures,
                 }
                 with self._lock:
                     self._total_prompt_tokens += p_tok
                     self._total_completion_tokens += c_tok
                     self._total_time += elapsed
                     self._call_log.append(entry)
+                self._thread_local.last_call = entry
 
                 trunc_flag = " TRUNCATED" if truncated else ""
                 logger.info(
@@ -116,6 +127,15 @@ class LLMClient:
                 return content
 
             except Exception as e:
+                retry_failures.append({
+                    "type": type(e).__name__,
+                    "status": getattr(e, "status_code", None),
+                })
+                self._thread_local.last_call = {
+                    "call_id": call_id,
+                    "tag": tag,
+                    "retry_failures": retry_failures,
+                }
                 elapsed = time.time() - t0
                 is_throttle = self._is_rate_limit_error(e)
                 if is_throttle:
@@ -234,6 +254,11 @@ class LLMClient:
     @property
     def call_log(self) -> list[dict]:
         return list(self._call_log)
+
+    @property
+    def last_call(self) -> dict | None:
+        """Metadata for the latest call on the current thread."""
+        return getattr(self._thread_local, "last_call", None)
 
     def print_stats(self):
         s = self.stats

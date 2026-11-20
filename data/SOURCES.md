@@ -1,5 +1,12 @@
 # Data sources and redistribution notes
 
+## SMILES teaching example
+
+`examples/molecular/` contains hand-authored SMILES for common molecules
+and synthetic labels for the presence of a phenolic hydroxyl. The bundled
+responses were recorded from live model requests on this teaching example.
+The example files are distributed with the project under its MIT license.
+
 ## ChEMBL benchmark tables
 
 The files under `data/benchmarks/` are raw evidence-table extracts from ChEMBL 36. Each dataset directory contains its target, query filters, row counts, and retrieval timestamp. ChEMBL is provided by the European Bioinformatics Institute; consult the [ChEMBL data documentation](https://www.ebi.ac.uk/chembl/) and current terms before redistributing a release.

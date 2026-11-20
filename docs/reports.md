@@ -1,5 +1,17 @@
 # Reading and exporting an evidence report
 
+## Reports From SMILES
+
+The molecular CLI writes `report.html` and `predictions.json`. The report
+links each prediction with its retrieved references, their similarities,
+the selected view and the individual model judgments. Expand a judgment
+to see its chemical comparison, rationale and counter-evidence. The JSON
+also records the model calls and failure status.
+
+Try the complete teaching example with recorded model responses. [Tutorial](tutorial.md#replay-a-complete-prediction) · [Example report](https://studentiz.github.io/MolActAgent/molecular-example.html)
+
+## Reports From Numeric Tables
+
 MolActAgent can turn a saved classification record into an interactive,
 self-contained HTML report. It shows the prediction alongside the chemical
 comparisons and recorded explanations behind it. Exporting this report does
