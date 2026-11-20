@@ -1,0 +1,5 @@
+id,smiles,label,pchembl,measurement,source_url
+CHEMBL151,O=c1cc(-c2ccc(O)c(O)c2)oc2cc(O)cc(O)c12,inactive,4.7,"IC50 20,000 nM",https://www.ebi.ac.uk/chembl/api/data/activity/1963778.json
+CHEMBL232556,Cc1cc(N2C(=O)CN(C)C2=O)c2oc(-c3ccc(O)c(O)c3)c(O)c(=O)c2c1,active,7.25,IC50 56 nM,https://www.ebi.ac.uk/chembl/api/data/activity/1963780.json
+CHEMBL232557,Cc1cc(N2CCCS2(=O)=O)c2oc(-c3ccc(O)c(O)c3)c(O)c(=O)c2c1,active,7.06,IC50 87 nM,https://www.ebi.ac.uk/chembl/api/data/activity/1963802.json
+CHEMBL50,O=c1c(O)c(-c2ccc(O)c(O)c2)oc2cc(O)cc(O)c12,inactive,4.4,"IC50 40,000 nM",https://www.ebi.ac.uk/chembl/api/data/activity/1963774.json

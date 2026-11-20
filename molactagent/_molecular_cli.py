@@ -166,6 +166,8 @@ def run_molecular(args):
             raise ValueError(f"The {name} file changed while it was being read. Try again with a stable copy.")
     reference_names = _display_names(reference, columns["name_column"])
     query_names = _display_names(test, columns["name_column"])
+    annotations = [col for col in ("measurement", "source_url") if col in reference]
+    reference_notes = dict(enumerate(reference[annotations].fillna("").to_dict("records")))
     try:
         classifier = MolecularClassifier(client, **settings)
     except TypeError as exc:
@@ -205,6 +207,7 @@ def run_molecular(args):
             outputs[output_dir / "report.html"] = render_molecular_report(
                 results, endpoint=metadata["endpoint"], run=metadata, series=metadata["series"],
                 reference_names=dict(enumerate(reference_names)), query_names=query_names,
+                reference_notes=reference_notes,
             )
         _write_outputs(outputs)
 

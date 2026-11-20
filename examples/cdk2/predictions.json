@@ -1,0 +1,337 @@
+{
+  "run": {
+    "endpoint": "Inhibition of human cyclin-dependent kinase 2 (CDK2), measured by IC50 in a single biochemical assay. Active references have IC50 at or below 100 nM (pChEMBL at least 7). Inactive references have IC50 at or above 10,000 nM (pChEMBL at most 5). Intermediate measurements are outside these two example classes.",
+    "series": "",
+    "pchembl_threshold": null,
+    "labels_from_pchembl": false,
+    "task_name": "Molecular activity",
+    "profile": "panel",
+    "neighbors": 8,
+    "repeats": 5,
+    "temperature": 0.0,
+    "max_tokens": 16384,
+    "response_format": true,
+    "workers": 4,
+    "mode": "live",
+    "model": "group/deepseek-free",
+    "versions": {
+      "molactagent": "0.5.1",
+      "rdkit": "2025.09.6",
+      "python": "3.12.12",
+      "pandas": "2.3.3"
+    },
+    "files": {
+      "reference": "f1fe660f07dc2814eee6a45606e36a86aca68bab0e1d31d9ded4f71b032b5330",
+      "test": "e4baa2c651dd6a77b6730f6c56498f8208cd9444f1c687269fca05b0b7e66194"
+    },
+    "columns": {
+      "smiles_column": "smiles",
+      "label_column": "label",
+      "id_column": "id",
+      "name_column": null,
+      "pchembl_column": "pchembl"
+    },
+    "transport": {
+      "timeout_seconds": 120.0,
+      "max_retries": 10
+    }
+  },
+  "predictions": [
+    {
+      "identifier": "Q1",
+      "smiles": "Cc1cc(N2CCCS2(=O)=O)c2oc(-c3ccc(O)c(Br)c3)c(O)c(=O)c2c1",
+      "label": "Inconclusive",
+      "confidence": 0.0,
+      "selected_view": "panel",
+      "references": [
+        {
+          "reference": "CHEMBL232557",
+          "position": 2,
+          "smiles": "Cc1cc(N2CCCS2(=O)=O)c2oc(-c3ccc(O)c(O)c3)c(O)c(=O)c2c1",
+          "label": "active",
+          "similarity": 0.8421052631578947,
+          "pchembl": 7.06
+        },
+        {
+          "reference": "CHEMBL232556",
+          "position": 1,
+          "smiles": "Cc1cc(N2C(=O)CN(C)C2=O)c2oc(-c3ccc(O)c(O)c3)c(O)c(=O)c2c1",
+          "label": "active",
+          "similarity": 0.5072463768115942,
+          "pchembl": 7.25
+        },
+        {
+          "reference": "CHEMBL50",
+          "position": 3,
+          "smiles": "O=c1c(O)c(-c2ccc(O)c(O)c2)oc2cc(O)cc(O)c12",
+          "label": "inactive",
+          "similarity": 0.29411764705882354,
+          "pchembl": 4.4
+        },
+        {
+          "reference": "CHEMBL151",
+          "position": 0,
+          "smiles": "O=c1cc(-c2ccc(O)c(O)c2)oc2cc(O)cc(O)c12",
+          "label": "inactive",
+          "similarity": 0.1917808219178082,
+          "pchembl": 4.7
+        }
+      ],
+      "judgments": [
+        {
+          "view": "panel",
+          "repeat": 0,
+          "label": "Uncertain",
+          "confidence": 0.77,
+          "evidence": {
+            "class_contrast": "The active references are methylated flavonols bearing an N-linked five-membered heterocycle, whereas the inactive references are more hydroxylated flavonoids without that heterocycle.",
+            "test_position": "The test retains the active-side scaffold but replaces the pendant aryl hydroxyl at position [17*] with bromine, reducing the hydrogen-bond donor count from three to two.",
+            "counter_evidence": "Ref 2 favors activity by scaffold similarity but sits only 0.06 pChEMBL units above the active cutoff, and neither class contains a measured one-halogen analog.",
+            "rationale": "Ref 2 is the only same-scaffold one-halogen-delta reference and the closest sidechain match (0.949, pChEMBL 7.06). The other measured phenolic analog, ref 1, is also active but has a different scaffold. With no measured H, methoxy, or bromine analog at this position on the test scaffold, the effect of donor loss and bromination on the activity class remains unresolved.",
+            "reference_ids": [
+              2,
+              1,
+              3,
+              0
+            ],
+            "counter_reference_ids": [
+              2
+            ]
+          },
+          "parsed": true,
+          "error": null,
+          "call_tag": "query:0:panel:r0:a0"
+        },
+        {
+          "view": "panel",
+          "repeat": 1,
+          "label": "Uncertain",
+          "confidence": 0.8,
+          "evidence": {
+            "class_contrast": "The active flavonoids carry a core methyl and an N-linked five-membered heterocycle, whereas the inactive flavonoids carry two hydroxyls on the fused benzene ring in place of those substituents.",
+            "test_position": "The test retains the active-side core methyl and N-linked heterocycle but replaces one pendant phenolic hydroxyl with bromine.",
+            "counter_evidence": "All four measured references are halogen-free, and the panel has no same-scaffold H or methoxy analog at the brominated position to help isolate the effect of losing the phenolic donor.",
+            "rationale": "Ref 2 is the closest sidechain neighbor and the only measured same-scaffold analog with a one-halogen difference, so it dominates the local comparison. Its pChEMBL of 7.06 is just above the active cutoff. The OH-to-Br substitution removes a donor, and the available measurements leave its effect on the activity class unresolved.",
+            "reference_ids": [
+              2,
+              1,
+              3,
+              0
+            ],
+            "counter_reference_ids": []
+          },
+          "parsed": true,
+          "error": null,
+          "call_tag": "query:0:panel:r1:a0"
+        },
+        {
+          "view": "panel",
+          "repeat": 2,
+          "label": "Uncertain",
+          "confidence": 0.78,
+          "evidence": {
+            "class_contrast": "The active flavonols carry a core methyl and an N-linked five-membered heterocycle, whereas the inactive flavonoids lack both groups and carry more phenolic hydroxyls.",
+            "test_position": "The test retains the active-side methylated flavonol and N-linked sultam but replaces the pendant aryl hydroxyl at [17*] with bromine, removing one hydrogen-bond donor.",
+            "counter_evidence": "Neither class contains a one-halogen reference, and the only same-scaffold measurement is for the hydroxyl analog at pChEMBL 7.060, just above the active cutoff.",
+            "rationale": "Ref 2 dominates the local comparison because it shares the exact scaffold and has the closest sidechains (0.949 similarity). The inactive refs 3 and 0 lack the N-linked ring and cannot isolate the effect of the OH-to-Br change. With no matched hydrogen or methoxy analog, the panel cannot establish whether donor loss changes the class.",
+            "reference_ids": [
+              2,
+              1,
+              3,
+              0
+            ],
+            "counter_reference_ids": []
+          },
+          "parsed": true,
+          "error": null,
+          "call_tag": "query:0:panel:r2:a0"
+        },
+        {
+          "view": "panel",
+          "repeat": 3,
+          "label": "Uncertain",
+          "confidence": 0.84,
+          "evidence": {
+            "class_contrast": "The active references carry a methyl and a five-membered N-linked heterocycle on the flavonoid core, whereas the inactive references carry phenolic hydroxyls at those positions.",
+            "test_position": "The test retains the active-series core substitutions but replaces one pendant phenolic hydroxyl with bromine.",
+            "counter_evidence": "All four references are halogen-free, leaving neither class with an exact-count comparator and no measured same-scaffold OH-to-Br pair.",
+            "rationale": "Ref 2 is the closest sidechain match and the only same-scaffold, one-halogen-delta comparator, with pChEMBL 7.06 just above the active cutoff. Its aryl hydroxyl provides a donor that bromine removes. The panel lacks matched hydrogen and methoxy analogs, so it cannot establish whether donor loss changes the class. The different-scaffold inactives do not resolve that substitution effect.",
+            "reference_ids": [
+              2,
+              1,
+              0,
+              3
+            ],
+            "counter_reference_ids": []
+          },
+          "parsed": true,
+          "error": null,
+          "call_tag": "query:0:panel:r3:a0"
+        },
+        {
+          "view": "panel",
+          "repeat": 4,
+          "label": "active",
+          "confidence": 0.62,
+          "evidence": {
+            "class_contrast": "The active flavonols carry a methyl group and a five-membered nitrogen-containing ring on the fused benzene ring, whereas the inactive flavones and flavonols carry hydroxyl groups at those positions.",
+            "test_position": "The test retains the active-side methyl and cyclic sulfonamide scaffold but replaces one pendant phenolic hydroxyl with bromine, removing one hydrogen-bond donor.",
+            "counter_evidence": "Ref 2 is only 0.06 pChEMBL units above the active cutoff, so even a modest potency loss after the hydroxyl-to-bromine substitution could move the test outside the active class.",
+            "rationale": "Ref 2 is the closest sidechain match (0.949) and the only exact-scaffold reference (pChEMBL 7.060), so its scaffold supports the active prediction. Neither class contains a one-halogen reference, leaving the bromine substitution uncalibrated. The panel contains the phenolic donor analog but lacks matched H and methoxy analogs, so donor loss remains an untested explanation for any potency change.",
+            "reference_ids": [
+              2,
+              1,
+              3,
+              0
+            ],
+            "counter_reference_ids": [
+              2
+            ]
+          },
+          "parsed": true,
+          "error": null,
+          "call_tag": "query:0:panel:r4:a0"
+        }
+      ],
+      "calls": [
+        {
+          "call_id": 1,
+          "tag": "query:0:panel:r0:a0",
+          "elapsed_s": 17.46,
+          "prompt_tokens": 9367,
+          "completion_tokens": 532,
+          "prompt_chars": 12431,
+          "response_chars": 1091,
+          "truncated": false,
+          "finish_reason": "stop",
+          "response_model": "group/deepseek-free",
+          "system_fingerprint": null,
+          "http_attempts": 1,
+          "retry_failures": [],
+          "error": null,
+          "status": "uncertain"
+        },
+        {
+          "call_id": 2,
+          "tag": "query:0:panel:r1:a0",
+          "elapsed_s": 12.44,
+          "prompt_tokens": 9367,
+          "completion_tokens": 403,
+          "prompt_chars": 12431,
+          "response_chars": 1038,
+          "truncated": false,
+          "finish_reason": "stop",
+          "response_model": "group/deepseek-free",
+          "system_fingerprint": null,
+          "http_attempts": 1,
+          "retry_failures": [],
+          "error": null,
+          "status": "uncertain"
+        },
+        {
+          "call_id": 3,
+          "tag": "query:0:panel:r2:a0",
+          "elapsed_s": 10.99,
+          "prompt_tokens": 9367,
+          "completion_tokens": 357,
+          "prompt_chars": 12431,
+          "response_chars": 1037,
+          "truncated": false,
+          "finish_reason": "stop",
+          "response_model": "group/deepseek-free",
+          "system_fingerprint": null,
+          "http_attempts": 1,
+          "retry_failures": [],
+          "error": null,
+          "status": "uncertain"
+        },
+        {
+          "call_id": 4,
+          "tag": "query:0:panel:r3:a0",
+          "elapsed_s": 11.42,
+          "prompt_tokens": 9367,
+          "completion_tokens": 310,
+          "prompt_chars": 12431,
+          "response_chars": 1015,
+          "truncated": false,
+          "finish_reason": "stop",
+          "response_model": "group/deepseek-free",
+          "system_fingerprint": null,
+          "http_attempts": 1,
+          "retry_failures": [],
+          "error": null,
+          "status": "uncertain"
+        },
+        {
+          "call_id": 5,
+          "tag": "query:0:panel:r4:a0",
+          "elapsed_s": 10.97,
+          "prompt_tokens": 9367,
+          "completion_tokens": 346,
+          "prompt_chars": 12431,
+          "response_chars": 1138,
+          "truncated": false,
+          "finish_reason": "stop",
+          "response_model": "group/deepseek-free",
+          "system_fingerprint": null,
+          "http_attempts": 1,
+          "retry_failures": [],
+          "error": null,
+          "status": "accepted"
+        }
+      ],
+      "reason": "Too few model judgments supplied a class with usable evidence.",
+      "decision": {
+        "planned": 5,
+        "counts": {
+          "active": 1,
+          "inactive": 0,
+          "uncertain": 4,
+          "failed": 0
+        },
+        "decisive": 1,
+        "required": 3,
+        "weight_totals": {
+          "active": 0.62,
+          "inactive": 0
+        },
+        "method": "insufficient_votes",
+        "focused": []
+      },
+      "evidence_references": [
+        {
+          "reference": "CHEMBL232557",
+          "position": 2,
+          "smiles": "Cc1cc(N2CCCS2(=O)=O)c2oc(-c3ccc(O)c(O)c3)c(O)c(=O)c2c1",
+          "label": "active",
+          "similarity": 0.8421052631578947,
+          "pchembl": 7.06
+        },
+        {
+          "reference": "CHEMBL232556",
+          "position": 1,
+          "smiles": "Cc1cc(N2C(=O)CN(C)C2=O)c2oc(-c3ccc(O)c(O)c3)c(O)c(=O)c2c1",
+          "label": "active",
+          "similarity": 0.5072463768115942,
+          "pchembl": 7.25
+        },
+        {
+          "reference": "CHEMBL50",
+          "position": 3,
+          "smiles": "O=c1c(O)c(-c2ccc(O)c(O)c2)oc2cc(O)cc(O)c12",
+          "label": "inactive",
+          "similarity": 0.29411764705882354,
+          "pchembl": 4.4
+        },
+        {
+          "reference": "CHEMBL151",
+          "position": 0,
+          "smiles": "O=c1cc(-c2ccc(O)c(O)c2)oc2cc(O)cc(O)c12",
+          "label": "inactive",
+          "similarity": 0.1917808219178082,
+          "pchembl": 4.7
+        }
+      ]
+    }
+  ]
+}

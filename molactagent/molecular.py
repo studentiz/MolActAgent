@@ -85,8 +85,8 @@ def _reference_rows(records, query_index, indices, reference_ids):
 class MolecularClassifier:
     """Predict active or inactive by contrasting groups of measured references.
 
-    The default compares a class-balanced panel in five independent model
-    calls. The focused profile also enables local halogen and stereo views.
+    The default requests five judgments on the same reference panel.
+    The focused profile also enables local halogen and stereo views.
     """
 
     def __init__(

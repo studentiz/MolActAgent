@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1 — 2026-11-20
+
+- The project site and README introduce the experimental decision that MolActAgent supports. The tutorial walks through a live assessment of your own molecules. A command reference covers numeric tables, multi-class workflows, Python use, automation and troubleshooting.
+- Molecular reports show a candidate with labeled references, original measurement text and optional source links. When two displayed compounds differ at one unambiguous terminal atom, the report marks the corresponding bonds in both structures. Repeated identical written interpretations share one entry. Other interpretations, limitations, abstentions and failed calls remain available for inspection.
+- Added an optional public, single-assay example with a withheld query measurement, four traceable ChEMBL references, model responses and the resulting inconclusive assessment.
+- Molecular recordings from v0.5.0 can also be replayed on v0.5.1 with matching RDKit and original inputs. Replay verifies the request digests. The molecular prompts and class decision rules are shared by these two releases.
+
 ## 0.5.0 — 2026-11-20
 
 - Rebuilt GitHub Pages and the public guides around an illustrated example of the SMILES agent. The report now leads with the class, evidence coverage, structures, rationale and missing comparisons.

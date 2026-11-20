@@ -1,5 +1,12 @@
 # Data sources and redistribution notes
 
+## Measured CDK2 example
+
+The four references and one query in the public example are adapted from
+the ChEMBL 36 CDK2 extract. Its provenance table maps each row to a ChEMBL
+activity record and the published assay. Derivative data use CC BY-SA 3.0.
+[Case provenance](../examples/cdk2/README.md) · [ChEMBL licensing](https://chembl.gitbook.io/chembl-interface-documentation/about#data-licensing)
+
 ## SMILES teaching example
 
 `examples/molecular/` contains hand-authored SMILES for common molecules

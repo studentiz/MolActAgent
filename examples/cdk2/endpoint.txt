@@ -1,0 +1,1 @@
+Inhibition of human cyclin-dependent kinase 2 (CDK2), measured by IC50 in a single biochemical assay. Active references have IC50 at or below 100 nM (pChEMBL at least 7). Inactive references have IC50 at or above 10,000 nM (pChEMBL at most 5). Intermediate measurements are outside these two example classes.

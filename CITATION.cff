@@ -2,7 +2,7 @@ cff-version: 1.2.0
 title: "MolActAgent"
 message: "If MolActAgent contributes to your work, please cite this project."
 type: software
-version: "0.5.0"
+version: "0.5.1"
 date-released: "2026-11-20"
 license: MIT
 repository-code: https://github.com/studentiz/MolActAgent

@@ -1,37 +1,121 @@
 # MolActAgent tutorial
 
+- [Start with your own assay](#use-your-own-data)
+- [Try the optional worked example](#optional-worked-example)
+- [Classify numeric tables with the three-class Iris example](#iris-tutorial-for-numeric-tables)
+- [Look up commands, configuration, and Python interfaces](tutorial-reference.md)
+
+<a name="3-the-big-idea-in-three-sentences"></a>
+
 ## Predict from SMILES
 
-MolActAgent helps you inspect a prediction for an untested molecule. You supply
-its SMILES, examples from both classes, and the experimental definition of the
-classes. You get a label or an inconclusive result, with the structures and
-recorded judgments that led to it.
+Start with one decision your next set of experiments needs to inform. For example, you may have several new analogs and enough material to test only a few. Use compounds you have already measured under the same conditions to examine each candidate, identify gaps in the evidence, and decide which measurement would address one of those gaps.
 
-The example has six labeled references and one query, 4-fluorophenol. Its
-synthetic labels define `active` as having a hydroxyl bonded directly to an
-aromatic carbon. Watch for the difference between 4-fluorophenol and benzyl
-alcohol, whose hydroxyl is one carbon away from the ring.
+<a name="bring-your-own-smiles"></a>
+
+### Use your own data
+
+Save the files below as plain text in the project folder after installing MolActAgent. A CSV is a table your spreadsheet can export. Each row represents one compound. SMILES is a text representation of its structure.
+
+| File | What to put in it |
+| --- | --- |
+| `reference.csv` | Use the columns `id,smiles,label`. Give each measured reference a unique ID and label it `active` or `inactive` according to your assay. Include compounds from both classes. |
+| `query.csv` | Use the columns `id,smiles` for the compounds you want to review. Give each candidate a unique ID. |
+| `assay.txt` | State what you measured, the relevant assay conditions and units, and the rule you used to assign each label. Record both rules if active and inactive have separate cutoffs. |
+
+Use isomeric SMILES when you know the stereochemistry. Add a `name` column if it helps you recognize compounds in the report. [Molecular input options](tutorial-reference.md#molecular-cli)
+
+<a name="1-what-you-need-before-you-start"></a>
+<a name="2-getting-molactagent-onto-your-computer"></a>
+<a name="2-installing-molactagent"></a>
 
 ### Install the example environment
 
-Install Git and Python 3.12, then open a terminal. The tagged source includes
-the CSVs and the recording.
+Install Git and Python 3.12. Open a terminal in the folder where you want to keep the project, then copy these commands. The tag supplies the example files and the version pins for the chemistry environment.
 
 ```bash
-git clone --branch v0.5.0 https://github.com/studentiz/MolActAgent.git
+git clone --branch v0.5.1 https://github.com/studentiz/MolActAgent.git
 cd MolActAgent
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e ".[chem]" -c examples/molecular/constraints.txt
+molactagent --version
 ```
 
-On Windows PowerShell, create the environment with `py -3.12 -m venv .venv`
-and run the install command with `.venv\Scripts\python.exe -m pip` in place
-of `python -m pip`. Then use `.venv\Scripts\molactagent.exe` in place of
-`molactagent`. PowerShell commands can be pasted on one line after removing
-the trailing backslashes.
+In Windows PowerShell, run the same clone and `cd` commands, then use `py -3.12 -m venv .venv` and `.\.venv\Scripts\Activate.ps1`. If PowerShell blocks activation, use `.\.venv\Scripts\python.exe -m pip` in place of `python -m pip` and `.\.venv\Scripts\molactagent.exe` in place of `molactagent`. Paste each multiline command as one line, removing the trailing backslashes.
+
+Run the examples from the `MolActAgent` folder. The package supports Python 3.10–3.12. For numeric tables alone, you can use `python -m pip install -e .` in an active environment. [Optional readers and development setup](tutorial-reference.md#development-and-tests)
+
+<a name="5-setting-up-your-llm-your-ai-service"></a>
+
+### Use a live model
+
+The model reads the assay description and selected compound data. Use a service appropriate for your lab data that supports OpenAI-compatible Chat Completions. Create a local settings file.
+
+```bash
+molactagent init-config --path llm_config.jsonc
+```
+
+Open `llm_config.jsonc` in a text editor and fill in the `api_key`, API root `base_url`, and `model_name` from your service. Keep your API key private. [Credentials, profiles, and local services](tutorial-reference.md#model-and-api-configuration)
+
+With your three input files in the project folder, run the command below. The files in the optional worked example can take the place of your own.
+
+```bash
+molactagent molecular \
+  --reference reference.csv \
+  --test query.csv \
+  --id-column id \
+  --endpoint @assay.txt \
+  --llm-config llm_config.jsonc \
+  --max-tokens 16384 \
+  --record assay-responses.json \
+  --output-dir assay-output
+```
+
+### Read a molecular prediction
+
+1. Open `assay-output/report.html` and check the assay definition and the predicted class for a candidate. An `Inconclusive` decision means you should read the reason before deciding what to test.
+2. Select a cited reference and check its structure, recorded label, and any assay measurement. Look at the difference the model cites and whether your reference set contains a measurement that addresses it.
+3. Open the individual judgments to see where the comparisons disagree. Use scores as evidence within the run, and use your lab measurements to assess reliability.
+
+The CLI writes `predictions.json` with the structured decision, comparisons and call records. The response recording saves the model replies and settings for replay. Keep it with the input tables. [Report guide](reports.md#reports-from-smiles)
+
+### Optional worked example
+
+Use the included tables if you want to try the command on a public assay first. They contain four references from human CDK2 inhibition assay `CHEMBL897015` and one query, `Q1`, an alias for `CHEMBL392776`. The assay file defines active as IC₅₀ at or below 100 nM (pChEMBL ≥ 7) and inactive as IC₅₀ at or above 10,000 nM (pChEMBL ≤ 5). These are separate cutoffs. The query CSV supplies its ID and SMILES. [ChEMBL assay](https://www.ebi.ac.uk/chembl/explore/assay/CHEMBL897015) · [Query compound](https://www.ebi.ac.uk/chembl/explore/compound/CHEMBL392776) · [Example files](../examples/cdk2)
+
+```bash
+molactagent molecular \
+  --reference examples/cdk2/reference.csv \
+  --test examples/cdk2/query.csv \
+  --id-column id \
+  --pchembl-column pchembl \
+  --endpoint @examples/cdk2/endpoint.txt \
+  --llm-config llm_config.jsonc \
+  --temperature 0 --max-tokens 16384 \
+  --record cdk2-responses.json \
+  --output-dir cdk2-output
+```
+
+The release recording returned `Inconclusive`. Four judgments explicitly chose `Uncertain` and one voted `active`, with zero failures. The engine needed at least three usable class votes out of five. Exit code `4` signals an inconclusive prediction after the CLI has written the full HTML and JSON. A fresh live run may return different judgments. [CDK2 report](https://studentiz.github.io/MolActAgent/cdk2-report.html)
+
+The close active reference `CHEMBL232557` measured 87 nM, near the 100 nM cutoff. At the same site in `Q1`, a bromine takes the place of the terminal hydroxyl group. The nearest inactive reference, `CHEMBL50`, measured 40,000 nM. All four references are halogen-free, so the effect of the OH-to-Br substitution remains a question for measurement.
 
 ### Replay a complete prediction
+
+Use the saved responses to rebuild the release report without an API key. The outputs go to `cdk2-replay/`.
+
+```bash
+molactagent molecular \
+  --reference examples/cdk2/reference.csv \
+  --test examples/cdk2/query.csv \
+  --replay examples/cdk2/responses.json \
+  --output-dir cdk2-replay
+```
+
+To replay your own work, reuse the same CSVs and pass the response file you saved with `--record`. The recording supplies the assay description, column names, and settings. The CLI checks the input files, RDKit version, and rebuilt model requests. Choose a fresh output path for another copy of the report.
+
+The historical phenol example uses synthetic labels to illustrate a structure comparison. v0.5.1 accepts its v0.5.0 schema 2 recording in the pinned environment.
 
 ```bash
 molactagent molecular \
@@ -41,155 +125,116 @@ molactagent molecular \
   --output-dir molecular-output
 ```
 
-The terminal lists `Q1` as `active`. Open `molecular-output/report.html` in a
-browser. The comparison shows p-cresol and benzyl alcohol alongside the
-query. The highlighted bonds show where each hydroxyl attaches. Follow a
-citation to a reference record and open an individual LLM judgment to read
-its interpretation and counter-evidence. Five recorded judgments support
-the active label. The closest para-substituted phenol in the panel has a
-methyl in place of fluorine, leaving the fluorination comparison unresolved.
-[View the published report](https://studentiz.github.io/MolActAgent/molecular-example.html)
-
-The run rebuilds the comparisons, checks each request against the recording,
-parses the saved model responses and recomputes the vote. It writes one
-entry per query to `predictions.json` with the judgment and call records.
-Repeat the command with a fresh output directory to retain both reports.
-
-### Use a live model
-
-Create a local configuration with `molactagent init-config --path llm_config.jsonc`.
-Open it and set `api_key`, `base_url` and `model_name` for an OpenAI-compatible
-Chat Completions service. A live service receives the query and selected
-reference evidence. Use a service approved for your data and keep the local
-configuration private.
-
-```bash
-molactagent molecular \
-  --reference examples/molecular/reference.csv \
-  --test examples/molecular/query.csv \
-  --id-column id \
-  --endpoint @examples/molecular/endpoint.txt \
-  --llm-config llm_config.jsonc \
-  --temperature 0 --max-tokens 16384 \
-  --record teaching-live.json \
-  --output-dir teaching-live
-```
-
-The main panel asks for five LLM judgments per query by default, with extra
-attempts for transient API failures or incomplete responses. Concurrent
-judgments can use different backends when your service routes requests.
-Use `--workers 1` to send one model request at a time, or `--plain-json` when
-your provider supports JSON text and rejects the JSON-mode API option.
-`--max-retries 0` sends the initial HTTP request and disables transport
-retries. The comparison can still make one response-format correction for a
-truncated or invalid model reply.
-
-Replay a CLI recording with the same two input files and its `--replay` path.
-The command loads the saved assay text, column names and effective settings.
-It checks the file fingerprints before rebuilding the model requests. The
-files may be moved without changing their content. The report shows the
-requested model, and the response log identifies the model names returned
-by the service when present. Keep `--record` files with the input data
-because they contain model responses. For recordings made by v0.4.1, use that
-tag and the original command options and dependencies.
-
-### Use your own data
-
-Create a reference file with `smiles,label` and a query file with `smiles`.
-Supply the `active` and `inactive` reference classes from the same
-experimental endpoint. Write the assay definition in a text file and pass
-`--endpoint @assay.txt`. Include the assay conditions and what qualifies a
-compound for each class.
-
-| Column or option | What it supplies |
-| --- | --- |
-| `smiles` | One structure per row. Use isomeric SMILES when the configuration is known. |
-| `label` | The input activity class on reference rows. |
-| `id` | Optional ID for matching outputs to your records. Pass `--id-column id` when both tables have that column. CSV values such as `0007` and `NA` retain their text. |
-| `name` | Optional name for display. The CLI reads it wherever available. |
-| `--pchembl-column VALUE` | Measured reference potency where your assay uses pChEMBL. Leave unavailable measurements blank. |
-| `--pchembl-threshold 6.5` | Optional relevant cutoff to show in the report and give to the LLM. |
-| `--labels-from-pchembl` | Declare that reference labels are defined by the cutoff. Requires a potency column and cutoff. Every reference must have a value, with `active` at or above the cutoff. |
-
-Exact canonical matches to the query are excluded per prediction.
-Resolve contradictory labels for the same canonical structure before running.
-The CLI reports an invalid SMILES with its compound ID before any model
-requests. For a new set of tables, start with the default `panel` profile.
-`--molecular-profile focused` adds eligible local halogen or stereochemical
-comparisons and may make more calls.
-
-With `--output-dir`, a completed batch writes `predictions.json` and
-`report.html`, including any inconclusive queries. Choose paths without
-existing files of the same name. Without an output directory the JSON goes
-to standard output. The exit code is `0` when every query receives a class,
-`4` when the files contain one or more inconclusive predictions, or `2` for
-an input, configuration, replay or output error. [Report guide](reports.md#reports-from-smiles)
+Open `molecular-output/report.html` to compare 4-fluorophenol with p-cresol and benzyl alcohol. For a schema 1 recording made with v0.4.1, use that release, its dependencies, and the original command options. [Historical teaching report](https://studentiz.github.io/MolActAgent/molecular-example.html)
 
 ### Use the Python interface
 
-The same classifier accepts pandas DataFrames. Load a CSV with
-`dtype=str, keep_default_na=False` to preserve text IDs.
-
-```python
-import pandas as pd
-
-from molactagent import build_llm_client, load_llm_config
-from molactagent.molecular import MolecularClassifier
-
-reference = pd.read_csv("examples/molecular/reference.csv", dtype=str, keep_default_na=False)
-query = pd.read_csv("examples/molecular/query.csv", dtype=str, keep_default_na=False)
-config = load_llm_config("llm_config.jsonc", default_max_tokens=16384)
-agent = MolecularClassifier(
-    build_llm_client(config),
-    endpoint="Teaching assay with synthetic labels. Active means an aromatic carbon bonded directly to a hydroxyl.",
-    temperature=config.temperature,
-    max_tokens=config.max_tokens,
-)
-agent.fit(reference, id_column="id")
-for result in agent.predict(query, id_column="id"):
-    print(result.identifier, result.label, result.decision)
-```
+Use `MolecularClassifier` to access the reference comparisons and judgments in a notebook or script. [Molecular Python example](tutorial-reference.md#molecular-classifier)
 
 ## Iris tutorial for numeric tables
 
-Use `molactagent run` when you already have numeric features for each row.
-The bundled example asks the agent to classify six flowers into three
-species using sepal and petal measurements. It contains 24 labeled
-references. Validate the files first without contacting the model.
+<a name="4-a-tour-of-the-iris-flower-example"></a>
+
+Use the feature-table path when you have numeric measurements or descriptors. In this example, `reference.csv` contains 24 flowers labeled as `setosa`, `versicolor`, or `virginica`. The six test flowers have the same four sepal and petal measurements without species labels. The JSON descriptions explain each measurement and the label. The background file gives the model context for the comparison. [Iris example files](../examples/iris_flowers)
+
+<a name="6-step-1--validate-the-data"></a>
+
+### Validate the inputs
+
+Run validation before paying for a prediction. The check reads the tables and reports problems with IDs, labels, features, and descriptions without calling a model.
 
 ```bash
 molactagent validate \
-  -r examples/iris_flowers/reference.csv \
-  -t examples/iris_flowers/test.csv \
-  --label-col species --id-column flower_id --k 3 \
+  --reference examples/iris_flowers/reference.csv \
+  --test examples/iris_flowers/test.csv \
+  --label-column species --id-column flower_id --k 3 \
   --feature-descriptions examples/iris_flowers/feature_descriptions.json \
   --background @examples/iris_flowers/background.txt
 ```
 
-Use the same inputs with `molactagent run` to classify the queries. Pass
-`--llm-config llm_config.jsonc` to select the service and `--output-dir
-iris-output` for the output directory. Open `interpretability.html` to
-review the batch, and `summary.csv` to retrieve the labels. The numeric
-engine compares feature values in reference tuples and can apply its
-numeric decision rules. See the design document for that policy.
-[Feature-table design](design.md#feature-table-engine)
+<a name="7-step-2--run-the-classification-default-mode"></a>
+
+### Run the classification
+
+Reuse your `llm_config.jsonc` from the live example, or create and fill one in with `molactagent init-config`. This command writes a batch report and the predicted species.
+
+```bash
+molactagent run \
+  --reference examples/iris_flowers/reference.csv \
+  --test examples/iris_flowers/test.csv \
+  --label-column species --id-column flower_id --task classification --k 3 \
+  --feature-descriptions examples/iris_flowers/feature_descriptions.json \
+  --background @examples/iris_flowers/background.txt \
+  --llm-config llm_config.jsonc \
+  --output-dir iris-output
+```
+
+<a name="8-reading-the-default-outputs"></a>
+
+### Read the batch outputs
+
+Open `iris-output/summary.csv` for the labels and `iris-output/interpretability.html` for the vote and feature evidence. `interpretability.md` gives a text version. The labels are predictions for the six queries. A run can emit `Inconclusive` if there are no usable comparisons or the votes are too close. [Output formats and fields](tutorial-reference.md#numeric-table-outputs)
+
+<a name="9-adding-per-sample-reports"></a>
 
 ### Adding per-sample reports
 
-Add `--per-sample` to `molactagent run` to save each query's HTML, Markdown
-and JSON report. This can ask the model to write a narrative. Saved
-classification records with the relevant presentation metadata can also
-be opened in the named-compound viewer. [Numeric report guide](reports.md#reports-from-numeric-tables)
+Add `--per-sample` to save HTML, Markdown, and JSON for each query. HTML or Markdown requests a separate narrative from the model. For structured evidence only, use `--per-sample --per-sample-format json`. To open a saved classification record in the named-compound viewer, add the report context described in the report guide. [Export a saved record](reports.md#export-your-own-saved-classification)
+
+<a name="10-how-molactagent-handles-multi-class"></a>
+
+### How multi-class predictions work
+
+For each query, the numeric engine selects nearby candidate classes. In the Iris example it may compare two species or all three. Each comparison uses one reference row from each candidate class and the query's feature values. The engine checks the model's response against numerical evidence and combines the weighted votes. Inspect the candidate classes and vote evidence when judging a prediction. [Candidate selection, cost, and scores](tutorial-reference.md#how-numeric-classification-works)
+
+<a name="16-using-molactagent-from-python"></a>
+<a name="161--sklearn-style-estimators-molactagentclassifier-molactagentregressor"></a>
+
+### Classify a numeric table in Python
+
+The bundled loader prepares arrays with consistent feature columns. Pass feature names, descriptions, and background from the loader to preserve that context in the comparisons.
+
+```python
+import molactagent as ma
+
+iris = ma.datasets.load_iris_flowers()
+config = ma.load_llm_config("llm_config.jsonc")
+classifier = ma.MolActAgentClassifier(
+    llm_config=config,
+    feature_names=iris.feature_names,
+    feature_descriptions=iris.feature_descriptions,
+    background=iris.background,
+    k=3,
+)
+classifier.fit(iris.X_train, iris.y_train)
+print(classifier.predict(iris.X_test))
+print(classifier.classes_)
+print(classifier.predict_proba(iris.X_test))
+
+for sample_id, result in zip(iris.test_index, classifier.predict_full(iris.X_test)):
+    print(sample_id, result.label, result.confidence, result.candidate_classes)
+```
+
+`predict_proba` returns weighted-vote shares in `classes_` order. Read them as evidence scores. The estimator reuses its most recent predictions when called again on the same batch. For reports and file-oriented processing from Python, use `run_classification`. [Estimator and pipeline examples](tutorial-reference.md#python-interfaces)
+
+## Reference and troubleshooting
+
+- <a name="13-bringing-your-own-data"></a>Prepare your own feature tables, descriptions, and labels. [Numeric table inputs](tutorial-reference.md#numeric-table-inputs)
+- <a name="14-the-full-cli-reference"></a>Look up commands and flags. [Command-line reference](tutorial-reference.md#command-line-reference)
+- <a name="12-pipe-friendly-mode-using-molactagent-inside-other-tools"></a>Read a table from standard input and send structured results to another tool. [Using the CLI in scripts](tutorial-reference.md#using-the-cli-in-scripts)
+- <a name="162--compound-chemistry-smiles--molactagent-in-one-call"></a>Build numeric features from SMILES for the feature-table classifier. [SMILES to numeric features](tutorial-reference.md#smiles-to-numeric-features)
+- <a name="163--downstream-analysis-loocv-baselines-calibration-attribution"></a>Inspect batches, calibration, or results on your own measured data. [Downstream analysis](tutorial-reference.md#downstream-analysis)
+- <a name="15-common-error-messages"></a><a name="17-faq"></a>Resolve input, model, and replay errors. [Troubleshooting](tutorial-reference.md#troubleshooting)
+
+<a name="11-predicting-continuous-values-regression"></a>
 
 ### Experimental regression example
 
-The experimental numeric-table backend can use a continuous target. The
-penguins example includes a text `species` column. To predict body mass
-using only the three numeric measurements, run this Python from the
-repository root to prepare two files.
+The experimental numeric-table backend can predict continuous values. The Penguins example uses bill and flipper measurements to estimate body mass. Remove the text `species` column from the CSVs before using the CLI.
 
 ```python
 from pathlib import Path
+
 import pandas as pd
 
 source = Path("examples/penguins")
@@ -200,16 +245,15 @@ for filename in ("reference.csv", "test.csv"):
     table.drop(columns="species").to_csv(target / filename, index=False)
 ```
 
-Validate the prepared files. Replace `validate` with `run` and supply your
-LLM configuration and output directory to generate a prediction.
+Validate the resulting files. To run a prediction, use the same arguments with `molactagent run` and add `--task regression --llm-config llm_config.jsonc --output-dir penguins-output`.
 
 ```bash
 molactagent validate \
-  -r penguins-input/reference.csv \
-  -t penguins-input/test.csv \
-  --target-col body_mass_g --id-column sample_id --k 5 \
+  --reference penguins-input/reference.csv \
+  --test penguins-input/test.csv \
+  --target-col body_mass_g --id-column sample_id \
   --feature-descriptions examples/penguins/feature_descriptions.json \
   --background @examples/penguins/background.txt
 ```
 
-[Regression status and interpretation](experimental-regression.md)
+Inspect the estimated value and evidence range when present. A refused prediction means the engine withheld an estimate. In Python, `ma.datasets.load_penguins()` prepares the tables for you. [Regression API and outputs](tutorial-reference.md#experimental-regression) · [Current regression scope](experimental-regression.md)

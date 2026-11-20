@@ -9,7 +9,7 @@ pytest.importorskip("rdkit")
 
 from molactagent._molecular_evidence import ReferenceJudge
 from molactagent._molecular_recording import ReplayClient, ReplayError
-from molactagent._molecular_report import render_molecular_report
+from molactagent._molecular_report import _matched_ends, render_molecular_report
 from molactagent._molecules import make_record, specified_stereoisomers
 from molactagent.molecular import MolecularClassifier
 
@@ -196,3 +196,29 @@ def test_rejects_conflicting_canonical_labels_and_checks_only_declared_cutoffs(m
         MolecularClassifier(None, pchembl_threshold=6.5, labels_from_pchembl=True).fit(
             reference, id_column="id", pchembl_column="potency",
         )
+
+
+def test_bond_marks_require_a_unique_site_in_the_same_structure():
+    match = _matched_ends("Fc1ccccc1O", "Oc1ccccc1Cl")
+    assert match and [site[2] for site in match] == ["C–F", "C–Cl"]
+    assert _matched_ends("Fc1ccccc1O", "Clc1ccc(O)cc1") is None  # Position also changed.
+    assert _matched_ends("Fc1ccccc1F", "Fc1ccccc1Cl") is None  # Ambiguous query end.
+    assert _matched_ends("C[C@H](O)CCl", "C[C@@H](O)CF") is None
+
+
+def test_repeated_explanations_and_reference_measurements(molecules):
+    reference, query = molecules
+    reply = evidence_reply("active", references=(1, 2))
+    result = MolecularClassifier(Replies([(reply, False)] * 3), repeats=3, workers=1).fit(
+        reference, id_column="id",
+    ).predict(query)[0]
+    html = render_molecular_report(
+        [result], endpoint="Example assay",
+        run={"mode": "live", "model": "fixture", "temperature": 0, "max_tokens": 16384},
+        reference_notes={1: {"measurement": "<5 nM", "source_url": "https://example.org/A"},
+                         2: {"measurement": ">50 nM", "source_url": "javascript:alert(1)"}},
+    )
+    assert html.count('<section class="argument">') == 1
+    assert "Identical evidence in 3 judgments" in html
+    assert "&lt;5 nM" in html and 'href="https://example.org/A"' in html
+    assert "javascript:" not in html and "Individual LLM judgments (3)" in html

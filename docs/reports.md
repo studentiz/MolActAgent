@@ -1,92 +1,153 @@
 # Reading and exporting an evidence report
 
+A MolActAgent report helps you evaluate an activity assessment and decide
+what to measure next. Open `report.html` in a browser and start with three
+questions.
+
+1. **What did the run conclude?** Read the assigned class in the context
+   of your assay. `Inconclusive` means the run could not support a class.
+2. **Which measured compounds support that assessment?** Follow the
+   citations to the reference structures and any supplied measurements
+   and source links. Check which compounds were tested under comparable
+   conditions and which features they share with your candidate.
+3. **What points the other way, and what would help resolve it?** Read
+   the opposing evidence and any missing comparison. If the model points to a
+   substitution, for example, consider whether measuring an analog
+   with just that change in the same assay would test the explanation.
+
+[Reports from molecular structures](#reports-from-smiles) · [Reports from numeric tables](#reports-from-numeric-tables)
+
 ## Reports from SMILES
 
-Open `report.html` in a browser. The report is a standalone review of one or
-more predictions. Keep `predictions.json` with it for programmatic access
-to the reference IDs, judgments, outcome and API metadata.
+### Inspect the molecular evidence
 
-1. **Read the assay definition and predicted class.** Look at the count of
-   judgments supporting each class, abstaining, or failing. `Inconclusive`
-   can mean missing references, too few usable judgments, or a tie. The
-   summary tells you which reason applied.
-2. **Compare the structures.** In the teaching example, follow the highlighted
-   bond from the hydroxyl to the ring in 4-fluorophenol and p-cresol. Compare
-   the side-chain attachment in benzyl alcohol. The displayed reference
-   labels come from the input table.
-3. **Review the rationale and the evidence gap.** The recorded model
-   interpretation cites specific reference rows. Select a citation to see
-   the full structure, input label, fingerprint similarity and any measured
-   pChEMBL. For the teaching assay, the lack of a comparable fluorinated
-   reference leaves the effect of para fluorination unresolved.
-4. **Check disagreement and data provenance.** The report surfaces an opposing
-   judgment when present. Open the details to see properties calculated
-   from SMILES, all references shown to the LLM, individual interpretations,
-   and the API and response log. Read model scores as uncalibrated scores.
-   The measured potency comes only from the reference input.
+Read the assay definition and the candidate's verdict at the top of the
+report. `Inconclusive` leaves the activity class unresolved.
 
-The molecular CLI uses an optional `name` column for presentation. Use the
-persistent `--id-column` value to join a prediction to a laboratory record.
-The report may contain supplied structures, measurements and model text.
-Review those contents before sharing it.
+- In **Which compounds can you compare?**, open a cited reference record
+  to inspect the supplied structure and input class. The report's 2D
+  drawings, fingerprint similarities and descriptors are calculated from
+  the submitted structures. Reference measurements come from the input.
+  Follow the measurement source to check its endpoint and units.
+- In **What supports the call, and what is still open?**, read the visible
+  arguments and their limitations. The report shows the first recorded
+  argument for each comparison view and outcome, including opposing
+  judgments and abstentions when present. It groups identical recorded
+  evidence within each view and outcome. Open **Other recorded
+  interpretations** for additional distinct arguments from the same
+  views and outcomes.
+- Expand **How the final call was reached** to see the decision rule and
+  the main-panel counts for active, inactive, abstained and failed
+  judgments when recorded. An inconclusive result can reflect a missing
+  reference class, too few decisive judgments or a tied result. If a
+  focused comparison supplied the final decision, review it alongside
+  the original panel counts. [Molecular decision rules](design.md#check-the-replies-and-decide) · [Focused comparisons](design.md#focused-molecular-comparisons)
+- Open **Individual LLM judgments** for each judgment's evidence,
+  citations and any model score. Open **API and response log** for
+  failed requests, truncated or invalid replies and retries. An abstention is a valid
+  `Uncertain` reply with an explanation. A corrected reply belongs to
+  the original judgment. Model scores are uncalibrated self-reports on
+  a 0–1 scale.
 
-[Read the teaching report](https://studentiz.github.io/MolActAgent/molecular-example.html) · [Generate the same report offline](tutorial.md#replay-a-complete-prediction)
+Read the model's text as an interpretation of the class evidence for
+your candidate. The report's measured values belong to the references. Keep
+`predictions.json` with the HTML for reference rows, individual judgments
+and call metadata. Rendering uses the saved results and makes no
+additional model call. [SMILES tutorial](tutorial.md#predict-from-smiles)
 
-## Reports From Numeric Tables
+### Understand the reference fields
 
-MolActAgent can turn a saved classification record into an interactive,
-self-contained HTML report. It shows the prediction alongside the chemical
-comparisons and recorded explanations behind it. Exporting this report does
-not call an LLM or change the prediction.
+| Field | How to read it |
+| --- | --- |
+| Reference ID and name | The CLI uses a supplied `--id-column` or generates row-based IDs. The optional `name` column gives a display name. Use the persistent ID to trace the compound to its source. |
+| Class and pChEMBL | The class comes from the input label. A value supplied via `--pchembl-column` is numeric reference potency used in the model comparison. |
+| `measurement` | Optional free text from the reference CSV, such as the original value with units and a comparison sign. It appears on the reference record for human review. |
+| `source_url` | Optional HTTP(S) link from the reference CSV to the source for that reference. Follow it to check the assay, units and measurement. |
+| Similarity and properties | Comparisons and descriptors calculated from the SMILES. Similarity helps locate close analogs and cannot establish that a measured activity transfers to the query. |
 
-## Try it without an API key
+The CLI uses `measurement` and `source_url` only for display. The
+model receives the supplied pChEMBL values as numeric potency evidence. The CSV and original source give the context for how
+that potency was recorded. A molecular report can contain supplied
+structures, measurements and model text, so review it before sharing.
 
-After [installing the package](../README.md#installation), run this from the
-repository root:
+### Replay a report or open an example
+
+Replay a molecular recording with `--replay`, the matching RDKit version
+and the original reference and query files. With `--output-dir`, the CLI
+writes both `report.html` and `predictions.json`. An inconclusive
+prediction exits with status 4 and still writes both outputs. v0.5.1
+also accepts compatible v0.5.0 schema 2 recordings. File and request
+checks still apply, so preserve the original files and headers.
+[Offline replay tutorial](tutorial.md#replay-a-complete-prediction) · [How replay checks a recording](design.md#replay-molecular-decisions)
+
+- **Published assay example.** The CDK2 report shows an inconclusive
+  result. Expand **How the final call was reached** to see one active,
+  zero inactive, four abstained and zero failed judgments.
+  [CDK2 case report](https://studentiz.github.io/MolActAgent/cdk2-report.html) · [Case files](../examples/cdk2/)
+- **Synthetic teaching example.** Compare the hydroxyl
+  attachment in 4-fluorophenol and p-cresol with the side-chain hydroxyl
+  in benzyl alcohol. The input labels follow a teaching rule.
+  [Hydroxyl teaching report](https://studentiz.github.io/MolActAgent/molecular-example.html)
+
+## Reports from numeric tables
+
+The feature-table engine records comparisons between rows of numeric
+descriptors or measured properties. Each comparison, called a tuple,
+contains the query and one reference per candidate class. The
+interactive named-compound viewer displays a saved classification
+record with the feature values and explanations available for review.
+It renders offline and makes no model requests.
+[How the numeric engine decides](design.md#decide-a-tuple-from-its-feature-alignment)
+
+### Try the viewer offline
+
+Install MolActAgent, then run this from the repository root. Open
+`examples/evidence_report/outputs/evidence_report.html` in a browser
+with JavaScript enabled. The included JSON uses synthetic labels,
+scores and handwritten explanations to demonstrate the viewer.
+[Installation guide](tutorial.md#install-the-example-environment) · [Example files](../examples/evidence_report/)
 
 ```bash
 python examples/evidence_report/render.py
 ```
 
-Open `examples/evidence_report/outputs/evidence_report.html` in a browser.
-No server, API credentials, chemistry extra or network connection is needed
-to view the exported file. JavaScript must be enabled.
+### Follow a feature-table decision
 
-The example is **illustrative**, with synthetic activity labels and
-handwritten explanations. It demonstrates the report interface; it is not
-an experimental result or an LLM prediction. The bundled JSON makes every
-displayed field inspectable.
+1. **Prediction overview** shows the assigned class, number of
+   comparisons and aggregate evidence score. The score summarizes the
+   class weight margin, size of the smallest candidate reference group
+   and share of tuples that gave a class. It has no probability
+   calibration. [Score details](design.md#combine-tuple-results)
+2. **Supporting and opposing evidence** shows the saved decision basis,
+   counter-evidence and uncertainty. If you supply names, the viewer
+   expands recognized references in the displayed prose.
+3. **Comparison explorer and chemical feature comparison** show a
+   selected tuple, its interpretation and its discriminative feature
+   values. Check which reference value is closest to the query for
+   each feature. Ties appear as neutral. Inspect the saved tuple
+   label, numeric baseline and any fallback reason. The engine can
+   record an explanation favoring one class while the label follows
+   the numeric baseline.
+4. **Feature contributions and evidence aggregation** show the saved
+   feature attributions, their rationales and comparison numbers,
+   weighted class support and the retrieved references. Select a
+   comparison row with the mouse or keyboard to inspect it. A driver
+   attribution describes the recorded interpretation. Experimental
+   evidence is needed to establish a causal effect.
+5. **Original structured prediction record** contains the input JSON
+   with the original text. An additional explanation, when supplied
+   to the renderer, is available in an expandable section. Fields
+   missing from the saved record may be unavailable in the viewer.
 
-## Follow a decision
+### Export your own saved classification
 
-1. **Prediction overview** gives the compound name, assigned class, number
-   of comparisons and aggregated evidence score. This score is not a
-   calibrated probability of correctness.
-2. **Supporting and opposing evidence** reproduces the saved decision basis,
-   counter-evidence and uncertainty. Chemical names replace reference IDs
-   in the displayed prose when a name mapping is supplied.
-3. **Feature contributions** includes every saved feature attribution and
-   all its rationales, together with the comparison numbers where it was cited.
-4. **Comparison explorer** lets you select a reference combination. Read its
-   complete interpretation, drivers, opposing features and validation
-   details. Nothing is shortened to a headline or ellipsis.
-5. **Chemical feature comparison** shows every discriminative feature in
-   that comparison, including definitions, query and reference values, and
-   the nearest reference class. A tie is displayed as neutral.
-6. **Evidence aggregation** shows weighted class support, all local
-   interpretations, score components, reference pools and retrieved
-   neighbors. Select a comparison row with the mouse or keyboard to inspect it.
-7. **Original structured prediction record** contains the prediction JSON
-   without display-name substitutions. An additional explanation, if
-   supplied to the renderer, is also retained in an expandable section.
-
-The report exposes the model's recorded reasoning. Its chemical or
-biological explanations do not establish causal mechanisms. Rendering
-cannot recover explanations or reference values that were never saved.
-
-## Export your own saved classification
-
-The public function signature remains unchanged:
+Pass a single feature-table prediction record to
+`molactagent.report.render_html_report`. Obtain it with
+`result.to_dict()` from an estimator result or `outcome.raw_result`
+from a pipeline `SampleOutcome`. Add `report_context` to supply
+presentation details. The renderer reads that dictionary to enable
+the named-compound viewer. Replace the example indices, names and values
+below with those of your run.
 
 ```python
 from copy import deepcopy
@@ -120,47 +181,32 @@ html = render_html_report(display_record, title="My compound — MolActAgent")
 Path("compound_report.html").write_text(html, encoding="utf-8")
 ```
 
-Replace the example names and values with the actual references from your
-run. The JSON must be a **single engine prediction record**, not an entire
-pipeline summary. For an estimator result, obtain it with
-`record = result.to_dict()`; for a pipeline `SampleOutcome`, use
-`record = outcome.raw_result`.
-
-The optional `report_context` is presentation metadata:
-
-| Key | Meaning |
+| `report_context` key | What to supply |
 | --- | --- |
-| `sample_name` | Chemical name of the query. |
-| `reference_names` | Reference index to chemical name; JSON object keys are strings. |
-| `reference_feature_values` | Reference index to feature-value mapping. Use the same units and representation as `test_feature_values`. |
-| `feature_labels` | Short readable labels; original feature codes remain visible. |
-| `feature_descriptions` | Chemical meanings and units of the features. |
-| `display_features` | Features to put first; all other discriminative features are still shown. |
-| `initial_ref_indices` | Optional class-to-reference-index mapping for the comparison shown on opening. |
-| `input_description`, `footer` | Optional description of the recorded run and report provenance. |
+| `sample_name` | Display name of the query. |
+| `reference_names` | Reference index to display name. Use string keys in JSON. |
+| `reference_feature_values` | Reference index to feature-value mapping in the same units and representation as `test_feature_values`. |
+| `feature_labels`, `feature_descriptions` | Readable names, definitions and units. The feature codes stay visible. |
+| `display_features` | Features to show first. The viewer also shows the other discriminative features. |
+| `initial_ref_indices` | Optional class-to-reference-index mapping to choose the initial comparison. |
+| `input_description`, `footer` | Optional run description and provenance. |
 
-Reference indices are the indices stored in `tuple_results[*].ref_indices`,
-not compound IDs or row numbers from a different data split. Missing
-reference values are shown as unavailable; they are not inferred by the
-renderer. Retain the original prediction JSON alongside the report.
+Use the indices found in `tuple_results[*].ref_indices` to map the
+reference values and names. Missing reference values appear as
+unavailable. Keep the original JSON alongside the HTML.
 
-## Existing reports and API compatibility
+### Batch and per-sample outputs
 
-The named-compound viewer is enabled by adding a `report_context` mapping
-to a classification record. Classification records without that mapping
-keep their existing layout. Regression reports also keep their existing
-renderer. The [regression backend is experimental](experimental-regression.md),
-remains under development, and is not evaluated in the manuscript;
-it is shared for community exploration and collaboration.
-`class_labels`, `explanation` and `title` remain supported.
+`molactagent run --output-dir` can generate a batch summary and aggregate
+interpretability reports from the saved comparisons. Add `--per-sample`
+for individual HTML, Markdown and JSON reports. The CLI can request an
+additional model-written narrative for HTML or Markdown. Use
+`--per-sample --per-sample-format json` for the structured records alone.
+Rendering a saved record with `render_html_report` uses the supplied data
+and optional explanation. The function also accepts `class_labels` and `title`.
 
-The CLI and prediction pipelines do not automatically build this optional
-name/value mapping. Their existing `--per-sample` behavior remains as
-described in the [tutorial](tutorial.md#adding-per-sample-reports).
-That path can request an additional LLM-written narrative; rendering a
-saved record with `render_html_report` requires no additional model call.
-
-The HTML embeds its data, styling and script locally. Text is inserted
-as text, and embedded JSON escapes HTML/script delimiters. A report still
-contains the reference information and explanations supplied to it, so
-check those contents before sharing it.
+The CLI uses the standard feature-table layout. Supply `report_context`
+yourself for the optional named-compound viewer. The renderer routes
+regression records to a dedicated layout. Regression is experimental
+and remains under development.
+[Per-sample tutorial](tutorial.md#adding-per-sample-reports) · [Regression status](experimental-regression.md) · [Renderer source](../molactagent/report.py)

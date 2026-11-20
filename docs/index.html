@@ -3,150 +3,61 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="MolActAgent is an open-source AI agent for molecular activity. Compare an untested molecule with labeled references and inspect the evidence before choosing what to test.">
-  <title>MolActAgent · An AI agent for molecular activity</title>
+  <meta name="description" content="MolActAgent helps chemists decide which compounds to test when measured activity is scarce. Trace a prediction to your own reference compounds and see where a measurement is still needed.">
+  <title>MolActAgent · Which compound would you test next?</title>
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
-  <a class="skip" href="#main">Skip to content</a>
-  <header class="site-header">
-    <nav class="wrap navigation" aria-label="Main navigation">
-      <a class="brand" href="./"><img src="assets/logo.svg" width="30" height="30" alt="">MolActAgent</a>
-      <div class="nav-links">
-        <a href="#workflow">How it works</a>
-        <a href="#quickstart">Quick start</a>
-        <a href="#docs">Docs</a>
-        <a href="https://github.com/studentiz/MolActAgent">GitHub</a>
-      </div>
-    </nav>
-  </header>
-  <main id="main">
-    <section class="wrap intro" aria-labelledby="intro-title">
-      <div>
-        <h1 id="intro-title">MolActAgent</h1>
-        <p class="tagline">An AI agent for molecular activity</p>
-        <p class="intro-copy">Give it an untested molecule and active and inactive examples from your assay. See which structural comparisons support the prediction, where the evidence falls short, and which control could help you decide what to test next.</p>
-        <div class="actions">
-          <a class="button primary" href="molecular-example.html">Open the evidence report</a>
-          <a class="button" href="#quickstart">Run it offline</a>
-        </div>
-      </div>
-      <a class="result-preview" href="#workflow" aria-label="Follow the prediction for 4-fluorophenol">
-        <span class="preview-label"><span>Teaching assay</span><span>Synthetic labels</span></span>
-        <img src="assets/example-query.png" width="340" height="176"
-             alt="4-Fluorophenol with the bond between the aromatic ring and hydroxyl highlighted">
-        <div class="preview-result"><strong>4-Fluorophenol</strong><span>Predicted active</span></div>
-        <span class="preview-caption">Follow the comparison <span aria-hidden="true">↓</span></span>
-      </a>
-    </section>
+<a class="skip" href="#main">Skip to content</a>
+<header class="wrap mast">
+  <a class="brand" href="./" aria-label="MolActAgent home"><img src="assets/logo-mono.svg" width="34" height="34" alt="">MolActAgent</a>
+  <nav aria-label="Main navigation"><a href="#decisions">For chemists</a><a href="#workflow">The idea</a><a href="https://github.com/studentiz/MolActAgent">GitHub</a></nav>
+</header>
+<main id="main">
+<section class="wrap hero" aria-labelledby="hero-title">
+  <h1 id="hero-title">Which compound would you test <em>next?</em></h1>
+  <div class="opening">
+    <p>You have a few measured compounds, several candidates and a limited number of assays. <strong>MolActAgent</strong> is an open-source AI agent that compares each candidate with compounds that were active and inactive in your assay. See which candidates have support for testing and where an experiment could resolve a doubt.</p>
+    <div class="actions"><a class="button" href="#decisions">See what you can learn</a><a class="text-link" href="https://github.com/studentiz/MolActAgent#readme">Get MolActAgent</a></div>
+  </div>
+</section>
 
-    <section class="wrap workflow" id="workflow" aria-labelledby="workflow-title">
-      <div class="section-heading">
-        <h2 id="workflow-title">From assay to evidence</h2>
-        <p>The teaching assay labels a molecule active when its hydroxyl is bonded directly to an aromatic carbon.</p>
-      </div>
-      <div class="workflow-grid">
-        <section class="agent-flow" aria-labelledby="agent-title">
-          <h3 id="agent-title">What the agent does</h3>
-          <p class="flow-input"><strong>Inputs</strong> Assay definition, labeled references, query SMILES</p>
-          <ol class="steps">
-            <li><a href="#structures"><strong>Retrieve similar molecules</strong><span>Find close examples within each class.</span></a></li>
-            <li><a href="#structures"><strong>Compare structures and properties</strong><span>Show attachment points, descriptors and available measurements.</span></a></li>
-            <li><a href="#judgment"><strong>Ask the language model to judge</strong><span>The LLM explains which class the comparison supports and what evidence is missing.</span></a></li>
-            <li><a href="#verdict"><strong>Combine valid judgments</strong><span>Check the citations and combine the votes. Leave weak or unresolved cases open.</span></a></li>
-          </ol>
-          <p class="flow-output"><strong>Output</strong> Predicted class and an evidence report to review before testing</p>
-        </section>
-        <section class="worked" aria-labelledby="worked-title">
-          <h3 id="worked-title">Inside one prediction</h3>
-          <div class="molecule-map" id="structures">
-            <figure class="molecule active">
-              <figcaption><span>Active reference</span><strong>p-Cresol</strong></figcaption>
-              <img src="assets/example-active.png" width="340" height="176" alt="p-Cresol with its ring-to-hydroxyl bond highlighted">
-              <p>OH directly on ring</p>
-            </figure>
-            <figure class="molecule query">
-              <figcaption><span>Query</span><strong>4-Fluorophenol</strong></figcaption>
-              <img src="assets/example-query.png" width="340" height="176" alt="4-Fluorophenol with its ring-to-hydroxyl bond highlighted">
-              <p>OH directly on ring</p>
-            </figure>
-            <figure class="molecule inactive">
-              <figcaption><span>Inactive reference</span><strong>Benzyl alcohol</strong></figcaption>
-              <img src="assets/example-inactive.png" width="340" height="176" alt="Benzyl alcohol with its side-chain carbon-to-hydroxyl bond highlighted">
-              <p>OH one carbon away</p>
-            </figure>
-          </div>
-          <div class="observations">
-            <div id="judgment">
-              <h4>LLM judgment</h4>
-              <p>The test compound matches p-cresol at the highlighted bond. Benzyl alcohol also has a hydroxyl, but it attaches to a side-chain carbon.</p>
-            </div>
-            <div>
-              <h4>Missing comparison</h4>
-              <p>The panel has no directly comparable fluorinated reference. The effect of para fluorination remains an open question.</p>
-            </div>
-          </div>
-          <div class="verdict" id="verdict">
-            <p><strong>Predicted active</strong><span>5 of 5 recorded judgments supported this label.</span></p>
-            <a href="molecular-example.html#compound-1">Inspect the evidence <span aria-hidden="true">→</span></a>
-          </div>
-        </section>
-      </div>
+<section class="decisions" id="decisions"><div class="wrap question-layout">
+  <div class="section-intro">
+    <h2>What can I decide from a handful of results?</h2>
+    <p>For each candidate, see what the evidence supports in <em>your</em> assay. Start with the question you face at the bench.</p>
+  </div>
+  <fieldset class="questions"><legend class="sr">Explore three experimental decisions</legend>
+    <input class="sr" type="radio" name="question" id="ask-test" checked>
+    <input class="sr" type="radio" name="question" id="ask-why">
+    <input class="sr" type="radio" name="question" id="ask-gap">
+    <div class="tabs"><label id="choose-test" for="ask-test">Choose what to test</label><label id="choose-why" for="ask-why">Check the reasoning</label><label id="choose-gap" for="ask-gap">Find the gap</label></div>
+    <section class="answer" id="answer-test"><h3>Which candidate has a case for taking forward?</h3>
+      <p>Compare the assessments for the structures on your bench. A candidate predicted active comes with the measured compounds behind that call. You can weigh the strength of the comparison alongside how much sample you have left.</p>
     </section>
-
-    <section class="wrap quickstart" id="quickstart" aria-labelledby="quickstart-title">
-      <div class="quickstart-info">
-        <h2 id="quickstart-title">Reproduce this report</h2>
-        <p>Use Python 3.12. The teaching run uses saved responses and needs no API key. Open <code>molecular-output/report.html</code> when the command finishes.</p>
-        <p><a href="https://github.com/studentiz/MolActAgent/blob/v0.5.0/docs/tutorial.md#use-a-live-model">Run your own assay with a live model</a></p>
-      </div>
-      <div class="command">
-        <div class="command-header"><strong>macOS and Linux</strong><button type="button" id="copy-command" hidden>Copy commands</button></div>
-        <pre tabindex="0"><code id="example-command">git clone --branch v0.5.0 https://github.com/studentiz/MolActAgent.git
-cd MolActAgent
-python3.12 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e ".[chem]" -c examples/molecular/constraints.txt
-
-molactagent molecular \
-  --reference examples/molecular/reference.csv \
-  --test examples/molecular/query.csv \
-  --replay examples/molecular/responses.json \
-  --output-dir molecular-output</code></pre>
-        <p class="copy-status" id="copy-status" aria-live="polite"></p>
-      </div>
+    <section class="answer" id="answer-why"><h3>Why would I trust this comparison?</h3>
+      <p>Look at what happened to similar compounds in the same assay, including those that were inactive. Follow the reasoning to a particular reference, inspect its structure and check its measurement against your own records.</p>
     </section>
-
-    <section class="wrap resources" id="docs" aria-labelledby="docs-title">
-      <h2 id="docs-title">Documentation</h2>
-      <ul>
-        <li><a href="https://github.com/studentiz/MolActAgent/blob/v0.5.0/docs/tutorial.md#predict-from-smiles"><strong>Tutorial</strong><span>Install, replay the example, and prepare your assay data.</span></a></li>
-        <li><a href="https://github.com/studentiz/MolActAgent/blob/v0.5.0/docs/reports.md#reports-from-smiles"><strong>Read a report</strong><span>Trace a prediction to a structure, a measurement, and a model judgment.</span></a></li>
-        <li><a href="https://github.com/studentiz/MolActAgent/blob/v0.5.0/docs/design.md#molecular-binary-classification"><strong>Design notes</strong><span>See how retrieval, judgment, and aggregation fit together.</span></a></li>
-        <li><a href="https://github.com/studentiz/MolActAgent/blob/v0.5.0/CHANGELOG.md"><strong>Changelog</strong><span>Version history and changes to replay and outputs.</span></a></li>
-      </ul>
+    <section class="answer" id="answer-gap"><h3>What would another measurement tell me?</h3>
+      <p>A candidate may resemble an active reference but carry a change none of your measured compounds shares. The report shows the competing explanations or the reason for an inconclusive result. That gap can help you choose a comparison to test.</p>
     </section>
-  </main>
-  <footer class="site-footer"><div class="wrap footer-content">
-    <strong>MolActAgent</strong>
-    <a href="https://github.com/studentiz/MolActAgent/releases/tag/v0.5.0">v0.5.0</a>
-    <a href="https://github.com/studentiz/MolActAgent/blob/v0.5.0/LICENSE">MIT license</a>
-  </div></footer>
-  <script>
-    const copyButton = document.getElementById("copy-command");
-    if (navigator.clipboard) {
-      copyButton.hidden = false;
-      copyButton.addEventListener("click", async () => {
-        const status = document.getElementById("copy-status");
-        try {
-          await navigator.clipboard.writeText(document.getElementById("example-command").textContent);
-          status.textContent = "Commands copied.";
-        } catch {
-          status.textContent = "Select and copy the commands from the code block.";
-        }
-      });
-    }
-  </script>
+  </fieldset>
+</div></section>
+
+<section id="workflow" class="wrap workflow">
+  <div class="method-intro"><h2>Keep the chemistry behind the call.</h2>
+    <p>MolActAgent brings together the candidate, similar active and inactive references, and the meaning of activity in your experiment. A language model weighs their structural and property differences. You can follow the resulting call back to the compounds, including evidence that points the other way.</p>
+    <a class="text-link" href="https://github.com/studentiz/MolActAgent/blob/v0.5.1/docs/design.md#molecular-binary-classification">Read the method in detail</a>
+  </div>
+  <figure class="method-figure"><a href="assets/assay-decision.png" aria-label="Open the full-size illustrated chemical comparison"><img loading="lazy" src="assets/assay-decision.png" alt="From a small set of active and inactive references to a decision about a candidate. An enlarged structural comparison shows how to inspect supporting evidence and its limits."></a><figcaption>Illustrative cell-growth assay with hypothetical labels. <a href="assets/assay-decision.png">View full size</a></figcaption></figure>
+</section>
+
+<section id="quickstart" class="use"><div id="docs" class="wrap use-inner">
+  <div><h2>Bring your assay.</h2><p>You need the structures of your candidates, active and inactive examples from the same experiment and a description of how you assign the labels. New predictions use a compatible LLM API.</p></div>
+  <div class="use-links"><a class="button" href="https://github.com/studentiz/MolActAgent/blob/v0.5.1/docs/tutorial.md">Use your measurements</a><a class="text-link" href="cdk2-report.html">Inspect a complete example report</a><a class="source" href="https://github.com/studentiz/MolActAgent/tree/v0.5.1/examples/cdk2">Data and sources for the example</a></div>
+</div></section>
+</main>
+<footer class="wrap foot"><a href="./" class="brand">MolActAgent</a><a href="https://github.com/studentiz/MolActAgent/blob/v0.5.1/LICENSE">MIT software license</a><a href="https://github.com/studentiz/MolActAgent/releases/tag/v0.5.1">Release v0.5.1</a></footer>
 </body>
 </html>
